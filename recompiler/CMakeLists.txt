@@ -404,6 +404,7 @@ if(BUILD_TESTING)
                 fmv_quiet_guards
                 fps_telemetry_opt_in
                 frame_interpolation_display_rate
+                gl_depth24_coherency
                 hybrid_dev_any_input
                 launcher_vulkan_option
                 mod_controller_override
