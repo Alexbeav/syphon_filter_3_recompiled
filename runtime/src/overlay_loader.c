@@ -2010,7 +2010,8 @@ extern uint32_t i_mask;
  * interrupts.c may still run the guest handler, but it restores the interrupted
  * thread and defers a requested cross-thread switch until a clean outer boundary.
  * Interrupt delivery itself MUST remain enabled: a callee can legitimately wait
- * for an IRQ-backed BIOS event before returning (SF2's memory-card event pump),
+ * for an IRQ-backed BIOS event before returning (as proven by a retail card
+ * event pump),
  * and suppressing the IRQ for the whole call unit deadlocks that wait. Incremented
  * only when the A/B toggle is on (below). */
 int g_call_unit_depth = 0;

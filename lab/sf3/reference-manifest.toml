@@ -1,0 +1,31 @@
+schema_version = 1
+created = "2026-08-03"
+
+[experiment]
+name = "Syphon Filter 3 recompilation feasibility"
+branch = "experiment/sf3-recomp-feasibility"
+source_framework_commit = "4f811c2"
+psxrecomp_commit = "0cfa9fe0a8da944e9f694a24361b4973c57131ea"
+hybrid_oracle_repository = "I:/Projects/SF3-PC-Port"
+hybrid_implementation_commit = "d84e475"
+hybrid_knowledge_commit = "6edd6e2"
+reference_catalog = "I:/Projects/PSX-References/CATALOG.md"
+knowledge_corpus = "I:/Projects/PSX-Ports"
+
+[game]
+title = "Syphon Filter 3"
+region = "USA / NTSC-U"
+serial = "SCUS-94640"
+executable_name = "SCUS_946.40"
+executable_entry = "0x800FB368"
+executable_text_size = "0x001CC000"
+executable_sha256 = "b4b32cc92e6b8634762893b637bc9a471442edbeb7569afcfb18eafbe82b9460"
+
+[policy]
+retail_inputs_tracked = false
+generated_game_code_tracked = false
+overlay_captures_tracked = false
+private_research_tracked = false
+commercial_use_permitted_by_framework_license = false
+runs_headless = true
+runs_silent = true

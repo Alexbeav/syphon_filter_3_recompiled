@@ -93,19 +93,19 @@ __pycache__/
 /duckstation/
 _wip/
 
-# SF2 recompilation feasibility lab: all retail inputs, generated game code,
+# SF3 recompilation feasibility lab: all retail inputs, generated game code,
 # overlay captures, traces, and private research remain local-only.
 /.local-context/
-/lab/sf2/local/
-/lab/sf2/generated/
-/lab/sf2/captures/
-/lab/sf2/traces/
+/lab/sf3/local/
+/lab/sf3/generated/
+/lab/sf3/captures/
+/lab/sf3/traces/
 **/overlay_captures.json
 *.cue
 *.iso
 *.chd
 *.img
-*.sf2pad
+*.sf3pad
 *.psxstate
 
 # Game discs/EXEs and recompiler output (copyrighted, not distributable).
