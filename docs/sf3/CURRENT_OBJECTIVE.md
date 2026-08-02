@@ -2,6 +2,8 @@
 
 Updated: 2026-08-03
 
+Status: minimum TITLE gate achieved; stretch route in progress.
+
 ## Objective
 
 Establish a clean reproducible SF3 game-project generation and Release build,
@@ -54,3 +56,17 @@ state-0 player control.
 Retail frontend input selects Story/Mission 1, reaches state 8 and then state
 `0/1`; player-owned state changes under recorded PAD input while GPU, SPU/XA
 and CD remain live. Repeat from two clean processes.
+
+## Achieved minimum evidence
+
+- Release framework suite: 40/40 with `PYTHONUTF8=1`.
+- Generated trees: 1,128/1,128 normalized-identical files, tree SHA-256
+  `09043b8c29b5c34a0364d0fd36778fa7002ef14d29128938a60b272bf915433e`.
+- Clean Release products: normalized SHA-256
+  `a23b0071a7e8ae94746e1e0080a0e4cf4c43c62648724ddc8367842911ac683d`.
+- Two clean native runs: executable entry, `Game_Main`, and application loop
+  all occur at frame 714 with identical call records.
+- Frame 714 and 1000 write/PC/MMIO/SPU/cycle fingerprints match exactly.
+- Both runs reach retail TITLE depth/state `2/4`, with 122 valid native-overlay
+  candidates, four loaded cache regions, zero dispatch misses/invalidations/CRC
+  misses, and bounded residual fallback.

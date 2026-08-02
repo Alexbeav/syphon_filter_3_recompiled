@@ -72,3 +72,72 @@ validator for GPU page/composition results: SF2 hybrid.
   `a23b0071a7e8ae94746e1e0080a0e4cf4c43c62648724ddc8367842911ac683d`.
 - Current repository footprint including both ignored generated trees and
   their clean builds is 1.662 GiB, below the 20 GiB cap.
+
+### R1 — OpenBIOS, retail entry and stable TITLE
+
+The untouched Release product first ran for a bounded 30 seconds with
+`--headless --no-launcher`, a fresh memory-card directory and no SDL audio
+initialization. It loaded the bundled OpenBIOS image, selected `LLE (recompiled
+BIOS)`, mounted SCUS-94640, and began at `0xBFC00000`. The first launch attempt
+was contradicted before guest execution because PowerShell split the cue path;
+explicit argument quoting fixed the host launcher invariant.
+
+A separate Release-optimized `build-r1` enabled the framework TCP diagnostics.
+The first uncached run reached frame 714 with an identical retail chain:
+
+| Target | Caller RA | SP | Frame |
+| --- | --- | --- | ---: |
+| `0x800FB368` executable entry | `0xBFC06694` | `0x801FFFF0` | 714 |
+| `0x80029ED8` `Game_Main` | `0x800FB40C` | `0x807FFFF8` | 714 |
+| `0x80029FB8` application loop | `0x80029FA0` | `0x807FFFE0` | 714 |
+
+Live RAM `0x80121B84..0x80121B93` was
+`02000000040000000000000000000000`: depth 2, current state 4, transition 0.
+GPU state was 320x240x15 with alternating page-zero/page-240 draw/display
+ownership and live GP0 draw, copy and environment traffic. CD remained active
+with `int1_lost=0`. Headless mode intentionally had no host/SPU render pump,
+while decoded CD/XA input was nonzero; this proves silent device activity, not
+audible output.
+
+### R1 — runtime-installed code ownership
+
+The uncached TITLE run recorded 39 chronological installs, represented by five
+coherent current capture regions. SF3 writes executable frontend code into
+nominal main-EXE text pages below physical `0x1DC000`. Initial interpretation
+that the overlay floor blocked these regions was contradicted by corpus/code
+consultation: the framework deliberately divides kernel, overwritten boot-text
+and above-floor overlay windows, and the runtime had checked below-floor bases
+`0x141000`, `0x146000`, `0x150000` and `0x15E000`.
+
+The first shard preflight correctly rejected an unstamped source include tree
+(`00000000` versus recompiler emitter hash `9713afe3`). Pointing it at the exact
+packaged runtime include tree used by the built game satisfied the staleness
+guard. Throwaway preflight and real cache publication both built four
+code-bearing regions, skipped one data-only region, and reported zero failures.
+
+Two subsequent clean headless/silent processes each loaded four regions and
+registered 122 candidates. Both reported zero static dispatch misses, overlay
+invalidations, revalidation CRC misses, stale blocks, candidate overflow and
+range-index overflow. At the sampled TITLE checkpoints:
+
+| Run | Frame | Native overlay | Interpreter fallback | Static hits |
+| --- | ---: | ---: | ---: | ---: |
+| A | 3006 | 16,313,494 | 14,741 | 9,285,427 |
+| B | 2463 | 13,225,927 | 11,183 | 9,131,008 |
+
+Counts differ with observation time; ownership ratios are honest cumulative
+counters. Semantic determinism is stronger: both runs produced exactly the
+same fingerprints at frames 714 and 1000:
+
+| Frame | write hash | PC hash | MMIO hash | SPU hash/count | cycles |
+| ---: | --- | --- | --- | --- | ---: |
+| 714 | `ca4cf1d7f0e72c45` | `ec595161d237329d` | `35c81a96dd3a652a` | `14650fb0739d0383` / 0 | 403038720 |
+| 1000 | `ab542f8206d1859e` | `b36c2304ed0c7251` | `2fc2b4305ce0eff4` | `d5e100f87114fb31` / 218 | 564480000 |
+
+The corpus disposition is therefore: below-floor capture lifecycle confirmed;
+text-end-as-immutable-code contradicted; `PSX-HLE-001` irrelevant under LLE;
+`PSX-GPU-001` narrowed/active; `PSX-GPU-002` irrelevant without a 24-bit
+symptom; CPU load-delay/JALR causal relevance not yet established; nested IRQ
+path exercised but causality not yet isolated. Tenchu is the independent
+validator for the generic overwritten-text lifecycle; SF2 hybrid remains the
+GPU page/composition validator.
