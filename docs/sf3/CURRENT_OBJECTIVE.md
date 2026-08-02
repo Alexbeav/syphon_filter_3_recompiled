@@ -2,7 +2,7 @@
 
 Updated: 2026-08-03
 
-Status: minimum TITLE gate achieved; stretch route in progress.
+Status: minimum and stretch gates achieved; validation/package audit in progress.
 
 ## Objective
 
@@ -70,3 +70,22 @@ and CD remain live. Repeat from two clean processes.
 - Both runs reach retail TITLE depth/state `2/4`, with 122 valid native-overlay
   candidates, four loaded cache regions, zero dispatch misses/invalidations/CRC
   misses, and bounded residual fallback.
+
+## Achieved stretch evidence
+
+- A tracked state-gated probe now launches the diagnostic Release product with
+  `--headless --no-launcher`, a fresh writable-state directory and no host
+  audio output.
+- Two fresh probe processes selected the visible retail `New Game` route,
+  reached Mission 1 state/depth `8/2`, observed the retail state-8 pop, and
+  reached state/depth `0/1` with the Mission 1 PAD return polling.
+- Both runs produced identical state-8, pop and Mission 1 PAD call shapes. TCP
+  polling landed within 5–10 guest frames between runs, so these are semantic
+  matches rather than falsely claimed same-frame input schedules.
+- At comparable final samples, static/native-overlay/fallback ownership was
+  `38.699% / 61.187% / 0.115%` and
+  `38.564% / 61.322% / 0.114%`. Each run had 123 registered candidates, four
+  native regions and zero static misses, invalidations or CRC misses.
+- Both runs retained live world-3D GPU traffic, SPU key-on activity, nonzero
+  decoded XA input, retail CD service and silent host output. A movement-only
+  Up press changed the rendered player position while state remained `0/1`.

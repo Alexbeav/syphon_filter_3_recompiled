@@ -25,3 +25,21 @@ python tools\compare_generated_projects.py .\lab\sf3\generated\run-a .\lab\sf3\g
 
 The retail executable, generated sources, builds, traces and captures are
 ignored and must remain local.
+
+## Headless Story/Mission 1 probe
+
+After creating the Release-optimized diagnostic build (`build-r1`) and
+publishing the captured overlay cache as described in the devlog, run:
+
+```powershell
+$env:PYTHONUTF8 = '1'
+python .\lab\sf3\probe_story.py $Sf3Cue --out .\lab\sf3\traces\clean-story-a --port 4388
+python .\lab\sf3\probe_story.py $Sf3Cue --out .\lab\sf3\traces\clean-story-b --port 4388
+```
+
+Each output directory must not already exist. The probe opens no window or
+audio device. It waits on retail state and call gates, supplies only active-low
+physical PAD words through SIO, records bounded JSON/screenshots beneath the
+ignored output directory, and exits only after state `0/1`, Mission 1 PAD
+polling and a movement sample. It never writes guest RAM, invokes a retail
+callback or patches generated code.

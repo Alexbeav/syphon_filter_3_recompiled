@@ -141,3 +141,65 @@ symptom; CPU load-delay/JALR causal relevance not yet established; nested IRQ
 path exercised but causality not yet isolated. Tenchu is the independent
 validator for the generic overwritten-text lifecycle; SF2 hybrid remains the
 GPU page/composition validator.
+
+### R2 — retail Story, state 8 and state-0 player control
+
+The first live TITLE gate appeared contradictory: state/depth was stable
+`4/2`, mode/substate RAM was `0/0`, retail PAD polling was live, but the hybrid
+oracle's transient mode-0 widget word was zero rather than four. A bounded
+screenshot resolved ownership without guessing: the runtime was rendering the
+authentic user-operable `New Game` menu. The widget word is therefore useful
+while constructing the menu, not a durable readiness invariant.
+
+Only active-low physical SIO words were then supplied: Cross `0xBFFF`, neutral
+release, and later Up `0xFFEF`. No application-state write, processed-PAD
+record, callback handoff or native substitute was used. Retail rendered the
+New Game/Two Player/Mini Game choice, selected New Game, displayed the Tokyo
+briefing, entered state/depth `8/2`, and popped to `0/1`. The exact observed
+state-8 PAD return, pop return and Mission 1 PAD return register/SP shapes were
+identical in two clean packaged runs:
+
+| Gate | Stable call evidence |
+| --- | --- |
+| state-8 PAD | `a0=0x807FFF84`, `a1=0`, `a2=0x10`, `a3=2`, `s3=0x8012D79C`, `sp=0x807FFF70` |
+| state-8 pop | `a0=0`, `a1=2`, `a2=0x177C8`, `a3=0x780000`, `s3=0x8012D79C`, `sp=0x807FFF70` |
+| Mission 1 PAD | `a0=0x1F8003A4`, `a1=0`, `a2=0x80122258`, `a3=0x807FFF28`, `s3=0x8012D79C`, `sp=0x1F800384` |
+
+The rendered state-0 frame contains the player, HUD and Tokyo world geometry.
+A bounded Up press visibly moves the player while the application remains
+`0/1` and the Mission 1 PAD return continues polling. The runtime's low-level
+CD path owns disc transfer and retail owns archive parsing and installed code;
+no hybrid host archive/member bridge is present. Read-only `sf_tool`
+independently identifies the loaded resource as the 40-room Tokyo archive with
+270 objects and player index 199.
+
+Two clean executions of tracked `lab/sf3/probe_story.py` passed. Because TCP
+commands are delivered at the next host-serviced boundary, their gates landed
+at frames `1517/1522` (TITLE), `3217/3223` (state 8), `3231/3239` (pop), and
+`3240/3250` (first post-pop Mission 1 PAD sample). Absolute frame equality is
+not claimed. The call shapes, state path, overlay identities and device
+invariants match exactly.
+
+At the final bounded samples, the dispatch census was:
+
+| Run | Static | Native overlay | Fallback | Ownership percentages |
+| --- | ---: | ---: | ---: | --- |
+| D | 9,486,303 | 14,998,871 | 28,075 | `38.699 / 61.187 / 0.115` |
+| E | 9,489,763 | 15,090,082 | 28,162 | `38.564 / 61.322 / 0.114` |
+
+Both runs had 123 registered candidates, four loaded native regions, zero
+static misses, invalidations and CRC misses. GPU world-3D/draw counters, SPU
+key-on counts, decoded XA input and CD state were live. Host audio output was
+inactive with zero SPU/host render frames, preserving the silent-run promise.
+
+The packaged probe exposed one host-side nuance. On a fresh headless pad, the
+first injected D-pad edge can be consumed while the generic runtime requests a
+coherent analog-to-digital type transition. Retail state remains unchanged;
+after a neutral interval the next physical edge is accepted. The probe retries
+only while the retail gate is unchanged, stops immediately on transition,
+permits at most three attempts and records the actual count. Both clean runs
+used two edges at initial TITLE and one thereafter. This is narrowed input
+boundary behavior, not an SF3 application or CPU defect.
+
+Current footprint including ignored generations, builds, captures and all
+probe evidence is 2.187 GiB, below the 20 GiB ceiling.
