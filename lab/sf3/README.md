@@ -69,7 +69,8 @@ silently consuming stale input.
 ```powershell
 .\lab\sf3\record_input_route.ps1 `
   -Project .\lab\sf3\generated\input-route-e `
-  -Route .\lab\sf3\traces\human-mission1.psxpad
+  -Route .\lab\sf3\traces\human-mission1.psxpad `
+  -Renderer opengl
 ```
 
 Use `-Silent` to select SDL's dummy audio driver. Release all controls before
@@ -77,3 +78,26 @@ closing the window so the finalized route has a neutral trailing sample. A
 `.partial` recovery file is refreshed every 3,600 guest samples; the final file
 is written during orderly shutdown. This is a diagnostic input witness, not by
 itself proof of deterministic state, correct rendering or campaign completion.
+
+After the route is finalized, two ordinary Release replays can exercise the
+same hidden renderer and stop at the exact recorded retail-SIO sample count:
+
+```powershell
+.\lab\sf3\replay_input_route.ps1 `
+  -Project .\lab\sf3\generated\input-route-g `
+  -Route .\lab\sf3\traces\human-mission1.psxpad `
+  -Out .\lab\sf3\traces\human-mission1-replay-a `
+  -Renderer opengl
+.\lab\sf3\replay_input_route.ps1 `
+  -Project .\lab\sf3\generated\input-route-g `
+  -Route .\lab\sf3\traces\human-mission1.psxpad `
+  -Out .\lab\sf3\traces\human-mission1-replay-b `
+  -Renderer opengl
+```
+
+The helper always selects SDL dummy audio, uses an isolated memory-card
+directory and refuses to reuse an output directory. `--hidden-window` keeps the
+selected renderer active; it is not renderer-less `--headless`. Successful
+process exit proves only that every recorded sample was consumed. State,
+presentation and campaign gates still require the diagnostic observer and the
+ordinary visible confirmation described in the objective.

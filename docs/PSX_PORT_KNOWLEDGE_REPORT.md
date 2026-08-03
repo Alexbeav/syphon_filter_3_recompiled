@@ -131,6 +131,16 @@ and the source suite passes 45/45. Neither product was launched after the
 user's no-run instruction, so the new TCP color handlers remain compile-tested
 but runtime-unclaimed.
 
+Bounded timeline replay can now use `--hidden-window`, keeping OpenGL/software
+presentation active while stopping at the exact recorded retail-SIO sample
+count; visible processes still reject the stop limit. A source-owned two-run
+helper uses isolated cards/logs and dummy audio. Two clean 1,132-file
+generations match (tree SHA-256
+`aecb26b66492b0ca0074c9d58895483ca7686227313188f321ad9c96ce7febe5`),
+the ordinary Release links, and 46/46 tests pass. The user prohibited launching
+the product during this interval, so this remains a source/build-validated
+route contract rather than replay evidence.
+
 ## Quality debt
 
 | Debt | Likely owner | Removal gate |

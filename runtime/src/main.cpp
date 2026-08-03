@@ -3154,9 +3154,9 @@ void init_input_timeline() {
     try {
         if (const char* stop = std::getenv("PSX_INPUT_STOP_AFTER")) {
             g_input_stop_after = std::strtoull(stop, nullptr, 10);
-            if (g_input_stop_after && !g_headless) {
+            if (g_input_stop_after && !g_headless && !g_hidden_window) {
                 std::fprintf(stderr,
-                    "psxrecomp: PSX_INPUT_STOP_AFTER is headless-only; ignoring it\n");
+                    "psxrecomp: PSX_INPUT_STOP_AFTER requires headless or hidden-window mode; ignoring it\n");
                 g_input_stop_after = 0;
             }
         }
@@ -3203,7 +3203,7 @@ void init_input_timeline() {
 void stop_after_input_sample_if_requested() {
     if (!g_input_stop_after || g_input_sample_index < g_input_stop_after) return;
     flush_recorded_input(true);
-    std::fprintf(stdout, "psxrecomp: headless input sample limit reached (%llu)\n",
+    std::fprintf(stdout, "psxrecomp: bounded input sample limit reached (%llu)\n",
         static_cast<unsigned long long>(g_input_sample_index));
     std::fflush(stdout);
     std::exit(0);

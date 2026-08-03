@@ -431,6 +431,7 @@ if(BUILD_TESTING)
                 overlay_decodable_fallback
                 overlay_init_guard
                 sdl3_main_single_include
+                sf3_input_route_helpers
                 vk_build_default
                 vk_color_self_barrier
                 vk_command_buffer_batching

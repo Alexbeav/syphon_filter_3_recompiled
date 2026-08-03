@@ -5,6 +5,8 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$Route,
     [string]$MemcardDir,
+    [ValidateSet('opengl', 'software')]
+    [string]$Renderer = 'opengl',
     [switch]$Silent
 )
 
@@ -49,7 +51,7 @@ try {
     Write-Host 'Release all controls before closing the game to leave a neutral bookend.'
     Push-Location (Split-Path -Parent $exe)
     try {
-        & $exe --no-launcher --game $game --memcard-dir $memcardPath
+        & $exe --no-launcher --renderer $Renderer --game $game --memcard-dir $memcardPath
         $exitCode = $LASTEXITCODE
     } finally {
         Pop-Location

@@ -27,8 +27,9 @@ of playability.
   sustained rendering, audio, pause, combat, death/restart, checkpoint restore,
   objective completion or the next retail transition.
 - A retail-boundary input recorder now builds and has a passing source-owned
-  contract test, but no human Mission 1 route has been recorded or replayed.
-  It is a witness mechanism, not resolution of either intermittent P0.
+  contract test. A bounded two-run helper can replay through a hidden renderer,
+  but no human Mission 1 route has been recorded or replayed. These are witness
+  mechanisms, not resolution of either intermittent P0.
 
 ## Representative-slice exit gate
 
@@ -49,7 +50,7 @@ of playability.
 | Briefing handoff intermittently fails | unresolved lifecycle/device/control owner | mission does not start | user cold-launch report | first divergence fixed; two ordinary Release routes pass |
 | Mission textures can sample corrupt data | unresolved GPU/VRAM owner | gameplay is visually invalid | user cold-launch screenshot | software/OpenGL oracle comparison plus correct multi-room two-page presentation |
 | Probe covers only initial state-0 movement | validation harness | false confidence in playability | prior `probe_story.py` exit boundary | extend through sustained play, failure/restart, checkpoint and completion |
-| Human route recorder not runtime-validated | validation harness | offered playthrough cannot yet serve as deterministic witness | serializer/replay test and fresh Release link only | record one neutral-bookended Mission 1 route and replay it twice with matching semantic/GPU evidence |
+| Human route recorder/replayer not runtime-validated | validation harness | offered playthrough cannot yet serve as deterministic witness | serializer, hidden-renderer helper guards and fresh Release link only | record one neutral-bookended Mission 1 route and replay it twice with matching semantic/GPU evidence |
 | Diagnostic display readback can alter host timing | validation observer | a clean observed run may not represent ordinary Release timing | OpenGL ring capture flushes/reads back even without CPU-VRAM synchronization | reproduce under a recorded route, localize with bounded capture, then confirm the fix twice in ordinary Release with the observer disabled |
 | Campaign beyond Mission 1 unverified | retail/content lifecycle | no campaign claim | no connected mission matrix | later campaign-complete gate; not part of this representative slice |
 
@@ -99,7 +100,7 @@ and CD remain live. Repeat from two clean processes.
 
 ## Achieved minimum evidence
 
-- Release framework suite: 45/45 with `PYTHONUTF8=1`, including the generic
+- Release framework suite: 46/46 with `PYTHONUTF8=1`, including the generic
   OpenGL 15/24-bit coherency and CD seek-retarget regressions.
 - Generated trees: 1,128/1,128 normalized-identical files, tree SHA-256
   `09043b8c29b5c34a0364d0fd36778fa7002ef14d29128938a60b272bf915433e`.

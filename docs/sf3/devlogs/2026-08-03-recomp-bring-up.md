@@ -430,3 +430,25 @@ The framework suite is 45/45 passing. Per the user's explicit instruction,
 neither executable was launched; the process census remained zero and runtime
 observer behavior is not claimed. The complete local footprint is 10.569 GiB,
 below the 20 GiB limit.
+
+The no-launch interval also closed the human-route replay packaging gap.
+`PSX_INPUT_STOP_AFTER` previously accepted only renderer-less `--headless`, so
+an unattended replay could not both exercise the authentic OpenGL presentation
+path and stop at the recorded retail-SIO sample boundary. The generic runtime
+now accepts the limit in `--hidden-window` mode while continuing to reject it
+for an ordinary visible process. A source-owned helper validates a `PSXPAD2`
+header, isolates memory cards and logs, enables dummy audio, consumes the route
+through the selected hidden renderer and requires the exact bounded-completion
+marker. It neither injects TCP input nor writes guest state. The recording
+helper now makes the OpenGL/software renderer choice explicit.
+
+The helper/source guards and PowerShell AST checks bring the framework suite to
+46/46. Two clean post-change generations match across 1,132/1,132 files with
+tree SHA-256
+`aecb26b66492b0ca0074c9d58895483ca7686227313188f321ad9c96ce7febe5`.
+The untouched ordinary Release links to a 97,748,156-byte product (SHA-256
+`49b6e61e3a58730d7774fb7ac6e5e105b36b1ba35ca8c04d9fd19f9da751153b`).
+Per the user's continuing instruction, the helper and product were not run;
+the process census remained zero. The 11.723 GiB footprint remains below the
+20 GiB limit. Runtime replay equivalence, presentation and semantic route
+evidence therefore remain unclaimed.
