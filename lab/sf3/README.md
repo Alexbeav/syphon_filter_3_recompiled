@@ -82,6 +82,12 @@ Use `-Unique` for repeated human attempts; it appends a timestamp before the
 extension and still refuses to overwrite any existing final or partial route.
 The connected human checklist is [MISSION1_ACCEPTANCE.md](../../docs/sf3/MISSION1_ACCEPTANCE.md).
 
+The desktop has two distinct entry points targeting the same compatible
+`input-route-k` ordinary Release: **Syphon Filter 3 Recomp Lab** for an ordinary
+visible run, and **Syphon Filter 3 Recomp - Record Mission 1** for a timestamped
+input witness. Neither shortcut enables diagnostic TCP tooling or modifies
+retail state.
+
 After the route is finalized, two ordinary Release replays can exercise the
 same hidden renderer and stop at the exact recorded retail-SIO sample count:
 

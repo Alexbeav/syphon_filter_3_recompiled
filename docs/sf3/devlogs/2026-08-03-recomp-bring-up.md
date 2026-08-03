@@ -453,8 +453,8 @@ the process census remained zero. The 11.723 GiB footprint remains below the
 20 GiB limit. Runtime replay equivalence, presentation and semantic route
 evidence therefore remain unclaimed.
 
-A separate desktop shortcut, `Syphon Filter 3 Recomp - Record Mission 1`, now
-initially targeted the source-owned recorder and replay-compatible `input-route-i`
+A separate desktop shortcut, `Syphon Filter 3 Recomp - Record Mission 1`, was
+initially created for the source-owned recorder and replay-compatible `input-route-i`
 ordinary Release. It fixes the output to the ignored
 `lab/sf3/traces/human-mission1.psxpad` path and selects OpenGL. The older normal
 play shortcut was preserved. Creating and inspecting the new shortcut did not
@@ -498,3 +498,9 @@ Mission 1 checklist names every representative-slice human gate through the
 following retail transition. `-NoExit` keeps the capture receipt visible after
 the game closes. The shortcut was edited but not opened; the game process
 census remained zero.
+
+The ordinary desktop shortcut `Syphon Filter 3 Recomp Lab` was then retargeted
+from the stale `fmv-c` product to the same `input-route-k` ordinary Release used
+by the capture/replay contract. It retains the isolated play memory-card path,
+and the SCUS-94640 game configuration selects OpenGL. The shortcut was inspected
+after editing but not opened.
