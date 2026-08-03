@@ -42,6 +42,8 @@ of playability.
 - Mission 1 completes through its retail result/save/next-state flow.
 - The connected deterministic route passes twice and a human completes the
   same representative route without developer-only state manipulation.
+- Human evidence follows `docs/sf3/MISSION1_ACCEPTANCE.md` and identifies the
+  exact first failed gate rather than treating initial movement as completion.
 
 ## Quality debt
 
@@ -100,7 +102,7 @@ and CD remain live. Repeat from two clean processes.
 
 ## Achieved minimum evidence
 
-- Release framework suite: 46/46 with `PYTHONUTF8=1`, including the generic
+- Release framework suite: 47/47 with `PYTHONUTF8=1`, including the generic
   OpenGL 15/24-bit coherency and CD seek-retarget regressions.
 - Generated trees: 1,128/1,128 normalized-identical files, tree SHA-256
   `09043b8c29b5c34a0364d0fd36778fa7002ef14d29128938a60b272bf915433e`.

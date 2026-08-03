@@ -151,6 +151,15 @@ and matching ordinary/diagnostic Release products link from the same source
 identity. Neither was launched, so page coverage and replay behavior remain
 unverified.
 
+An even-cadence observer was contradicted as a valid two-page witness because
+SF3 alternates pages each frame; the corrected observer samples adjacent ring
+frames. The 47-test suite includes a bounded comparator for matching semantic
+transitions, distinct display origins, live subsystem snapshots and absence of
+the known corruption signature. It deliberately leaves human presentation,
+audio quality, pause/death/checkpoint and mission-completion gates open.
+Timestamped recorder output preserves intermittent failed routes instead of
+blocking or overwriting the next attempt.
+
 ## Quality debt
 
 | Debt | Likely owner | Removal gate |

@@ -21,6 +21,8 @@ record_required = (
     "--renderer $Renderer",
     "Release all controls before closing",
     ".partial",
+    "[switch]$Unique",
+    "yyyyMMdd-HHmmss",
 )
 replay_required = (
     "PSX_INPUT_REPLAY",
@@ -53,6 +55,7 @@ observer_required = (
     '"display_ring_color_stats"',
     '"application_transitions"',
     '"state0_page_samples"',
+    "newest - 1",
 )
 missing = [token for token in observer_required if token not in observer_text]
 if missing:

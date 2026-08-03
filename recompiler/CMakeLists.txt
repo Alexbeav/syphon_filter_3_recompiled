@@ -432,6 +432,7 @@ if(BUILD_TESTING)
                 overlay_init_guard
                 sdl3_main_single_include
                 sf3_input_route_helpers
+                sf3_route_evidence_compare
                 vk_build_default
                 vk_color_self_barrier
                 vk_command_buffer_batching

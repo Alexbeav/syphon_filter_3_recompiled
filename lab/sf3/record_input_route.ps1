@@ -7,6 +7,7 @@ param(
     [string]$MemcardDir,
     [ValidateSet('opengl', 'software')]
     [string]$Renderer = 'opengl',
+    [switch]$Unique,
     [switch]$Silent
 )
 
@@ -22,6 +23,13 @@ if (-not (Test-Path -LiteralPath $game -PathType Leaf)) {
 }
 
 $routePath = [IO.Path]::GetFullPath($Route)
+if ($Unique) {
+    $routeDirectory = Split-Path -Parent $routePath
+    $routeStem = [IO.Path]::GetFileNameWithoutExtension($routePath)
+    $routeExtension = [IO.Path]::GetExtension($routePath)
+    $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
+    $routePath = Join-Path $routeDirectory "$routeStem-$stamp$routeExtension"
+}
 if (Test-Path -LiteralPath $routePath) {
     throw "Refusing to overwrite input route: $routePath"
 }

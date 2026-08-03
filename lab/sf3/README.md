@@ -78,6 +78,9 @@ closing the window so the finalized route has a neutral trailing sample. A
 `.partial` recovery file is refreshed every 3,600 guest samples; the final file
 is written during orderly shutdown. This is a diagnostic input witness, not by
 itself proof of deterministic state, correct rendering or campaign completion.
+Use `-Unique` for repeated human attempts; it appends a timestamp before the
+extension and still refuses to overwrite any existing final or partial route.
+The connected human checklist is [MISSION1_ACCEPTANCE.md](../../docs/sf3/MISSION1_ACCEPTANCE.md).
 
 After the route is finalized, two ordinary Release replays can exercise the
 same hidden renderer and stop at the exact recorded retail-SIO sample count:
@@ -121,3 +124,20 @@ python .\lab\sf3\observe_input_route.py `
 
 This diagnostic route is intentionally timing-perturbing. Acceptance still
 requires the ordinary Release replays with the observer absent.
+
+Compare two completed diagnostic observations with the bounded semantic
+classifier:
+
+```powershell
+python .\lab\sf3\compare_route_evidence.py `
+  .\lab\sf3\traces\human-mission1-observed-a\evidence.json `
+  .\lab\sf3\traces\human-mission1-observed-b\evidence.json `
+  --out .\lab\sf3\traces\human-mission1-observed-compare.json
+```
+
+The comparator requires matching retail application-transition sequences, a
+following retail transition, two display origins in each state-0 run, live
+subsystem snapshots, exact bounded-route consumption and no match for the known
+corruption signature. It deliberately does not claim general texture
+correctness, audio quality, pause/death/checkpoint behavior or Mission 1
+completion; those remain explicit human and ordinary-Release gates.

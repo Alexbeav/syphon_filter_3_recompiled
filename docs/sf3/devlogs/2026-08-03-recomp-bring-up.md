@@ -480,3 +480,21 @@ The recording shortcut was retargeted from `input-route-i` to this matching
 `input-route-k` ordinary product. No executable was launched, the process
 census remained zero, and runtime observer behavior remains unclaimed. The
 workspace occupies 13.255 GiB, still below the 20 GiB ceiling.
+
+The first observer draft sampled every 60 frames. Because SF3 alternates its
+display pages every frame, that even cadence could repeatedly land on one page
+and falsely satisfy a long-duration presentation check. The observer now reads
+adjacent retained frames at each state-0 checkpoint. A source-owned two-run
+classifier requires matching application-transition sequences, a subsequent
+retail transition, two display origins per run, live subsystem snapshots,
+complete bounded input consumption and no known-corruption match. Its output
+explicitly excludes arbitrary texture correctness, audio quality,
+pause/death/checkpoint behavior and mission completion. Regression coverage
+brings the suite to 47/47.
+
+The human capture shortcut now passes `-Unique`, producing timestamped routes
+without overwriting a prior success, P0 failure or partial recovery. A tracked
+Mission 1 checklist names every representative-slice human gate through the
+following retail transition. `-NoExit` keeps the capture receipt visible after
+the game closes. The shortcut was edited but not opened; the game process
+census remained zero.

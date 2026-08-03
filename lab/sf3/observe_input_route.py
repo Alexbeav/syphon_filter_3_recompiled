@@ -162,11 +162,17 @@ def main() -> int:
 
                 if pair == (1, 0) and frame - last_page_sample >= 60:
                     ring = tcp_call(args.port, "display_ring_stats")
+                    oldest = int(ring["oldest_frame"])
                     newest = int(ring["newest_frame"])
-                    color = safe_call(
-                        args.port, "display_ring_color_stats", frame=newest
-                    )
-                    evidence["state0_page_samples"].append(color)
+                    # Consecutive frames are required here: SF3 alternates its
+                    # display pages, so a fixed even polling interval can
+                    # repeatedly observe only one page and create false
+                    # two-page confidence.
+                    for page_frame in range(max(oldest, newest - 1), newest + 1):
+                        color = safe_call(
+                            args.port, "display_ring_color_stats", frame=page_frame
+                        )
+                        evidence["state0_page_samples"].append(color)
                     last_page_sample = frame
 
                     scan = tcp_call(
