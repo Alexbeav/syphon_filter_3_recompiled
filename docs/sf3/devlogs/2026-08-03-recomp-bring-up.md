@@ -337,3 +337,60 @@ The project remains `bootstrap_verified`. Representative-slice claims are
 withdrawn pending sustained correct presentation, input/audio/pause,
 death/restart, checkpoint restore, Mission 1 completion and its following
 retail transition in two clean deterministic routes plus a human completion.
+
+### R6 — non-perturbing repro and retail-boundary input witness
+
+The user subsequently reported that another ordinary launch looked and played
+correctly. This narrows both P0 symptoms to intermittent behavior; it does not
+contradict the failed briefing handoff or corrupt-texture observations and does
+not promote the project beyond `bootstrap_verified`.
+
+The first bounded renderer checks reached clean Mission 1 state-0 output in one
+OpenGL run and one software run. A second OpenGL run omitted all intermediate
+screenshots and captured the always-on display ring instead. It was also clean,
+contradicting the hypothesis that screenshot-triggered OpenGL-to-CPU VRAM sync
+was required to heal the route. The check did expose a validation hazard:
+`screenshot_file` synchronizes the OpenGL FBO into CPU VRAM for 15-bit output,
+so it is not a transparent witness for a split-representation ownership bug.
+Future first-divergence work must use the display ring before requesting a
+screenshot. No same-frame corrupt software/OpenGL pair has yet been captured.
+
+To turn the user's connected Mission 1 playthrough into a repeatable witness,
+the runtime now records and replays normalized two-port pad packets at the
+existing retail SIO sample boundary. The `PSXPAD2` format contains input only,
+uses contiguous guest-sample indices, preserves connection/type/analog state,
+holds neutral after replay completion, rejects malformed or incompatible
+routes, and disables the optional second low-latency host resample. Its
+compatibility token hashes the complete runtime and generated retail source
+content plus Release/Debug flavor. Periodic `.partial` publication limits loss
+without introducing another guest sample. A source-owned parser/replay test and
+PowerShell launcher syntax test pass.
+
+A fresh SCUS-94640 project generated with the integration retained executable
+entry `0x800FB368`, load address `0x80010000` and text size `0x1CC000`. An
+initial two-tree comparison was reproducible but exposed a stale CLI packaging
+snapshot that predated one required declaration; this was rejected before it
+became a release artifact. After rebuilding the CLI package, two new clean
+trees match across 1,130/1,130 files with tree SHA-256
+`b7ba1712d1c69be424842bc49a220b8d7bb9c2c8fea59546f8132495fe88625b`,
+and packaged `runtime/src/main.cpp` is byte-identical to the owning source.
+One untouched generated tree builds an ordinary 97,744,583-byte Release
+product (SHA-256
+`7f18886f6118a6e32edb705806519ae5198fd6951c83ecb8588607e39b988631`).
+The framework suite passes 42/42 with `PYTHONUTF8=1`. Per the user's request,
+the game was not launched after that build, so runtime record/replay
+equivalence remains an explicit open gate. The recorder is diagnostic
+infrastructure, not a fix for either P0 and not evidence of campaign
+completion. The repository plus ignored generations and builds occupies
+9.040 GiB, within the 20 GiB ceiling.
+
+Read-only sibling review separates the enhancement deltas. The recomp runtime
+already owns generic internal supersampling and keyboard-to-pad mapping. Its
+generic widescreen path can be used only after SCUS-94640-specific projection,
+sprite/HUD and culling checks; no SF2 address is transferable. Native relative
+mouse freelook in `sf-pc-port` is installed at identified SF1/SF2 retail camera
+consumers and gates scripted-camera ownership, so SF3 requires its own bounded
+consumer/ownership discovery. PsyCross PGXP is coupled to the hybrid scene
+adapter and ordering-table renderer and is not a drop-in recomp-runtime patch.
+High-resolution, native mouse/freelook, widescreen and PGXP therefore remain
+Redux work after the representative compatibility gate.

@@ -1,5 +1,35 @@
 # Third-Party Attribution
 
+## PSX Ports shared input timeline
+
+The title-neutral pad timeline implementation in `runtime/include/input_timeline.hpp`
+and `runtime/src/input_timeline.cpp`, plus its contract test, were adapted from
+the private PSX Ports shared runtime by PSX Ports contributors, licensed
+**MIT**. The SF3 integration, compatibility fingerprint and retail SIO
+placement are independently validated in this project.
+
+MIT License
+
+Copyright (c) 2026 PSX Ports contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
 ## OpenBIOS — PCSX-Redux's free PS1 BIOS
 
 [OpenBIOS](https://github.com/grumpycoders/pcsx-redux) (src/mips/openbios) by

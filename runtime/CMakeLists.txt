@@ -18,6 +18,12 @@ psxrecomp_add_runtime_target(psx-runtime
 )
 
 if(BUILD_TESTING)
+    add_executable(input_timeline_test
+        tests/test_input_timeline.cpp
+        src/input_timeline.cpp)
+    target_include_directories(input_timeline_test PRIVATE include)
+    add_test(NAME input_timeline_test COMMAND input_timeline_test)
+
     add_executable(launcher_device_roundtrip_test
         tests/test_launcher_device_roundtrip.cpp)
     target_include_directories(launcher_device_roundtrip_test PRIVATE include)

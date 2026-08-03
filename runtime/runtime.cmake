@@ -178,6 +178,7 @@ endif()
 
 set(PSXRECOMP_RUNTIME_SOURCES
     ${PSXRECOMP_ROOT}/runtime/src/main.cpp
+    ${PSXRECOMP_ROOT}/runtime/src/input_timeline.cpp
     ${PSXRECOMP_ROOT}/runtime/src/psx_sdl_audio.cpp
     ${PSXRECOMP_ROOT}/runtime/src/psx_stick.c
     ${PSXRECOMP_ROOT}/runtime/src/memory.c
@@ -581,6 +582,20 @@ function(psxrecomp_add_runtime_target target)
         ${generated_sources}
         ${PSXRT_EXTRAS_SOURCES}
     )
+
+    # Record/replay files are accepted only by a source-identical runtime and
+    # generated retail image. Hash content, not paths, so two clean generations
+    # remain compatible while any owning-code change fails closed.
+    set(_input_contract_material "")
+    foreach(_input_contract_source IN LISTS PSXRECOMP_RUNTIME_SOURCES generated_sources)
+        if(EXISTS "${_input_contract_source}")
+            file(SHA256 "${_input_contract_source}" _input_contract_hash)
+            string(APPEND _input_contract_material "${_input_contract_hash};")
+        endif()
+    endforeach()
+    string(SHA256 _input_contract_id "${_input_contract_material}")
+    target_compile_definitions(${target} PRIVATE
+        PSX_INPUT_COMPAT_BASE="psxpad2-${_input_contract_id}")
 
     # Game-specific executable name. Every title instantiates this function with
     # the same CMake target name ("psx-runtime"), so without this they ALL produce

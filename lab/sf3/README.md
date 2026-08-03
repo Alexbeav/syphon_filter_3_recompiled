@@ -47,3 +47,23 @@ immediately so input cannot bleed into the next movie state. It records bounded
 JSON/screenshots beneath the ignored output directory and exits only after
 state `0/1`, Mission 1 PAD polling and a movement sample. It never writes guest
 RAM, invokes a retail callback or patches generated code.
+
+## Human route capture
+
+The source-owned `record_input_route.ps1` helper records the two normalized PSX
+pad packets at the retail SIO sampling boundary. It does not record retail data,
+frames, audio or host key names. The route carries a content-derived runtime and
+generated-image compatibility ID, so a changed build rejects it rather than
+silently consuming stale input.
+
+```powershell
+.\lab\sf3\record_input_route.ps1 `
+  -Project .\lab\sf3\generated\input-route-b `
+  -Route .\lab\sf3\traces\human-mission1.psxpad
+```
+
+Use `-Silent` to select SDL's dummy audio driver. Release all controls before
+closing the window so the finalized route has a neutral trailing sample. A
+`.partial` recovery file is refreshed every 3,600 guest samples; the final file
+is written during orderly shutdown. This is a diagnostic input witness, not by
+itself proof of deterministic state, correct rendering or campaign completion.

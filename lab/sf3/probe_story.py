@@ -139,6 +139,17 @@ def main() -> int:
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--port", type=int, default=4388)
     parser.add_argument("--timeout", type=float, default=120.0)
+    parser.add_argument(
+        "--renderer",
+        choices=("software", "opengl"),
+        default="opengl",
+        help="runtime renderer for an otherwise identical retail route",
+    )
+    parser.add_argument(
+        "--no-intermediate-screenshots",
+        action="store_true",
+        help="avoid screenshot-triggered GL→CPU synchronization before gameplay",
+    )
     args = parser.parse_args()
 
     # Preserve mapped-drive spelling.  Path.resolve() expands a mapped drive to
@@ -175,6 +186,8 @@ def main() -> int:
         str(exe),
         "--hidden-window",
         "--no-launcher",
+        "--renderer",
+        args.renderer,
         "--game",
         str(game_toml),
         "--disc",
@@ -194,7 +207,9 @@ def main() -> int:
             stderr=stderr,
             creationflags=creationflags,
         )
-        evidence: dict[str, Any] = {"pid": process.pid, "port": args.port}
+        evidence: dict[str, Any] = {
+            "pid": process.pid, "port": args.port, "renderer": args.renderer
+        }
         try:
             def server_ready() -> dict[str, Any]:
                 exit_code = process.poll()
@@ -222,7 +237,8 @@ def main() -> int:
                 return None
 
             evidence["title"] = wait_for("stable retail TITLE", args.timeout, title_ready)
-            evidence["title"]["screenshot"] = screenshot(args.port, out / "title.png")
+            if not args.no_intermediate_screenshots:
+                evidence["title"]["screenshot"] = screenshot(args.port, out / "title.png")
 
             def story_choice_or_later() -> tuple[int, int, int] | None:
                 depth, state = app_pair(args.port)
@@ -239,7 +255,10 @@ def main() -> int:
                 "pad_attempts": attempts,
             }
             if choice[1] == 4 and choice[2] == 10:
-                evidence["story_choice"]["screenshot"] = screenshot(args.port, out / "story-choice.png")
+                if not args.no_intermediate_screenshots:
+                    evidence["story_choice"]["screenshot"] = screenshot(
+                        args.port, out / "story-choice.png"
+                    )
 
                 def story_accepted() -> tuple[int, int, int] | None:
                     depth, state = app_pair(args.port)
@@ -273,15 +292,17 @@ def main() -> int:
                 evidence["story_choice"]["movie_early"] = wait_for(
                     "retail New Game movie decode", args.timeout, lambda: new_game_movie(20)
                 )
-                evidence["story_choice"]["movie_early"]["screenshot"] = screenshot(
-                    args.port, out / "new-game-movie-early.png"
-                )
+                if not args.no_intermediate_screenshots:
+                    evidence["story_choice"]["movie_early"]["screenshot"] = screenshot(
+                        args.port, out / "new-game-movie-early.png"
+                    )
                 evidence["story_choice"]["movie_late"] = wait_for(
                     "later retail New Game movie decode", args.timeout, lambda: new_game_movie(100)
                 )
-                evidence["story_choice"]["movie_late"]["screenshot"] = screenshot(
-                    args.port, out / "new-game-movie-late.png"
-                )
+                if not args.no_intermediate_screenshots:
+                    evidence["story_choice"]["movie_late"]["screenshot"] = screenshot(
+                        args.port, out / "new-game-movie-late.png"
+                    )
 
             def state8_ready() -> dict[str, Any] | None:
                 depth, state = app_pair(args.port)
@@ -292,7 +313,8 @@ def main() -> int:
 
             evidence["state8"] = wait_for("Mission 1 state 8", args.timeout, state8_ready)
             evidence["state8"]["fmv"] = tcp_call(args.port, "fmv_state")
-            evidence["state8"]["screenshot"] = screenshot(args.port, out / "state8.png")
+            if not args.no_intermediate_screenshots:
+                evidence["state8"]["screenshot"] = screenshot(args.port, out / "state8.png")
 
             def state8_accepted() -> tuple[int, int] | None:
                 pair = app_pair(args.port)
@@ -325,7 +347,31 @@ def main() -> int:
                 args.timeout,
                 lambda: tcp_call(args.port, "frame")["frame"] >= pop_frame + 2000,
             )
-            evidence["state0"]["before_move"] = screenshot(args.port, out / "state0-before-move.png")
+            ring = tcp_call(args.port, "display_ring_stats")
+            ring_frame = int(ring["newest_frame"])
+            evidence["state0"]["ring_before_move"] = {
+                "stats": ring,
+                "display": tcp_call(
+                    args.port,
+                    "display_ring_get",
+                    frame=ring_frame,
+                    path=(out / "state0-before-move-ring.png").as_posix(),
+                ),
+                "vram": tcp_call(
+                    args.port,
+                    "display_ring_aux",
+                    frame=ring_frame,
+                    path=(out / "state0-before-move-vram.bin").as_posix(),
+                ),
+            }
+            if args.renderer == "opengl":
+                evidence["state0"]["gl_vram_diff_before_move"] = tcp_call(
+                    args.port, "gl_vram_diff"
+                )
+            if not args.no_intermediate_screenshots:
+                evidence["state0"]["before_move"] = screenshot(
+                    args.port, out / "state0-before-move.png"
+                )
             before_frame = tcp_call(args.port, "frame")["frame"]
             press(args.port, PAD_UP, 16)
             wait_for(
@@ -333,7 +379,31 @@ def main() -> int:
                 10.0,
                 lambda: tcp_call(args.port, "frame")["frame"] >= before_frame + 24,
             )
-            evidence["state0"]["after_move"] = screenshot(args.port, out / "state0-after-move.png")
+            ring = tcp_call(args.port, "display_ring_stats")
+            ring_frame = int(ring["newest_frame"])
+            evidence["state0"]["ring_after_move"] = {
+                "stats": ring,
+                "display": tcp_call(
+                    args.port,
+                    "display_ring_get",
+                    frame=ring_frame,
+                    path=(out / "state0-after-move-ring.png").as_posix(),
+                ),
+                "vram": tcp_call(
+                    args.port,
+                    "display_ring_aux",
+                    frame=ring_frame,
+                    path=(out / "state0-after-move-vram.bin").as_posix(),
+                ),
+            }
+            if args.renderer == "opengl":
+                evidence["state0"]["gl_vram_diff_after_move"] = tcp_call(
+                    args.port, "gl_vram_diff"
+                )
+            if not args.no_intermediate_screenshots:
+                evidence["state0"]["after_move"] = screenshot(
+                    args.port, out / "state0-after-move.png"
+                )
 
             evidence["final"] = {
                 "frame": tcp_call(args.port, "frame"),

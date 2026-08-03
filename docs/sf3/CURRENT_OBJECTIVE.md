@@ -26,6 +26,9 @@ of playability.
 - The diagnostic probe stops after a movement sample. It does not cover
   sustained rendering, audio, pause, combat, death/restart, checkpoint restore,
   objective completion or the next retail transition.
+- A retail-boundary input recorder now builds and has a passing source-owned
+  contract test, but no human Mission 1 route has been recorded or replayed.
+  It is a witness mechanism, not resolution of either intermittent P0.
 
 ## Representative-slice exit gate
 
@@ -46,6 +49,7 @@ of playability.
 | Briefing handoff intermittently fails | unresolved lifecycle/device/control owner | mission does not start | user cold-launch report | first divergence fixed; two ordinary Release routes pass |
 | Mission textures can sample corrupt data | unresolved GPU/VRAM owner | gameplay is visually invalid | user cold-launch screenshot | software/OpenGL oracle comparison plus correct multi-room two-page presentation |
 | Probe covers only initial state-0 movement | validation harness | false confidence in playability | prior `probe_story.py` exit boundary | extend through sustained play, failure/restart, checkpoint and completion |
+| Human route recorder not runtime-validated | validation harness | offered playthrough cannot yet serve as deterministic witness | serializer/replay test and fresh Release link only | record one neutral-bookended Mission 1 route and replay it twice with matching semantic/GPU evidence |
 | Campaign beyond Mission 1 unverified | retail/content lifecycle | no campaign claim | no connected mission matrix | later campaign-complete gate; not part of this representative slice |
 
 ## Starting evidence

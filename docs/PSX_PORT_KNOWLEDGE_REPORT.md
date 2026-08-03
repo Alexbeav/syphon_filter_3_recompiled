@@ -99,6 +99,26 @@ identical-route software/OpenGL comparison at the first corrupt gameplay frame.
 Enhancement work remains prohibited until the representative Mission 1 gate
 passes.
 
+The user later observed a correct ordinary run, confirming intermittency rather
+than resolution. One clean OpenGL, one clean software and one clean OpenGL
+no-intermediate-screenshot route have not reproduced the corrupt surface. The
+no-screenshot run contradicts a required screenshot-sync healing theory, while
+the screenshot implementation itself remains a perturbing observer because it
+synchronizes FBO-owned 15-bit state into CPU VRAM. A corrupt same-frame display
+ring/software comparison is still required.
+
+Candidate reuse from `_shared/runtime` was converted into an SF3-bounded check:
+the title-neutral `PSXPAD2` input timeline is integrated exactly at SF3's
+normalized pad-to-SIO sample boundary, with a content-derived runtime/generated
+image compatibility token and a source-owned regression. A fresh ordinary
+SCUS-94640 Release links from one of two 1,130-file matching clean generations
+(tree SHA-256
+`b7ba1712d1c69be424842bc49a220b8d7bb9c2c8fea59546f8132495fe88625b`).
+Runtime capture/replay is deliberately unclaimed
+until the user records a neutral-bookended Mission 1 route and two clean
+replays match. Tenchu remains the independent validator for the generic input
+timeline; SF3 will independently validate the complete connected route.
+
 ## Quality debt
 
 | Debt | Likely owner | Removal gate |

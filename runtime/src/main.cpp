@@ -68,6 +68,7 @@ extern "C" void psx_event_step_conservative_env_init(void);
 #include "launcher_device.h" /* recomp-ui controller-source round-trip */
 #include "psx_keybinds.h"    /* configurable keyboard->DualShock keybinds (keybinds.ini) */
 #include "psx_stick.h"       /* radial SDL-stick -> DualShock response transform */
+#include "input_timeline.hpp" /* deterministic retail-boundary pad capture/replay */
 #if defined(RECOMP_LAUNCHER)
 #include "recomp_launcher.h"   /* shared recomp-ui Dear ImGui launcher */
 #include "launcher_profile.h"  /* per-system variant profile (theme/caps bundle) */
@@ -96,7 +97,9 @@ extern "C" void psx_event_step_conservative_env_init(void);
 #include <array>
 #include <filesystem>
 #include <fstream>
+#include <memory>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -1507,6 +1510,7 @@ static std::filesystem::path default_memcard_dir(const char* argv0) {
 
 static void close_controller(void);
 static void shutdown_runtime(void);
+namespace { void flush_recorded_input(bool final_write); }
 
 /* Set when this process started netplay from the lobby room — soft-exit returns
  * there instead of killing the process. */
@@ -1550,6 +1554,7 @@ static void netplay_soft_exit(const char *origin) {
 }
 
 static void shutdown_runtime(void) {
+    flush_recorded_input(true);
     /* (sljit removed 2026-07-15: overlay_compile_worker_stop joined the
      * off-thread JIT worker here; the worker no longer exists.) */
     psx_netplay_shutdown();
@@ -3042,10 +3047,214 @@ static int capture_pad_slot_exclusive(int s, PsxNetPad* out) {
 }
 
 static void apply_pad_slot_to_sio(int s, const PsxNetPad& pad) {
+    sio_set_pad_connected(s, pad.connected ? 1 : 0);
     sio_set_pad_state_slot(s, pad.buttons);
     sio_set_pad_sticks(s, pad.lx, pad.ly, pad.rx, pad.ry);
     sio_request_pad_type(s, pad.analog ? 1 : 0);
 }
+
+static void capture_override_pad(int override_word, PsxNetPad* out);
+
+namespace {
+
+enum class InputTimelineMode { inactive, record, replay, failed };
+
+InputTimelineMode g_input_timeline_mode = InputTimelineMode::inactive;
+std::filesystem::path g_input_timeline_path;
+psx_port::InputTimeline g_recorded_input;
+std::unique_ptr<psx_port::InputTimeline> g_replay_input;
+std::unique_ptr<psx_port::InputReplay> g_input_replay;
+std::uint64_t g_input_sample_index = 0;
+std::uint64_t g_input_stop_after = 0;
+bool g_input_timeline_initialized = false;
+bool g_input_replay_complete_logged = false;
+
+std::string input_timeline_compatibility_id() {
+#ifndef PSX_INPUT_COMPAT_BASE
+#define PSX_INPUT_COMPAT_BASE "unversioned-input-contract"
+#endif
+#ifdef NDEBUG
+    constexpr const char* build_flavor = "release";
+#else
+    constexpr const char* build_flavor = "debug";
+#endif
+    const std::string identity = std::string{PSX_INPUT_COMPAT_BASE} + '|' +
+                                 build_flavor;
+    std::uint64_t hash = 1469598103934665603ULL;
+    for (const unsigned char byte : identity) {
+        hash ^= byte;
+        hash *= 1099511628211ULL;
+    }
+    char token[32]{};
+    std::snprintf(token, sizeof(token), "psxrecomp-%016llx",
+                  static_cast<unsigned long long>(hash));
+    return token;
+}
+
+psx_port::PadSample timeline_pad(const PsxNetPad& pad) {
+    return {pad.buttons, pad.lx, pad.ly, pad.rx, pad.ry,
+            pad.connected != 0, pad.analog != 0};
+}
+
+PsxNetPad runtime_pad(const psx_port::PadSample& pad) {
+    PsxNetPad result{};
+    result.buttons = pad.buttons;
+    result.lx = pad.left_x;
+    result.ly = pad.left_y;
+    result.rx = pad.right_x;
+    result.ry = pad.right_y;
+    result.connected = pad.connected ? 1u : 0u;
+    result.analog = pad.analog ? 1u : 0u;
+    return result;
+}
+
+void write_input_timeline(const std::filesystem::path& path,
+                          const psx_port::InputTimeline& timeline) {
+    std::ofstream output(path, std::ios::binary | std::ios::trunc);
+    if (!output) throw std::runtime_error{"cannot open input timeline for writing"};
+    timeline.write(output);
+    output.close();
+    if (!output) throw std::runtime_error{"cannot finish writing input timeline"};
+}
+
+void flush_recorded_input(bool final_write) {
+    if (g_input_timeline_mode != InputTimelineMode::record ||
+        g_recorded_input.samples().empty()) return;
+    try {
+        const auto path = final_write
+            ? g_input_timeline_path
+            : std::filesystem::path{g_input_timeline_path.string() + ".partial"};
+        write_input_timeline(path, g_recorded_input);
+        if (final_write) {
+            std::fprintf(stdout, "psxrecomp: wrote %zu input samples to %s%s\n",
+                g_recorded_input.samples().size(), path.string().c_str(),
+                g_recorded_input.hasNeutralBookends()
+                    ? "" : " (warning: non-neutral bookend)");
+            std::fflush(stdout);
+        }
+    } catch (const std::exception& e) {
+        std::fprintf(stderr, "psxrecomp: input timeline write failed: %s\n", e.what());
+        if (final_write) g_input_timeline_mode = InputTimelineMode::failed;
+    }
+}
+
+void init_input_timeline() {
+    if (g_input_timeline_initialized) return;
+    g_input_timeline_initialized = true;
+    const char* record = std::getenv("PSX_INPUT_RECORD");
+    const char* replay = std::getenv("PSX_INPUT_REPLAY");
+    const bool has_record = record && record[0];
+    const bool has_replay = replay && replay[0];
+    if (!has_record && !has_replay) return;
+    if (has_record && has_replay) {
+        std::fprintf(stderr,
+            "psxrecomp: PSX_INPUT_RECORD and PSX_INPUT_REPLAY are mutually exclusive\n");
+        std::exit(2);
+    }
+    try {
+        if (const char* stop = std::getenv("PSX_INPUT_STOP_AFTER")) {
+            g_input_stop_after = std::strtoull(stop, nullptr, 10);
+            if (g_input_stop_after && !g_headless) {
+                std::fprintf(stderr,
+                    "psxrecomp: PSX_INPUT_STOP_AFTER is headless-only; ignoring it\n");
+                g_input_stop_after = 0;
+            }
+        }
+        if (has_replay) {
+            g_input_timeline_path = replay;
+            std::ifstream input(g_input_timeline_path, std::ios::binary);
+            if (!input) throw std::runtime_error{"cannot open input timeline for reading"};
+            g_replay_input = std::make_unique<psx_port::InputTimeline>(
+                psx_port::InputTimeline::read(input));
+            const auto current_id = input_timeline_compatibility_id();
+            if (g_replay_input->compatibilityId().empty()) {
+                throw std::runtime_error{"legacy input timeline has no compatibility ID"};
+            }
+            if (g_replay_input->compatibilityId() != current_id) {
+                throw std::runtime_error{
+                    "input timeline belongs to a different runtime build (capture=" +
+                    g_replay_input->compatibilityId() + ", current=" + current_id + ')'};
+            }
+            g_input_replay = std::make_unique<psx_port::InputReplay>(*g_replay_input);
+            g_input_timeline_mode = InputTimelineMode::replay;
+            std::fprintf(stdout, "psxrecomp: replaying %zu input samples from %s\n",
+                g_replay_input->samples().size(), g_input_timeline_path.string().c_str());
+        } else {
+            g_input_timeline_path = record;
+            g_recorded_input.setCompatibilityId(input_timeline_compatibility_id());
+            g_input_timeline_mode = InputTimelineMode::record;
+            std::fprintf(stdout, "psxrecomp: recording guest input samples to %s\n",
+                g_input_timeline_path.string().c_str());
+        }
+        if (g_low_latency_input) {
+            g_low_latency_input = 0;
+            std::fprintf(stdout,
+                "psxrecomp: low-latency resampling disabled for deterministic input timeline\n");
+        }
+        std::fflush(stdout);
+    } catch (const std::exception& e) {
+        std::fprintf(stderr, "psxrecomp: input timeline initialization failed: %s\n", e.what());
+        g_input_timeline_mode = InputTimelineMode::failed;
+        std::fflush(stderr);
+        std::exit(2);
+    }
+}
+
+void stop_after_input_sample_if_requested() {
+    if (!g_input_stop_after || g_input_sample_index < g_input_stop_after) return;
+    flush_recorded_input(true);
+    std::fprintf(stdout, "psxrecomp: headless input sample limit reached (%llu)\n",
+        static_cast<unsigned long long>(g_input_sample_index));
+    std::fflush(stdout);
+    std::exit(0);
+}
+
+bool sample_input_timeline(int override) {
+    init_input_timeline();
+    if (g_input_timeline_mode == InputTimelineMode::inactive) return false;
+    try {
+        if (g_input_timeline_mode == InputTimelineMode::replay) {
+            const auto result = g_input_replay->sample(g_input_sample_index, true);
+            for (int s = 0; s < 2; ++s)
+                apply_pad_slot_to_sio(s, runtime_pad(result.ports[s]));
+            if (result.consumed) ++g_input_sample_index;
+            if (result.complete && !g_input_replay_complete_logged) {
+                std::fprintf(stdout,
+                    "psxrecomp: input replay complete at sample %llu; holding neutral input\n",
+                    static_cast<unsigned long long>(g_input_sample_index));
+                std::fflush(stdout);
+                g_input_replay_complete_logged = true;
+            }
+            stop_after_input_sample_if_requested();
+            return true;
+        }
+
+        psx_port::InputSample sample{};
+        sample.index = g_input_sample_index;
+        for (int s = 0; s < 2; ++s) {
+            PsxNetPad pad{};
+            pad.buttons = 0xFFFFu;
+            pad.lx = pad.ly = pad.rx = pad.ry = 0x80u;
+            if (override >= 0 && s == 0) capture_override_pad(override, &pad);
+            else if (!g_headless) capture_pad_slot(s, &pad);
+            sample.ports[s] = timeline_pad(pad);
+            apply_pad_slot_to_sio(s, pad);
+        }
+        g_recorded_input.append(sample);
+        ++g_input_sample_index;
+        if ((g_input_sample_index % 3600u) == 0u) flush_recorded_input(false);
+        stop_after_input_sample_if_requested();
+        return true;
+    } catch (const std::exception& e) {
+        std::fprintf(stderr, "psxrecomp: input timeline failed at sample %llu: %s\n",
+            static_cast<unsigned long long>(g_input_sample_index), e.what());
+        g_input_timeline_mode = InputTimelineMode::failed;
+        std::fflush(stderr);
+        std::exit(2);
+    }
+}
+
+} // namespace
 
 /* Local human pad for delay-sync: sample the host PlayerInput selected for
  * this peer (see --net-input-player / auto), then recomp-net maps that blob
@@ -3216,6 +3425,7 @@ static void netplay_barrier_admit(int override) {
 }
 
 static void sample_pad_into_sio(int override) {
+    if (sample_input_timeline(override)) return;
     if (override >= 0) {
         apply_input_override_to_sio(override);
         return;
@@ -3235,6 +3445,7 @@ static void sample_pad_into_sio(int override) {
 }
 
 static void sample_headless_pad_into_sio(int override) {
+    if (sample_input_timeline(override)) return;
     if (override >= 0) {
         apply_input_override_to_sio(override);
         return;
