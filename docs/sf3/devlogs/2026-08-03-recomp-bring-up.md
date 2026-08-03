@@ -647,3 +647,39 @@ uses `Start-Process -Wait -PassThru`, so a crash or normal close cannot return
 before final route publication. The workspace is 15.668 GiB. The desktop
 candidate is cache-complete and ready for one visible human countercheck, but
 representative readiness and the corrupt-texture owner remain open.
+
+### R10 — representative Mission 1 slice accepted through Mission 2 gameplay
+
+The cache-complete visible countercheck passed. The user reported only brief
+graphical defects at the start of Mission 1; the rest of the run matched the
+original game to observation. The finalized 42,480-sample `PSXPAD2` route covers
+death, checkpoint reload, full Mission 1 completion, following FMV, new-card
+creation/save, Mission 2 FMV, briefing, cutscene and live state-0 gameplay before
+a normal window close. Its SHA-256 is
+`4b534e2b0e1b7e675fb55f8967f539333ba3b5b37902eb0caa503faa419d1277`.
+
+Two clean ordinary hidden OpenGL processes consumed the exact route to the
+bounded sample marker in 717.4 seconds each. Standard error is byte-identical;
+standard output differs only by the intentionally isolated writable-state path.
+Both runs created byte-identical 128-KiB slot-1 images with SHA-256
+`ab79103084f591b122eff13803b64dec166102454ac10144b5a55399e1e2cf1f`;
+the untouched slot-2 images also match. Terminal reports are orderly `atexit`
+at frame 42,480 with 8–9 KiB maximum guest stack use and only the normal
+interpreter instruction-guard yield.
+
+One passive diagnostic OpenGL replay completed with zero exit at observed frame
+42,476. It records 14 authentic application transitions, 1,011 state-0 samples
+across display origins `(0,0)`, `(0,2)` and `(0,240)`, live GPU/SPU/CD/PAD
+traffic, exact bounded completion and no match for the known red/checkered
+signature. Near frame 42,074 it reports four loaded cache regions, 115 current
+candidates, 9,715,051 native overlay dispatches, 292,119 interpreter fallbacks,
+zero candidate overflow, zero static dispatch misses, eight invalidations and
+nine revalidation CRC misses. Dirty execution is 71,182,859 instructions in the
+diagnostic run; the ordinary terminal heartbeat reaches 125,345,648 after the
+Mission 2 overlay arrives. The representative route is correct and repeatable,
+but Mission 2 native closure remains explicit debt.
+
+The acceptance status advances from `bootstrap_verified` to
+`representative_slice_verified`. This does not erase the brief start-of-level
+graphical defect or establish Missions 2–19. Those become the next compatibility
+and campaign-coverage work, ahead of or alongside optional enhancements.

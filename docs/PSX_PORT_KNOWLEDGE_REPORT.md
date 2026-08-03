@@ -238,6 +238,24 @@ for a finalized route.
 | State-0 world textures can be corrupt | GPU/VRAM unresolved | authoritative software/OpenGL comparison and correct two-page multi-room output |
 | Existing probe ends after initial movement | validation harness | connected death/restart, checkpoint and Mission 1 completion replay |
 
+## Representative-slice closure — 2026-08-03
+
+The cache-complete human route is accepted through live Mission 2 gameplay. It
+contains 42,480 retail PAD samples and covers Mission 1 death/checkpoint reload,
+completion, FMV, new-card save and the complete Mission 2 frontend handoff. Two
+ordinary isolated-card replays complete at the exact bound and generate
+byte-identical card images. A passive diagnostic replay records 14 retail state
+transitions, 1,011 state-0 display samples and zero known-corruption matches.
+
+This closes the SF3 representative-slice validation gap and narrows the earlier
+fatal to a cache-empty release-closure failure. It does not promote the brief
+Mission 1 start-frame graphical defect as fixed. It also exposes the next
+execution-tier boundary: Mission 2 raises ordinary dirty execution to 125.35M
+instructions; the diagnostic endpoint measures 9.72M native overlay dispatches
+and 292K fallbacks with four regions loaded. SF2 recomp remains the independent
+validator for additive-history compilation; SF3 now independently demonstrates
+that deterministic card artifacts can strengthen a long retail lifecycle route.
+
 ## Provenance
 
 No retail input, executable, generated C, overlay capture, RAM/state, card or

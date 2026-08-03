@@ -50,3 +50,21 @@ This human report is necessary but not sufficient. The same compatible route
 must subsequently pass the passive diagnostic comparison and two clean ordinary
 Release replays. Diagnostic color thresholds cover only the supplied
 red/checkered symptom and cannot prove arbitrary texture correctness.
+
+## Accepted route — 2026-08-03
+
+`human-mission1-20260803-140851.psxpad` contains 42,480 normalized samples
+(SHA-256 `4b534e2b0e1b7e675fb55f8967f539333ba3b5b37902eb0caa503faa419d1277`).
+The human run covered death, checkpoint reload, full Mission 1 completion,
+following FMV, creation and save of a new memory card, Mission 2 FMV/briefing/
+cutscene and live Mission 2 gameplay. Brief graphical defects were visible only
+at the start of Mission 1; no other deviation from retail was reported.
+
+Two ordinary hidden OpenGL replays consumed all 42,480 samples with clean zero
+exits. Their slot-1 save images match byte-for-byte at SHA-256
+`ab79103084f591b122eff13803b64dec166102454ac10144b5a55399e1e2cf1f`;
+slot 2 also matches. A passive diagnostic replay completed at observed frame
+42,476 with 14 retail application transitions, 1,011 state-0 display samples,
+live GPU/SPU/CD/PAD evidence and zero matches for the known red/checkered
+signature. This closes the representative Mission 1 slice, not the remaining
+start-frame defect or campaign-wide validation.

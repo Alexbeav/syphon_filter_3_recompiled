@@ -2,10 +2,12 @@
 
 Updated: 2026-08-03
 
-Graduation state: `bootstrap_verified`. The earlier state-0 bootstrap evidence
-does not satisfy the representative-slice gate. Human validation contradicted
-the readiness claim with a briefing-to-gameplay failure on one cold launch and
-severe Mission 1 texture corruption on the next.
+Graduation state: `representative_slice_verified`. A connected human route now
+covers cold boot, Story/Mission 1, death, checkpoint reload, full mission
+completion, FMV, new-card save and the retail Mission 2 handoff through live
+gameplay. Two ordinary hidden OpenGL replays and one passive diagnostic replay
+consume the same complete route. Brief start-of-level graphical defects remain
+presentation debt and campaign-wide correctness is not yet claimed.
 
 ## Objective
 
@@ -16,30 +18,18 @@ textures at their owning generic runtime invariants. Preserve the existing
 generation, overlay and execution-tier evidence without treating it as proof
 of playability.
 
-## Current P0 blockers
+## Current blockers
 
-- The next visible run contradicted the OpenGL swap-backpressure owner: the
-  fatal frame reported zero slow presents and no vsync recovery. It displayed
-  severe corrupt geometry/textures and exited around frame 2751.
-- That candidate had no compiled overlay cache. The fatal run executed about
-  134 million dirty-interpreter instructions. Four previously validated SF3
-  shards are now restored under the exact codegen/config namespace; two clean
-  ordinary replays complete, but a visible countercheck is still required.
-- The recorded failing run plays the intro's XA audio but displays no video,
-  consumes no visible retail input and never progresses into the mission. Its
-  neutral-bookended 3,194-sample route contains 333 active retail-SIO samples,
-  so missing host input delivery is contradicted while guest consumption is
-  not yet established.
-- A separate clean launch can reach state-0 gameplay with large world surfaces
-  sampling visibly wrong red/checkered texture data while geometry, actors and
-  HUD continue to render.
-- The diagnostic probe stops after a movement sample. It does not cover
-  sustained rendering, audio, pause, combat, death/restart, checkpoint restore,
-  objective completion or the next retail transition.
-- A retail-boundary input recorder now builds and has a passing source-owned
-  contract test. A bounded two-run helper can replay through a hidden renderer,
-  but no human Mission 1 route has been recorded or replayed. These are witness
-  mechanisms, not resolution of either intermittent P0.
+- No representative-slice P0 remains. The cache-complete visible countercheck
+  and three complete replays supersede the earlier cache-empty fatal.
+- Brief graphical defects remain visible at the start of Mission 1. They did
+  not recur during the rest of the mission, but require a focused presentation
+  capture before enhancement work can claim a clean compatibility baseline.
+- Mission 2 introduces substantial new interpreted ownership. The diagnostic
+  route ends with four loaded regions, 9.72M native overlay dispatches, 292K
+  fallbacks and 71.18M dirty instructions; the ordinary run reaches 125.35M
+  dirty instructions after entering Mission 2. Correct flow is proven, not
+  campaign-wide native closure.
 
 ## Representative-slice exit gate
 
@@ -59,10 +49,8 @@ of playability.
 
 | Debt | Owner | User impact | Evidence | Removal gate |
 | --- | --- | --- | --- | --- |
-| Briefing/movie handoff intermittently fails | unresolved; OpenGL swap-backpressure contradicted for the latest fatal run, missing native cache narrowed as an execution-tier amplifier | audio continues while presentation/emulation/input appears frozen or corrupt before exit | failing frame had `present_slow_count=0`; uncached fatal ran ~134M interpreted instructions; cached exact-route runs complete | cached visible candidate passes, then two ordinary connected routes pass |
-| Mission textures can sample corrupt data | unresolved GPU/VRAM owner | gameplay is visually invalid | user cold-launch screenshot | software/OpenGL oracle comparison plus correct multi-room two-page presentation |
-| Probe covers only initial state-0 movement | validation harness | false confidence in playability | prior `probe_story.py` exit boundary | extend through sustained play, failure/restart, checkpoint and completion |
-| Human route recorder/replayer not runtime-validated | validation harness | offered playthrough cannot yet serve as deterministic witness | serializer, hidden-renderer helper guards and fresh Release link only | record one neutral-bookended Mission 1 route and replay it twice with matching semantic/GPU evidence |
+| Brief graphical defects at Mission 1 start | GPU/presentation unresolved | transient incorrect presentation | human full-route report; broad red/checkered detector did not match | focused first-divergence capture against the native-resolution oracle |
+| Mission 2 overlay remains heavily interpreted | overlay coverage | performance risk and incomplete recompilation ownership | ordinary terminal heartbeat 125.35M dirty instructions; diagnostic 292K fallback dispatches | capture and safely compile Mission 2 code variants, then measure two clean runs |
 | Diagnostic display readback can alter host timing | validation observer | a clean observed run may not represent ordinary Release timing | OpenGL ring capture flushes/reads back even without CPU-VRAM synchronization; route observer is source/build validated only | reproduce under a recorded route, localize with bounded capture, then confirm the fix twice in ordinary Release with the observer disabled |
 | Campaign beyond Mission 1 unverified | retail/content lifecycle | no campaign claim | no connected mission matrix | later campaign-complete gate; not part of this representative slice |
 
