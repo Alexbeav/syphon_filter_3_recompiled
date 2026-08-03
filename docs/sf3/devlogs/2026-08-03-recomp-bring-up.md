@@ -394,3 +394,9 @@ consumer/ownership discovery. PsyCross PGXP is coupled to the hybrid scene
 adapter and ordering-table renderer and is not a drop-in recomp-runtime patch.
 High-resolution, native mouse/freelook, widescreen and PGXP therefore remain
 Redux work after the representative compatibility gate.
+
+Source checkpoint `cbae3a9` contains the recorder, non-perturbing probe,
+regression and documentation. Private-corpus checkpoint `76393af` records the
+bounded status and names Tenchu as the independent generic-format validator;
+it explicitly leaves SF3 runtime capture/replay unverified. Neither checkpoint
+contains a retail input, generated image, route, overlay cache or save.

@@ -58,7 +58,7 @@ silently consuming stale input.
 
 ```powershell
 .\lab\sf3\record_input_route.ps1 `
-  -Project .\lab\sf3\generated\input-route-b `
+  -Project .\lab\sf3\generated\input-route-e `
   -Route .\lab\sf3\traces\human-mission1.psxpad
 ```
 

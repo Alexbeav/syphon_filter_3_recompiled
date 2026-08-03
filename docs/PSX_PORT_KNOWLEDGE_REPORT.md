@@ -131,5 +131,6 @@ timeline; SF3 will independently validate the complete connected route.
 
 No retail input, executable, generated C, overlay capture, RAM/state, card or
 media payload is tracked. Oracle projects are read-only. Reusable findings were
-returned to the private corpus in `87e6c7a`; the parentless public source
-snapshot is published as `Alexbeav/syphon_filter_3_recompiled`.
+returned to the private corpus in `87e6c7a`; input-witness status and the
+independent-validator assignment were returned in `76393af`. The parentless
+public source snapshot is published as `Alexbeav/syphon_filter_3_recompiled`.
