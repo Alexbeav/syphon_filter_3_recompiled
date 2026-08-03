@@ -266,6 +266,18 @@ ordinary retail route remains the promotion oracle. SF2 recomp remains the
 independent validator for additive-history compilation and partial-shard
 rejection.
 
+## Redux camera candidate — 2026-08-03
+
+SCUS-94640 independently confirms a reusable direct-mouse pattern without
+adopting SF2 addresses. The unique semantic block is `0x800549C4` with exact
+word `0x8EA30034`; player and controller are live in `$s3/$s2`. The SF3 state
+layout differs from SF2 (`+0xF4/+0xF8` controller/wrapper), while bounded live
+evidence confirms wrapper base `+0xA4`, owner `+0xDC`, and paired pitch fields
+`+0x8E8/+0x918`. Crucially, state 0 can still have a non-player scripted owner,
+so the reusable contract is exact word + state + valid pointers + owner equality,
+not state alone. SF2 Recomp is the independent validator for the live-register
+variant that removes the global-player-pointer dependency.
+
 ## Provenance
 
 No retail input, executable, generated C, overlay capture, RAM/state, card or

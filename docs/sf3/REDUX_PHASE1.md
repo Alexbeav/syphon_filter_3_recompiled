@@ -20,7 +20,7 @@ reversible GTE/presentation widescreen facility. Phase 1 therefore does not
 need a new high-resolution renderer. It needs an SF3 profile, regressions and
 retail-route validation.
 
-The first new layer converts relative mouse motion into bounded ordinary
+The fallback layer converts relative mouse motion into bounded ordinary
 retail D-pad pulses, with right-button aim gating for vertical motion. Mouse
 buttons map to existing retail PAD buttons. It is disabled by default, loses
 all state when focus is lost, cannot operate headlessly or in a hidden window,
@@ -38,6 +38,32 @@ Application state `0x80121B88` is independently established by the SF3 runtime
 profile. These facts narrow a direct camera hook but do not validate SF2's
 owner/pitch offsets for SF3.
 
+## Bounded SF3 proof — 2026-08-03
+
+A read-only hidden/dummy-audio probe armed only routine `0x80053954` and block
+`0x800549C4`. At retail state 0 it observed player `0x801B0608`, state
+`0x8012D79C`, controller `0x801A1CF4`, wrapper `0x801FD2BC` and base
+`0x8012B7D0`. Wrapper `+0xDC` equalled the player during player ownership;
+base `+0x8E8` and `+0x918` agreed. The exact block executed in the bounded
+window. A separate 4x Redux replay also observed the wrapper owner switch to
+`0x801AEE48` during the opening scripted camera, proving that state 0 alone is
+insufficient and that the owner check is necessary.
+
+The direct bridge therefore takes player from live `$s3` and controller from
+live `$s2`, avoiding SF2's global-player lookup. Generation fails if the exact
+resident word changes. Runtime application additionally requires application
+state 0, valid RAM pointers and `owner == player`. Motion expires after four
+vblank callbacks and resets on focus loss. The title-neutral unit covers chase,
+aim and owner rejection; source-contract tests cover the generation/runtime
+guards. The framework suite passes 53/53.
+
+The accepted route was retagged only after exact source SHA-256 validation;
+all 42,480 PAD payload samples remain byte-identical (payload SHA-256
+`6d26b87efb8b9cf935d73a156581edb899d2891896bd761d7d0ab7ec1499840f`).
+The 4x diagnostic run reached the state-0 window, recorded exact site hits and
+ended cleanly at the 3,000-sample bound. This proves structural integration,
+not human camera feel.
+
 ## Ordered gates
 
 1. Build and unit-test the reversible PAD adapter and focus isolation.
@@ -54,5 +80,6 @@ owner/pitch offsets for SF3.
 6. Treat PGXP, interpolation, texture replacement/filtering and other Redux
    features as later independent gates. PsyCross PGXP is not a drop-in patch.
 
-First unresolved invariant: SF3 camera owner and pitch-field semantics at the
-confirmed candidate site. No offsets will be copied by analogy.
+First unresolved invariant: visible chase/aim feel and seamless ownership
+handoff across scripted cameras. This requires a human windowed run; hidden
+evidence cannot close it.

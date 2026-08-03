@@ -271,6 +271,15 @@ if(BUILD_TESTING)
         ../runtime/include)
     add_test(NAME mouse_pad_adapter_test COMMAND mouse_pad_adapter_test)
 
+    add_executable(mouse_camera_test
+        ../runtime/tests/test_mouse_camera.c
+        ../runtime/src/mouse_camera.c)
+    target_include_directories(mouse_camera_test PRIVATE ../runtime/include)
+    if(NOT MSVC)
+        target_link_libraries(mouse_camera_test PRIVATE m)
+    endif()
+    add_test(NAME mouse_camera_test COMMAND mouse_camera_test)
+
     add_executable(input_timeline_contract_test
         ../runtime/tests/test_input_timeline.cpp
         ../runtime/src/input_timeline.cpp)
@@ -382,6 +391,10 @@ if(BUILD_TESTING)
             NAME input_focus_guards
             COMMAND ${Python3_EXECUTABLE}
                     ${CMAKE_CURRENT_SOURCE_DIR}/../runtime/tests/test_input_focus_guards.py)
+        add_test(
+            NAME mouse_camera_codegen_guards
+            COMMAND ${Python3_EXECUTABLE}
+                    ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_mouse_camera_codegen_guards.py)
 
         # ---- codegen tests that were written but never registered -----------
         # These existed in recompiler/tests/ with no add_test() entry, so they

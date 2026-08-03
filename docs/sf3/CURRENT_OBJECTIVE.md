@@ -11,11 +11,12 @@ previous catastrophic start-of-level corruption does not reproduce with the
 cache-complete product; a small software/OpenGL raster-precision delta remains
 presentation debt and campaign-wide correctness is not yet claimed.
 
-Redux state: `phase1_input_scaffold_verified`. The isolated branch builds with
-51/51 Release tests. It has a clean 4x/4:3 source profile, keyboard mapping and
-a reversible relative-mouse-to-retail-PAD layer with strict focus/headless
-guards. The direct camera owner/pitch fields remain intentionally unimplemented
-until they are observed in live SCUS-94640 state 0.
+Redux state: `phase1_direct_camera_structurally_verified`. The isolated branch
+builds with 53 Release tests. It has a clean 4x/4:3 profile, keyboard mapping,
+a reversible relative-mouse-to-retail-PAD fallback and a direct camera bridge
+with strict focus, word, state, pointer and retail-owner guards. A generated
+ordinary Release product and separate Release-diagnostic product both link.
+Human mouse feel and scripted-camera handoff remain open acceptance gates.
 
 ## Objective
 
@@ -27,9 +28,11 @@ accepted route, keep an off switch, and record honest native/fallback ownership.
 
 ## Current blockers
 
-- Direct camera/freelook is narrowed to an exact SCUS-94640 hook candidate, but
-  the SF3 owner and pitch fields are not yet proven. This is the first active
-  invariant and will be checked live before implementation.
+- No structural direct-camera blocker remains. Live SCUS-94640 evidence proves
+  the player/state/controller/wrapper/base chain, owner `+0xDC`, pitch
+  `+0x8E8/+0x918`, and exact site execution. The active gate is a visible human
+  check of chase/aim feel and scripted-camera handoff; this has not been claimed
+  from hidden replay evidence.
 
 - No representative-slice P0 remains. The cache-complete visible countercheck
   and three complete replays supersede the earlier cache-empty fatal.

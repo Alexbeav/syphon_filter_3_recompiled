@@ -782,3 +782,28 @@ unique SF3 instruction at `0x800549C4` inside the structurally mapped routine
 at `0x80053954`. The local register semantics match SF2 while SF3's controller
 layout differs. Owner and pitch offsets remain unproven and are the next live,
 bounded invariant; none will be copied by address analogy.
+
+### R13 — SCUS-94640 direct camera reaches structural acceptance
+
+The focused read-only route probe was corrected through three bounded harness
+issues: mapped-drive spelling must be preserved for the child process,
+function tracing must be explicitly armed, and `cyc_watch_dump` is streamed
+multi-line JSON. The final baseline proof reaches state 0 near frame 2177,
+records the exact semantic block and establishes the live player, controller,
+wrapper, base, owner and paired pitch fields. No guest RAM was written.
+
+The direct bridge uses live `$s3` for the player and `$s2` for the controller,
+so it improves on the SF2 global-pointer dependency. Generation is guarded by
+the exact `0x8EA30034` word at `0x800549C4`; runtime additionally gates state 0,
+RAM pointer validity and retail camera ownership. A 4x Redux diagnostic replay
+exposed the opening scripted owner `0x801AEE48`, distinct from player
+`0x801B0608`; the guard rejects that interval. Unit tests cover chase, aim and
+owner rejection. The 53-test framework suite passes.
+
+An independent generated tree links ordinary and diagnostic Release products.
+Its generated source contains one hook immediately before the unmodified retail
+instruction. The accepted route's header was retagged for the changed input
+contract only after checking whole-file SHA-256; its 42,480-sample payload is
+byte-identical. The 4x diagnostic product reaches state 0, records exact hook
+hits and terminates cleanly at sample 3000. Visible mouse feel and scripted
+handoff remain human acceptance items; widescreen is still disabled.

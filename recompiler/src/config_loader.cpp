@@ -693,6 +693,64 @@ static RuntimeConfig parse_runtime_block(const toml::value& cfg, const fs::path&
                     "[controller] mouse_aim_counts_per_frame out of range (1..256): {}", n));
             rt.controller_mouse_aim_counts_per_frame = static_cast<int>(n);
         }
+        if (ct.contains("mouse_camera")) {
+            const toml::value& mc = toml::find(ct, "mouse_camera");
+            const auto hex = [&](const char* key) -> uint32_t {
+                return parse_hex(toml::find<std::string>(mc, key),
+                                 fmt::format("controller.mouse_camera.{}", key));
+            };
+            const auto sensitivity = [&](const char* key, double fallback) {
+                if (!mc.contains(key)) return fallback;
+                const double value = toml::find<double>(mc, key);
+                if (value < 0.01 || value > 20.0)
+                    throw std::runtime_error(fmt::format(
+                        "[controller.mouse_camera] {} out of range (0.01..20): {}",
+                        key, value));
+                return value;
+            };
+#define MC_HEX(FIELD, KEY) if (mc.contains(KEY)) rt.FIELD = hex(KEY)
+            if (mc.contains("enabled"))
+                rt.controller_mouse_camera_enabled = toml::find<bool>(mc, "enabled");
+            MC_HEX(controller_mouse_camera_facing_site, "facing_site");
+            MC_HEX(controller_mouse_camera_facing_expected, "facing_expected");
+            MC_HEX(controller_mouse_camera_application_state_addr, "application_state_addr");
+            MC_HEX(controller_mouse_camera_player_state_offset, "player_state_offset");
+            MC_HEX(controller_mouse_camera_wrapper_offset, "wrapper_offset");
+            MC_HEX(controller_mouse_camera_base_offset, "base_offset");
+            MC_HEX(controller_mouse_camera_owner_offset, "owner_offset");
+            MC_HEX(controller_mouse_camera_desired_pitch_offset, "desired_pitch_offset");
+            MC_HEX(controller_mouse_camera_rendered_pitch_offset, "rendered_pitch_offset");
+            MC_HEX(controller_mouse_camera_vector_x_offset, "vector_x_offset");
+            MC_HEX(controller_mouse_camera_vector_y_offset, "vector_y_offset");
+            MC_HEX(controller_mouse_camera_vector_z_offset, "vector_z_offset");
+#undef MC_HEX
+            const auto reg = [&](const char* key) -> int {
+                const auto value = toml::find<int64_t>(mc, key);
+                if (value < 1 || value > 31)
+                    throw std::runtime_error(fmt::format(
+                        "[controller.mouse_camera] {} must be 1..31", key));
+                return static_cast<int>(value);
+            };
+            if (mc.contains("player_reg"))
+                rt.controller_mouse_camera_player_reg = reg("player_reg");
+            if (mc.contains("controller_reg"))
+                rt.controller_mouse_camera_controller_reg = reg("controller_reg");
+            rt.controller_mouse_chase_yaw_sensitivity = sensitivity("chase_yaw_sensitivity", 0.75);
+            rt.controller_mouse_chase_pitch_sensitivity = sensitivity("chase_pitch_sensitivity", 1.0);
+            rt.controller_mouse_aim_yaw_sensitivity = sensitivity("aim_yaw_sensitivity", 1.0);
+            rt.controller_mouse_aim_pitch_sensitivity = sensitivity("aim_pitch_sensitivity", 1.0);
+            if (mc.contains("invert_y"))
+                rt.controller_mouse_invert_y = toml::find<bool>(mc, "invert_y");
+            if (rt.controller_mouse_camera_enabled &&
+                (!rt.controller_mouse_camera_facing_site ||
+                 !rt.controller_mouse_camera_facing_expected ||
+                 !rt.controller_mouse_camera_application_state_addr ||
+                 !rt.controller_mouse_camera_player_reg ||
+                 !rt.controller_mouse_camera_controller_reg))
+                throw std::runtime_error(
+                    "[controller.mouse_camera] enabled requires facing_site, "
+                    "facing_expected, application_state_addr, player_reg and controller_reg");
+        }
     }
 
     return rt;
