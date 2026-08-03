@@ -204,71 +204,84 @@ boundary behavior, not an SF3 application or CPU defect.
 Current footprint including ignored generations, builds, captures and all
 probe evidence is 2.187 GiB, below the 20 GiB ceiling.
 
-### R3 — retail FMV coherency and New Game intro
+### R3 — retail FMV coherency and complete intro sequence
 
 The first user playtest exposed two superficially similar symptoms: colorful
-stale bands around a correctly decoded Mission 1 movie, and an apparently
-missing intro. The mandatory corpus pass matched the presentation symptom to
-`FAIL-009` / `PSX-GPU-002`: a hardware-renderer FBO and the CPU VRAM mirror can
-disagree when packed 24-bit movie uploads take ownership. The SF2 recomp lab's
-`09be64b` correction was treated only as a candidate. Its generic invariant
-was checked against SCUS-94640 with a fresh OpenGL diagnostic build.
+stale bands around a correctly decoded movie, and the missing pre-menu intro.
+The mandatory corpus pass matched the presentation symptom to `FAIL-009` /
+`PSX-GPU-002`: a hardware-renderer FBO and the CPU VRAM mirror can disagree
+when packed 24-bit movie uploads take ownership. The SF2 recomp lab's
+`09be64b` correction was treated only as a candidate and checked against
+SCUS-94640 with a fresh OpenGL diagnostic build.
 
 The OpenGL backend now receives GP1(08h) depth transitions. On 15-to-24-bit
 entry it first flushes/readbacks authoritative 15-bit FBO state, then permits
 packed RGB uploads to own the CPU mirror. GP0 fills issued in 24-bit mode update
 both representations, and upload policy runs before the first CPU write. No
 SCUS address, movie geometry, generated retail code or native movie presenter
-is involved. A title-neutral structural/model regression covers ordering,
-fills and upload ownership; the complete Release suite is 41/41 passing.
+is involved. A title-neutral regression covers ordering, fills and ownership.
 
-The intro hypothesis required separate falsification. A persistent neutral
-PAD (`0xFFFF`) and disabled auto-skip showed the natural retail sequence:
+The missing intro required separate falsification. After SCEA, a completed seek
+targeted `[51,54,39]`, but the drive still reported an active read at
+`[50,31,14]` with READ status set. The preceding ReadN/ReadS stream had survived
+SeekL, so later SetLoc data could not become authoritative. This matched the
+generic invariant independently isolated by SF2 recomp commit `485b79b`, but
+was adopted only after this bounded SCUS-94640 check.
+
+SeekL and SeekP now stop the active read generation (including pending INT1),
+clear READ/PLAY status, and only then enter SEEK at the requested location. No
+disc address, game state, generated retail code or movie callback is patched.
+A title-neutral regression covers the CD retargeting contract. Together with
+the GPU regression, the complete Release suite is 42/42 passing.
+
+The fixed natural retail sequence is:
 
 | Gate | Observed evidence |
 | --- | --- |
-| SCEA stream | decode 1 at frame 919/920; decode 45 at frame 1096 |
-| post-logo transition | title substate 3; XA inactive around frame 1414/1415 |
-| TITLE stream/menu | decode resumes at frame 1501/1506; title substate 0 |
-| New Game intro | retail-selected transition captures the Tokyo car arrival |
-| briefing/state 8 | decode total 414/415; state-8 PAD gate at frame 3499 |
-| state-0 control | state-8 pop at frame 3509/3511; zero dispatch misses |
+| SCEA stream | decode begins around frame 920 and reaches 45 around frame 1096 |
+| cemetery intro | full 512x240 pre-menu movie plays while title substate remains 3 |
+| TITLE stream/menu | retail menu gate at frame 7582, decode total 1653 |
+| New Game intro | retail-selected transition plays the Tokyo car arrival |
+| briefing/state 8 | frame 9523/9531, decode total 2007/2008 |
+| state-0 control | state-8 pop at frame 9535/9545; zero dispatch misses |
 
-Thus SCUS-94640 does not request ZINTRO before its main menu. The Tokyo intro
-is retail-owned by the New Game transition. The earlier automation was able to
-misreport a skip because it considered state 4 sufficient while SCEA was still
-playing, then left an eight-frame Cross injection armed after retail accepted
-the menu edge. The remaining input could legitimately cross the next state
-boundary. The corrected probe waits until the TITLE stream itself is decoding
-and immediately replaces an accepted press with neutral input. This changes no
-guest state and fabricates no callback.
+SCUS-94640 therefore owns two distinct sequences: the cemetery intro before
+the menu and the Tokyo movie after New Game. The CD seek bug owned the missing
+pre-menu intro. Separately, the earlier automation considered state 4
+sufficient while SCEA was still playing and could leave a multi-frame Cross
+pulse armed after a retail transition. The corrected probe waits for the
+actual TITLE stream/menu after the cemetery movie and immediately replaces an
+accepted press with neutral input. It changes no guest state and fabricates no
+callback.
 
-Two fresh hidden-window/dummy-audio runs followed the complete retail path.
-Both captured clean SCEA, TITLE and Tokyo intro frames with black letterbox
-regions and no stale colored bands. They reached the same state-8 call shape,
-state-0 Mission 1 control, and `miss_total=0`. Their semantic checkpoints were:
+Two fresh uncached hidden-window/dummy-audio runs followed the complete retail
+path and captured clean SCEA, cemetery, TITLE and Tokyo frames. Two further
+clean runs used the previously compiled retail-derived overlay cache:
 
-| Run | TITLE frame/decode | accepted decode | state-8 frame/decode | pop frame |
-| --- | --- | ---: | --- | ---: |
-| C | `1556 / 60` | 217 | `3499 / 415` | 3511 |
-| D | `1556 / 60` | 216 | `3499 / 414` | 3509 |
+| Run | TITLE frame/decode | state-8 frame/decode | pop frame | Static / native / fallback |
+| --- | --- | --- | ---: | --- |
+| A | `7582 / 1653` | `9531 / 2008` | 9545 | `11,406,832 / 53,312,659 / 55,544` |
+| B | `7582 / 1653` | `9523 / 2007` | 9535 | `11,404,559 / 53,288,291 / 55,470` |
 
-The one-frame/decode arrival variation is host TCP sampling, not divergent
-retail behavior. SDL used a hidden OpenGL window and the dummy audio driver, so
-the hardware presentation path was exercised without a visible window or
-sound device.
+Cached ownership was respectively `17.610% / 82.304% / 0.086%` and
+`17.614% / 82.301% / 0.086%`. Each run registered 123 candidates across four
+native regions with zero static misses, invalidations or CRC misses. SDL used
+a hidden OpenGL window and dummy audio, exercising hardware presentation
+without a visible window or sound device.
 
 Two new clean projects generated from the gated disc are identical across
 1,128/1,128 files with tree SHA-256
-`096032a2bd37ca13bc163b94693d21281eb17d60829eb68e6a753559f18b3918`.
+`b2994894e7b921b6e56adffa7c824ba65815c8dff9ea1974cb2c79f3e3757475`.
 Both 97,723,953-byte Release products built successfully. They differ only in
-the same eight PE/build timestamp bytes and normalize to SHA-256
-`3a43b1461cc82f07d86179ec56d8e2509df6d4235c108416299f2ea79e016dfe`.
-The repository plus ignored generations/builds/traces occupies 4.182 GiB.
+two PE timestamp/checksum bytes and normalize to SHA-256
+`6d1cbdd2c1aa5e325ed0e86f3b405b6cd6ee6b15135ef355cc34b7e2c5852032`.
+The repository plus ignored generations, builds, caches and traces occupies
+6.153 GiB, below the 20 GiB ceiling.
 
-Corpus disposition: `FAIL-009` / `PSX-GPU-002` is confirmed for the SF3 user
-symptom and fixed at the generic ownership invariant; early-input startup skip
-is narrowed to probe press lifetime rather than a retail playlist or MDEC
-failure; neutral input, MDEC underflow and auto-skip causes are contradicted.
-SF2 recomp is the independent validator for the GPU handoff. SF2 hybrid can
-independently validate the corrected release-on-transition probe contract.
+Corpus disposition: `FAIL-009` / `PSX-GPU-002` is confirmed for the colorful
+bands and fixed at the generic ownership invariant. The missing-intro symptom
+confirms the CD seek-retarget contract in SF3 after SF2's first proof. Probe
+press lifetime remains a narrowed secondary input hazard; MDEC underflow and
+neutral/auto-skip hypotheses are contradicted. SF2 recomp and SF3 now
+independently validate the GPU and CD invariants. SF2 hybrid can independently
+validate the release-on-transition probe contract.

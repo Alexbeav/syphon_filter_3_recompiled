@@ -17,8 +17,9 @@ depth/state `2/4` with exact matching frame fingerprints. Two further clean,
 packaged-probe processes select retail New Game, reach Mission 1 state `8/2`,
 pop to state `0/1`, poll the retail Mission 1 PAD path and visibly move the
 player in the rendered Tokyo scene. The first user FMV report is also resolved:
-two hidden-OpenGL runs render the retail New Game Tokyo intro without stale
-colored VRAM bands and continue through the same Mission 1 gates.
+hidden-OpenGL runs render both the restored pre-menu cemetery intro and the
+retail New Game Tokyo intro without stale colored VRAM bands, then continue
+through the same Mission 1 gates.
 
 ## Consumed leads
 
@@ -64,20 +65,27 @@ physical edge is accepted. The probe permits at most three state-checked edges
 and records the count; both clean runs required two at TITLE and one at each
 later gate. No guest state, processed-PAD record or callback is fabricated.
 
-A second input-boundary finding is narrowed. Retail installs TITLE behind the
-SCEA stream, so state `4/2` alone is not a movie-completion gate. The earlier
-probe also left part of an eight-frame Cross pulse active after New Game was
-accepted, allowing that physical input to skip the following intro. With a
-persistent neutral pad, active TITLE-decode readiness and immediate release on
-the observed transition, SCUS-94640 naturally plays the Tokyo car-arrival
-movie before state 8. Neutral/auto-skip and MDEC-underflow hypotheses were
-contradicted.
+A separate CD ownership finding is confirmed. On the broken SF3 route, a
+completed SeekL targeted `[51,54,39]` while the drive remained actively reading
+`[50,31,14]` with READ status set. SeekL/SeekP must cancel the prior read
+generation and pending INT1, clear READ/PLAY, and only then seek to the SetLoc
+target. The generic correction restores the full retail cemetery intro before
+TITLE and independently validates the SF2 recomp finding from `485b79b`.
+
+An input-boundary finding remains narrowed but is secondary, not the cause of
+the missing cemetery intro. State `4/2` alone is not a movie-completion gate,
+and a multi-frame Cross pulse can outlive the transition that accepted it. The
+probe now waits through SCEA and the cemetery movie to the actual TITLE stream,
+then immediately releases accepted input. SCUS-94640 separately plays the
+Tokyo car-arrival movie after New Game. MDEC underflow and neutral/auto-skip
+causes were contradicted.
 
 ## Next decisive experiment
 
 Independently validate the below-floor dirty-text capture finding in Tenchu.
-SF2 recomp independently validates the OpenGL 15/24-bit ownership handoff; SF2
-hybrid should validate release-on-transition input automation. Remaining work
+SF2 recomp and SF3 independently validate the OpenGL 15/24-bit ownership
+handoff and CD seek-retarget contract; SF2 hybrid should validate
+release-on-transition input automation. Remaining work
 is a user-visible build check, the final reproducibility/provenance audit and
 normalized corpus return before a clean public source publication.
 

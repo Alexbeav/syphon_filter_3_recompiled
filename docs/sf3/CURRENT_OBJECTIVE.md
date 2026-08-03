@@ -60,8 +60,8 @@ and CD remain live. Repeat from two clean processes.
 
 ## Achieved minimum evidence
 
-- Release framework suite: 41/41 with `PYTHONUTF8=1`, including the generic
-  OpenGL 15/24-bit coherency regression.
+- Release framework suite: 42/42 with `PYTHONUTF8=1`, including the generic
+  OpenGL 15/24-bit coherency and CD seek-retarget regressions.
 - Generated trees: 1,128/1,128 normalized-identical files, tree SHA-256
   `09043b8c29b5c34a0364d0fd36778fa7002ef14d29128938a60b272bf915433e`.
 - Clean Release products: normalized SHA-256
@@ -96,15 +96,19 @@ and CD remain live. Repeat from two clean processes.
 
 - The corpus-matched FBO/CPU-mirror ownership fault is corrected generically
   at GP1 display-depth transitions; generated retail code is untouched.
-- A neutral cold boot naturally plays SCEA and then the animated TITLE stream.
-  SCUS-94640 requests the Tokyo intro only after retail accepts New Game.
+- A neutral cold boot naturally plays SCEA, the full cemetery intro, and then
+  the animated TITLE/menu. Retail New Game separately plays the Tokyo intro.
+- The missing cemetery intro was caused by an active ReadN/ReadS stream
+  surviving SeekL and retaining the old location. SeekL/SeekP now cancel that
+  read generation and clear READ/PLAY before the requested seek takes ownership.
 - The prior story probe could bleed an accepted Cross press into the following
   movie. It now gates on active TITLE decoding and releases immediately at the
   observed retail transition.
-- Two hidden-OpenGL, dummy-audio runs captured clean Tokyo intro frames, reached
-  state 8 at frame 3499, and returned to state-0 control with zero dispatch
-  misses.
+- Two cached hidden-OpenGL, dummy-audio runs captured clean cemetery and Tokyo
+  intro frames, reached state 8 at frames 9523/9531, and returned to state-0
+  control with zero dispatch misses. Native overlay ownership was 82.301% and
+  82.304%; fallback was 0.086% in both runs.
 - Fresh generation A/B tree SHA-256 is
-  `096032a2bd37ca13bc163b94693d21281eb17d60829eb68e6a753559f18b3918`;
+  `b2994894e7b921b6e56adffa7c824ba65815c8dff9ea1974cb2c79f3e3757475`;
   both Release products normalize to
-  `3a43b1461cc82f07d86179ec56d8e2509df6d4235c108416299f2ea79e016dfe`.
+  `6d1cbdd2c1aa5e325ed0e86f3b405b6cd6ee6b15135ef355cc34b7e2c5852032`.

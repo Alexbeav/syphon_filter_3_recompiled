@@ -1951,9 +1951,15 @@ static void exec_command(uint8_t cmd) {
             set_irq(CDIRQ_ERROR);
             break;
         }
+        /* A seek owns the drive and cancels any prior ReadN/ReadS generation.
+         * Otherwise the old stream can continue producing sectors throughout
+         * the seek; software observing READ at completion then has no reason
+         * to issue a new read, and the SetLoc target is never consumed. */
+        stop_read_stream();
         xa_reset_decode();
         spu_cd_audio_reset();
         stop_cdda_playback();
+        stat_reg &= (uint8_t)~(CDSTAT_READ | CDSTAT_PLAY);
         stat_reg |= CDSTAT_SEEK;
         response_push(stat_reg);
         set_irq(CDIRQ_ACK);

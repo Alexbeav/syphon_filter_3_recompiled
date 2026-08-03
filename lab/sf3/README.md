@@ -40,7 +40,8 @@ python .\lab\sf3\probe_story.py $Sf3Cue --out .\lab\sf3\traces\clean-story-b --p
 Each output directory must not already exist. The probe creates an SDL/OpenGL
 window in hidden state and selects SDL's dummy audio driver, exercising the
 hardware presentation path without a visible window or sound device. It waits
-for SCEA to complete and the retail TITLE stream to begin before supplying only
+for SCEA and the full pre-menu cemetery intro to complete and the retail TITLE
+stream/menu to begin before supplying only
 active-low physical PAD words through SIO. Accepted edges are released
 immediately so input cannot bleed into the next movie state. It records bounded
 JSON/screenshots beneath the ignored output directory and exits only after
