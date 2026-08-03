@@ -9,7 +9,8 @@
 
 ## Current state
 
-Minimum and stretch feasibility gates are achieved. Two clean generated trees
+Graduation state is `bootstrap_verified`; the representative slice is not
+verified. Two clean generated trees
 and their normalized Release products match. Two clean headless/silent native
 runtime processes boot OpenBIOS, enter the authentic executable at frame 714,
 call `Game_Main` and its retail application loop, and reach stable TITLE
@@ -20,6 +21,13 @@ player in the rendered Tokyo scene. The first user FMV report is also resolved:
 hidden-OpenGL runs render both the restored pre-menu cemetery intro and the
 retail New Game Tokyo intro without stale colored VRAM bands, then continue
 through the same Mission 1 gates.
+
+Subsequent ordinary human testing contradicted the implied readiness of those
+bounded probe results. One cold launch accepted the briefing but did not start
+Mission 1. A second launch entered gameplay with large world surfaces sampling
+red/checkered corrupt texture data while geometry, actors and HUD remained
+visible. State `0/1`, PAD polling, movement and zero dispatch misses therefore
+proved bootstrap ownership only, not sustained retail correctness.
 
 ## Consumed leads
 
@@ -85,9 +93,19 @@ causes were contradicted.
 Independently validate the below-floor dirty-text capture finding in Tenchu.
 SF2 recomp and SF3 independently validate the OpenGL 15/24-bit ownership
 handoff and CD seek-retarget contract; SF2 hybrid should validate
-release-on-transition input automation. Remaining work is the user's visible
-build confirmation and broader campaign playtest before enhancement work
-begins.
+release-on-transition input automation. The next decisive experiments are an
+ordinary-Release lifecycle trace across accepted state-8 input and an
+identical-route software/OpenGL comparison at the first corrupt gameplay frame.
+Enhancement work remains prohibited until the representative Mission 1 gate
+passes.
+
+## Quality debt
+
+| Debt | Likely owner | Removal gate |
+| --- | --- | --- |
+| Briefing can fail to hand off to gameplay | lifecycle/device/control unresolved | two clean ordinary Release transitions with matching semantic state |
+| State-0 world textures can be corrupt | GPU/VRAM unresolved | authoritative software/OpenGL comparison and correct two-page multi-room output |
+| Existing probe ends after initial movement | validation harness | connected death/restart, checkpoint and Mission 1 completion replay |
 
 ## Provenance
 

@@ -1,18 +1,52 @@
-# Current objective — deterministic SCUS-94640 TITLE
+# Current objective — representative SCUS-94640 Mission 1 slice
 
 Updated: 2026-08-03
 
-Status: feasibility, stretch, FMV/intro correction and provenance-clean public
-source publication gates achieved; visible user confirmation remains.
+Graduation state: `bootstrap_verified`. The earlier state-0 bootstrap evidence
+does not satisfy the representative-slice gate. Human validation contradicted
+the readiness claim with a briefing-to-gameplay failure on one cold launch and
+severe Mission 1 texture corruption on the next.
 
 ## Objective
 
-Establish a clean reproducible SF3 game-project generation and Release build,
-then boot OpenBIOS and the authentic SCUS-94640 executable through CRT,
-`Game_Main`, the application loop and stable retail TITLE. Capture/rebuild
-runtime-installed overlays and measure static, native-overlay and interpreter
-ownership. Stretch through retail Story/Mission 1 selection, state 8 and
-state-0 player control.
+Bring the authentic retail route from cold boot through user-selected Story,
+Mission 1, sustained correct gameplay and the following retail transition.
+Reproduce and fix the failed state-8 briefing handoff and corrupt gameplay
+textures at their owning generic runtime invariants. Preserve the existing
+generation, overlay and execution-tier evidence without treating it as proof
+of playability.
+
+## Current P0 blockers
+
+- Ordinary Release can accept the Mission 1 briefing without beginning the
+  mission.
+- A separate clean launch can reach state-0 gameplay with large world surfaces
+  sampling visibly wrong red/checkered texture data while geometry, actors and
+  HUD continue to render.
+- The diagnostic probe stops after a movement sample. It does not cover
+  sustained rendering, audio, pause, combat, death/restart, checkpoint restore,
+  objective completion or the next retail transition.
+
+## Representative-slice exit gate
+
+- Two clean ordinary Release processes follow cold boot → retail frontend →
+  user-selected Story/Mission 1 → briefing → authored gameplay.
+- Both framebuffer pages show correct world, actors, HUD, palette and textures
+  across multiple rooms for at least five-to-ten minutes.
+- Input, camera handoff, pause/resume, dialogue, music and effects remain live.
+- Damage/death, retail restart and one checkpoint restore work.
+- Mission 1 completes through its retail result/save/next-state flow.
+- The connected deterministic route passes twice and a human completes the
+  same representative route without developer-only state manipulation.
+
+## Quality debt
+
+| Debt | Owner | User impact | Evidence | Removal gate |
+| --- | --- | --- | --- | --- |
+| Briefing handoff intermittently fails | unresolved lifecycle/device/control owner | mission does not start | user cold-launch report | first divergence fixed; two ordinary Release routes pass |
+| Mission textures can sample corrupt data | unresolved GPU/VRAM owner | gameplay is visually invalid | user cold-launch screenshot | software/OpenGL oracle comparison plus correct multi-room two-page presentation |
+| Probe covers only initial state-0 movement | validation harness | false confidence in playability | prior `probe_story.py` exit boundary | extend through sustained play, failure/restart, checkpoint and completion |
+| Campaign beyond Mission 1 unverified | retail/content lifecycle | no campaign claim | no connected mission matrix | later campaign-complete gate; not part of this representative slice |
 
 ## Starting evidence
 

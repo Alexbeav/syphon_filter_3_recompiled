@@ -308,3 +308,32 @@ The local desktop shortcut targets the fixed normal Release build and isolated
 play memory-card directory. `SF3_Redux` enhancement work remains deliberately
 outside this standalone checkpoint pending the user's visible FMV/intro and
 campaign-flow test.
+
+### R5 — human validation contradicts representative readiness
+
+The first post-publication human test invalidated the assumption that initial
+state-0 movement was an adequate product gate. On one ordinary cold launch,
+the retail briefing was accepted but Mission 1 did not begin. On the next,
+Mission 1 ran with large surfaces sampling red/checkered corrupt texture data;
+geometry, the player, another actor and the HUD remained visible. The private
+retail-derived screenshot remains outside version control.
+
+These are two separate normalized symptoms until a shared first divergence is
+proved. The transition failure is initially classified as lifecycle/device or
+control ownership. The presentation failure is initially classified as
+GPU/VRAM texture-source ownership (TPAGE/CLUT, upload/copy coherency or cache
+invalidation), not as an MDEC continuation of the earlier movie symptom.
+
+Corpus consultation found no existing failure with the same proven owner. It
+did identify the applicable contracts: `PSX-VAL-001` forbids equating state-0,
+input or a visible frame with playability; `PSX-GPU-001` requires persistent
+authored pages; `PSX-GPU-002` requires explicit split-representation coherency;
+and the SF3 hybrid report already leaves full same-tick composition and
+guest-authoritative texture residency open. Each is a falsifiable lead, not a
+fix to import. The next checks are an ordinary-Release state-8 lifecycle trace
+and same-route software/OpenGL capture at the first corrupt frame.
+
+The project remains `bootstrap_verified`. Representative-slice claims are
+withdrawn pending sustained correct presentation, input/audio/pause,
+death/restart, checkpoint restore, Mission 1 completion and its following
+retail transition in two clean deterministic routes plus a human completion.

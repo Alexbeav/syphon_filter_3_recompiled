@@ -7,15 +7,21 @@ the original title and menus, and reaches Mission 1 player control without
 forced application states, patched generated code, native substitute gameplay,
 or redistributed game data.
 
-Current validated scope:
+Current validated bootstrap scope:
 
 - deterministic game-project generation and reproducible Release products;
 - authentic executable entry, `Game_Main`, cemetery intro, TITLE, New Game,
-  Tokyo intro, briefing, state-8 load and state-0 Mission 1 control;
+  Tokyo intro, briefing, state-8 load and initial state-0 Mission 1 execution;
 - OpenGL FMV coherency across the 15/24-bit VRAM ownership transition;
 - retail GPU, SPU/XA, CD-ROM and PAD activity with measured native-overlay and
   interpreter ownership;
-- two matching clean hidden-renderer runs with zero static dispatch misses.
+- two matching clean hidden-renderer bootstrap runs with zero static dispatch
+  misses.
+
+This project is currently `bootstrap_verified`, not a representative playable
+slice. Human testing has reproduced both a briefing-to-gameplay transition
+failure and severe Mission 1 texture corruption. Correct sustained gameplay,
+death/restart, checkpoint restore and Mission 1 completion remain P0 gates.
 
 You must supply your own legally obtained USA BIN/CUE image. Retail executable,
 disc sectors, generated retail C, overlay captures, memory cards, screenshots
