@@ -34,6 +34,12 @@ can return invalid geometry ownership while the same retail route succeeds
 with interpreter ownership. Capture remains enabled for audit and future
 promotion after native/interpreter equivalence is proved.
 
+The same deterministic post-generation step selects 4x internal
+supersampling and installs `lab/sf3/keybinds.ini` beside every Release product.
+That tracked keyboard profile matches the SF2 recompilation project. These are
+presentation/input defaults only; they do not enable widescreen, mouse camera,
+freelook, or native runtime-overlay execution.
+
 ## Hidden-renderer Story/Mission 1 probe
 
 After creating the Release-optimized diagnostic build (`build-r1`) and

@@ -13,6 +13,8 @@ assert 'runtime.contains("overlay_native")' in loader
 assert 'toml::find<bool>(runtime, "overlay_native")' in loader
 assert "if (!gc.runtime.overlay_native)" in main
 assert "overlay_loader_set_native_exec(0);" in main
-assert 'setting = "overlay_native = false"' in configurator
+assert '"overlay_native = false"' in configurator
+assert '"supersampling = 4"' in configurator
+assert "TARGET_FILE_DIR:psx-runtime>/keybinds.ini" in configurator
 
 print("overlay native config guards: OK")
