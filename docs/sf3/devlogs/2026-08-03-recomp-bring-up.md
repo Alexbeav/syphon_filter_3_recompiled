@@ -504,3 +504,38 @@ from the stale `fmv-c` product to the same `input-route-k` ordinary Release used
 by the capture/replay contract. It retains the isolated play memory-card path,
 and the SCUS-94640 game configuration selects OpenGL. The shortcut was inspected
 after editing but not opened.
+
+### R7 — captured audio-only Mission 1 stall
+
+The next ordinary human recording reproduced the Mission 1 blocker more
+precisely: the intro cutscene's XA audio played, but no video was displayed,
+retail input produced no visible response, and the mission did not progress.
+The finalized ignored route is
+`lab/sf3/traces/human-mission1-20260803-120259.psxpad`. Its `PSXPAD2` header
+declares 3,194 contiguous samples and compatibility identity
+`psxrecomp-f966f1dd14bf443e`; both endpoints are neutral. There are 333 active
+samples in 59 runs from sample 205 through 3045, including 28 Cross runs (184
+samples) and six Start runs (52 samples). The artifact therefore confirms that
+host controls reached the normalized retail SIO boundary throughout the stall.
+It does not establish that the guest reached a state which consumed them.
+
+Mandatory corpus consultation classified `PSX-MDEC-005` and the device/lifecycle
+handoff contract as live leads: XA playback alone does not prove MDEC decode,
+display ownership or movie completion. `PSX-CPU-002` was checked directly
+against the SF2 portability report. This tree already contains the generic CFG
+ordinary-load delay correction at `663ac4a`, its focused generated-code
+regression, and post-correction generated products, so a missing import of that
+known fix is contradicted. Its incomplete edge coverage remains a framework
+risk until the first divergent instruction is identified. `FAIL-018` (one lost
+analog-to-digital input edge) is contradicted as the sole owner by repeated
+button runs spanning almost the entire failed route. A purely visual OpenGL
+coherency failure is also insufficient because retail progression and input
+consumption stopped with the missing picture.
+
+The bounded falsification order is now: (1) replay this exact route and compare
+retail application state with XA and MDEC decode counters; (2) if decode stalls,
+compare CD delivery/IRQ and MDEC DMA progress; (3) if decode completes without
+the retail transition, inspect execution-tier/lifecycle ownership at the first
+dirty-overlay handoff. The observer remains a localization instrument, not an
+ordinary-Release oracle. No replay was launched because the user's prior
+no-run instruction remains in force pending explicit permission.

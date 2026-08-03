@@ -29,6 +29,15 @@ red/checkered corrupt texture data while geometry, actors and HUD remained
 visible. State `0/1`, PAD polling, movement and zero dispatch misses therefore
 proved bootstrap ownership only, not sustained retail correctness.
 
+A later timestamped ordinary route sharpened the transition symptom: intro XA
+audio remained audible while video, visible input response and mission progress
+all stopped. The neutral-bookended `PSXPAD2` artifact has 3,194 contiguous
+samples, 333 active samples in 59 runs, and repeated Cross/Start activity as
+late as sample 3045. This confirms host input publication at the retail SIO
+boundary and contradicts a single lost-edge explanation; it does not prove
+guest input consumption. The artifact remains ignored and is not part of the
+source repository.
+
 ## Consumed leads
 
 Generic load-delay and encoded-JALR corrections remain covered by framework
@@ -36,6 +45,16 @@ regressions, but TITLE has not independently isolated either prior failure
 mode. The nested-call IRQ path is exercised (`irq_need_delivery` nonzero and
 `irq_skip_nested=48` in both clean runs), but no counterfactual has yet made the
 SF2 fix independently causal for SF3.
+
+The SF2 CFG load-delay portability report was rechecked against this exact
+failure. SF3 already includes the generic CFG correction at `663ac4a`, its
+focused code-generation regression, and regenerated products, contradicting a
+missing known-patch explanation. The conservative patch's documented boundary
+cases remain candidates only if a first divergent instruction reaches one.
+`PSX-MDEC-005` remains directly applicable: live XA audio does not prove MDEC
+decode, display or completion. Repeated recorded inputs contradict `FAIL-018`
+as the sole owner. The next bounded check must separate stalled MDEC/CD/IRQ
+progress from completed decode with a failed execution-tier/lifecycle handoff.
 
 `PSX-HLE-001` is irrelevant to this boundary because the active image is
 verified OpenBIOS and the backend is LLE. `PSX-GPU-001` remains relevant: SF3
@@ -159,6 +178,15 @@ the known corruption signature. It deliberately leaves human presentation,
 audio quality, pause/death/checkpoint and mission-completion gates open.
 Timestamped recorder output preserves intermittent failed routes instead of
 blocking or overwriting the next attempt.
+
+The first timestamped route is now structurally validated and captures the
+audio-only stall. With explicit launch permission, the decisive localization
+experiment is an exact hidden, silent diagnostic replay: first compare retail
+state, XA and MDEC counters; then inspect CD/IRQ and MDEC DMA only if decoding
+does not advance; finally inspect dirty/static lifecycle ownership only if
+decode completes without a retail transition. No diagnostic process has yet
+been launched for this route, and instrumented output will not be promoted to
+ordinary-Release acceptance evidence.
 
 ## Quality debt
 
