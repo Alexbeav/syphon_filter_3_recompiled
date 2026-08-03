@@ -1,8 +1,8 @@
-# Current objective — representative SCUS-94640 Mission 1 slice
+# Current objective — SF3 Redux Phase 1
 
 Updated: 2026-08-03
 
-Graduation state: `compatibility_baseline_verified`. A connected human route now
+Baseline state: `compatibility_baseline_verified`. A connected human route now
 covers cold boot, Story/Mission 1, death, checkpoint reload, full mission
 completion, FMV, new-card save and the retail Mission 2 handoff through live
 gameplay. Two ordinary hidden OpenGL replays and a passive diagnostic replay
@@ -11,16 +11,25 @@ previous catastrophic start-of-level corruption does not reproduce with the
 cache-complete product; a small software/OpenGL raster-precision delta remains
 presentation debt and campaign-wide correctness is not yet claimed.
 
+Redux state: `phase1_input_scaffold_verified`. The isolated branch builds with
+51/51 Release tests. It has a clean 4x/4:3 source profile, keyboard mapping and
+a reversible relative-mouse-to-retail-PAD layer with strict focus/headless
+guards. The direct camera owner/pitch fields remain intentionally unimplemented
+until they are observed in live SCUS-94640 state 0.
+
 ## Objective
 
-Bring the authentic retail route from cold boot through user-selected Story,
-Mission 1, sustained correct gameplay and the following retail transition.
-Reproduce and fix the failed state-8 briefing handoff and corrupt gameplay
-textures at their owning generic runtime invariants. Preserve the existing
-generation, overlay and execution-tier evidence without treating it as proof
-of playability.
+Carry the verified retail-compatible build into optional PC enhancements in an
+isolated project. First deliver 4x internal resolution, configurable keyboard
+and mouse input, and title-owned direct camera/freelook while preserving retail
+state and gameplay. Validate every enhancement independently against the
+accepted route, keep an off switch, and record honest native/fallback ownership.
 
 ## Current blockers
+
+- Direct camera/freelook is narrowed to an exact SCUS-94640 hook candidate, but
+  the SF3 owner and pitch fields are not yet proven. This is the first active
+  invariant and will be checked live before implementation.
 
 - No representative-slice P0 remains. The cache-complete visible countercheck
   and three complete replays supersede the earlier cache-empty fatal.

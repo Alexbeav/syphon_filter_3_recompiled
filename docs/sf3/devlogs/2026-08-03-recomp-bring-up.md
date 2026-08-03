@@ -761,3 +761,24 @@ not the ownership of the accepted build; current runtime-overlay native
 ownership is intentionally 0% until entry-level equivalence is proved. The
 campaign remains unverified beyond the user's earlier Mission 1/Mission 2
 slice.
+### R12a — isolated enhancement input work begins from the corrected baseline
+
+Enhancement work moved to the independent `SF3_Redux` worktree at compatibility
+commit `6aa349e`; the standalone recomp worktree remains unchanged. Review of
+the compatible SF1/SF2 projects shows that 4x internal supersampling and
+configurable keyboard PAD mapping are already generic framework facilities.
+The first Redux source profile enables those facilities at 4:3 and leaves
+widescreen/interpolation off pending SF3-specific capture gates.
+
+A disabled-by-default relative-mouse adapter now emits bounded ordinary retail
+PAD state and maps mouse buttons to retail controls. It resets on lost focus,
+is inert for hidden/headless runs and commits once per vblank. Keyboard paths
+received the same focus isolation. Unit and source-contract regressions cover
+the new boundary. This layer enables immediate keyboard/mouse playtesting but
+is explicitly not the direct camera/freelook milestone.
+
+An independent raw-executable check narrows the true-camera candidate to the
+unique SF3 instruction at `0x800549C4` inside the structurally mapped routine
+at `0x80053954`. The local register semantics match SF2 while SF3's controller
+layout differs. Owner and pitch offsets remain unproven and are the next live,
+bounded invariant; none will be copied by address analogy.

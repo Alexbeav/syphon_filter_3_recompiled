@@ -472,6 +472,13 @@ struct RuntimeConfig {
     bool                  has_anti_deadzone = false;
     int                   anti_deadzone     = 0;
 
+    // Opt-in Syphon mouse translation through ordinary PAD state. Relative
+    // motion is digital and preserves retail input ownership; the later direct
+    // camera layer is configured and validated independently.
+    bool                  controller_mouse_pad = false;
+    int                   controller_mouse_counts_per_frame = 12;
+    int                   controller_mouse_aim_counts_per_frame = 4;
+
 };
 
 // One entry from [[recompiler.bios_vectors]].

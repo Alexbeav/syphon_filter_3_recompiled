@@ -264,6 +264,13 @@ target_include_directories(l2_structural_test PRIVATE
 target_link_libraries(l2_structural_test PRIVATE fmt rabbitizer)
 
 if(BUILD_TESTING)
+    add_executable(mouse_pad_adapter_test
+        ../runtime/tests/test_mouse_pad_adapter.c
+        ../runtime/src/mouse_pad_adapter.c)
+    target_include_directories(mouse_pad_adapter_test PRIVATE
+        ../runtime/include)
+    add_test(NAME mouse_pad_adapter_test COMMAND mouse_pad_adapter_test)
+
     add_executable(input_timeline_contract_test
         ../runtime/tests/test_input_timeline.cpp
         ../runtime/src/input_timeline.cpp)
@@ -371,6 +378,10 @@ if(BUILD_TESTING)
             NAME dirty_text_continuation_guards
             COMMAND ${Python3_EXECUTABLE}
                     ${CMAKE_CURRENT_SOURCE_DIR}/../runtime/tests/test_dirty_text_continuation_guards.py)
+        add_test(
+            NAME input_focus_guards
+            COMMAND ${Python3_EXECUTABLE}
+                    ${CMAKE_CURRENT_SOURCE_DIR}/../runtime/tests/test_input_focus_guards.py)
 
         # ---- codegen tests that were written but never registered -----------
         # These existed in recompiler/tests/ with no add_test() entry, so they
