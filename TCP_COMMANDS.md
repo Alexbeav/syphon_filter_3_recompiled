@@ -78,7 +78,7 @@ Columns: **N** = native, **D** = DuckStation oracle.
 | `display_ring_stats` | ✓ |   | — | Report the 64-frame display-capture window and whether full-VRAM auxiliary capture was enabled at startup |
 | `display_ring_get` | ✓ |   | `frame`, `path` | Write the frame-exact 15-bit display stored in the ring. OpenGL capture does not update CPU VRAM, but its pack/readback can perturb host timing |
 | `display_ring_aux` | ✓ |   | `frame`, `path` | Write same-frame raw 1024×512 BGR555 VRAM only when `PSX_DISPLAY_RING_AUX=1`; this expensive forensic mode is off by default |
-| `display_ring_color_stats` | ✓ |   | `frame` | Return generic BGR555 red-dominant, hot-red and saturated pixel counts plus basis-point ratios for one retained display frame |
+| `display_ring_color_stats` | ✓ |   | `frame` | Return display origin/size plus generic BGR555 red-dominant, hot-red and saturated pixel counts and basis-point ratios for one retained display frame |
 | `display_ring_color_scan` | ✓ |   | optional `min_frame`, `red_dominant_bp`, `hot_red_bp` | Scan retained 15-bit display frames for configurable color-ratio thresholds; the SF3 probe's defaults are an observed-symptom heuristic, not a general correctness test |
 | `first_failure` | ✓ |   | — | Find first divergence point between runs (native-side tracking) |
 | `read_frame_ram` | ✓ |   | `addr`, `len`, `frame` | Read RAM **as of a specific frame** (from ring buffer) |

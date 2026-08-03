@@ -7914,7 +7914,7 @@ static void handle_get_snapshots(int id, const char *json)
  * cycling make later peeks worthless; only a same-frame capture is evidence. */
 typedef struct {
     uint32_t frame;
-    uint16_t w, h;
+    uint16_t x, y, w, h;
     uint8_t  depth24, valid;
     uint16_t *px;                 /* DISP_RING_MAX_W*DISP_RING_MAX_H halfwords */
     uint16_t *vram;               /* full 1024x512 */
@@ -7964,6 +7964,7 @@ static void disp_ring_capture(void)
     uint32_t w = di.width, h = di.height;
     if (w > DISP_RING_MAX_W) w = DISP_RING_MAX_W;
     if (h > DISP_RING_MAX_H) h = DISP_RING_MAX_H;
+    e->x = (uint16_t)di.display_x; e->y = (uint16_t)di.display_y;
     e->w = (uint16_t)w; e->h = (uint16_t)h;
     e->depth24 = (uint8_t)(di.depth24 ? 1 : 0);
     /* GPU-side truth when the GL raster pipeline is live (scissored pack of
@@ -8051,11 +8052,13 @@ static void handle_display_ring_color_stats(int id, const char *json)
     if (e->depth24) { send_err(id, "frame is 24bpp scanout (unsupported)"); return; }
     PsxFrameColorStats stats;
     psx_frame_color_stats_bgr555(e->px, (size_t)e->w * e->h, &stats);
-    send_fmt("{\"id\":%d,\"ok\":true,\"frame\":%d,\"width\":%u,\"height\":%u,"
+    send_fmt("{\"id\":%d,\"ok\":true,\"frame\":%d,\"display_x\":%u,"
+             "\"display_y\":%u,\"width\":%u,\"height\":%u,"
              "\"total\":%llu,\"red_dominant\":%llu,\"hot_red\":%llu,"
              "\"saturated\":%llu,\"red_dominant_bp\":%llu,"
              "\"hot_red_bp\":%llu,\"saturated_bp\":%llu}",
-             id, f, (unsigned)e->w, (unsigned)e->h,
+             id, f, (unsigned)e->x, (unsigned)e->y,
+             (unsigned)e->w, (unsigned)e->h,
              (unsigned long long)stats.total,
              (unsigned long long)stats.red_dominant,
              (unsigned long long)stats.hot_red,
@@ -8142,7 +8145,8 @@ static void handle_display_ring_get(int id, const char *json)
     fclose(fp);
     if (!ok) { send_err(id, "png encode failed"); return; }
     send_fmt("{\"id\":%d,\"ok\":true,\"frame\":%d,\"path\":\"%s\","
-             "\"width\":%u,\"height\":%u}", id, f, path, w, h);
+             "\"display_x\":%u,\"display_y\":%u,\"width\":%u,\"height\":%u}",
+             id, f, path, (unsigned)e->x, (unsigned)e->y, w, h);
 }
 
 static void handle_screenshot_file(int id, const char *json)

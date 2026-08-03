@@ -68,7 +68,7 @@ silently consuming stale input.
 
 ```powershell
 .\lab\sf3\record_input_route.ps1 `
-  -Project .\lab\sf3\generated\input-route-e `
+  -Project .\lab\sf3\generated\input-route-k `
   -Route .\lab\sf3\traces\human-mission1.psxpad `
   -Renderer opengl
 ```
@@ -84,12 +84,12 @@ same hidden renderer and stop at the exact recorded retail-SIO sample count:
 
 ```powershell
 .\lab\sf3\replay_input_route.ps1 `
-  -Project .\lab\sf3\generated\input-route-g `
+  -Project .\lab\sf3\generated\input-route-k `
   -Route .\lab\sf3\traces\human-mission1.psxpad `
   -Out .\lab\sf3\traces\human-mission1-replay-a `
   -Renderer opengl
 .\lab\sf3\replay_input_route.ps1 `
-  -Project .\lab\sf3\generated\input-route-g `
+  -Project .\lab\sf3\generated\input-route-k `
   -Route .\lab\sf3\traces\human-mission1.psxpad `
   -Out .\lab\sf3\traces\human-mission1-replay-b `
   -Renderer opengl
@@ -101,3 +101,23 @@ selected renderer active; it is not renderer-less `--headless`. Successful
 process exit proves only that every recorded sample was consumed. State,
 presentation and campaign gates still require the diagnostic observer and the
 ordinary visible confirmation described in the objective.
+
+For a diagnostic replay, `observe_input_route.py` consumes the same route
+without injecting TCP input. It records retail application transitions,
+periodic GPU/SPU/audio/CD/PAD/dispatch state, and BGR555 display statistics with
+the framebuffer display origin. If the observed red/checkered signature occurs,
+the first retained display frame is dumped immediately. Add
+`--display-ring-aux` only when the extra same-frame 1024×512 VRAM evidence is
+needed.
+
+```powershell
+python .\lab\sf3\observe_input_route.py `
+  'Z:\Emulators\PS1 Games\Syphon Filter 3 (USA).cue' `
+  .\lab\sf3\traces\human-mission1.psxpad `
+  --project .\lab\sf3\generated\input-route-k `
+  --out .\lab\sf3\traces\human-mission1-observed-a `
+  --renderer opengl
+```
+
+This diagnostic route is intentionally timing-perturbing. Acceptance still
+requires the ordinary Release replays with the observer absent.

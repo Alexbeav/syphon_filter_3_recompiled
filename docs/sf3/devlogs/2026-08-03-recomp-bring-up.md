@@ -454,8 +454,29 @@ the process census remained zero. The 11.723 GiB footprint remains below the
 evidence therefore remain unclaimed.
 
 A separate desktop shortcut, `Syphon Filter 3 Recomp - Record Mission 1`, now
-targets the source-owned recorder and replay-compatible `input-route-i`
+initially targeted the source-owned recorder and replay-compatible `input-route-i`
 ordinary Release. It fixes the output to the ignored
 `lab/sf3/traces/human-mission1.psxpad` path and selects OpenGL. The older normal
 play shortcut was preserved. Creating and inspecting the new shortcut did not
 launch the executable.
+
+The diagnostic route observer now records every retail application-pair
+transition, periodic GPU/SPU/audio/CD/PAD/dispatch state and the display origin
+with each state-0 BGR555 sample. A matching red/checkered frame is dumped while
+it remains in the 64-frame ring; optional full VRAM remains explicitly
+expensive. The observer consumes only `PSX_INPUT_REPLAY`: source guards reject
+TCP `set_input`, `press` and `write_ram` use. It is a perturbing localization
+run, not acceptance evidence.
+
+Two observer-ready generations match across 1,132/1,132 files with tree
+SHA-256
+`dea76d13f43caa9a327e48427c4b3fc2510091bfb8c2b60ef486acf77d30dffe`.
+Both products were built from the same tree so their timeline compatibility ID
+matches: ordinary Release is 97,748,156 bytes (SHA-256
+`322adfabf59cf4e9e3bb8d6b6a2f77ba25c925e5dd4830f5722319f3174f7629`)
+and diagnostic Release is 100,921,552 bytes (SHA-256
+`97b310b6ad5400514bac0850f2fda662ee7b10174093ecdd147ca2013598ef32`).
+The recording shortcut was retargeted from `input-route-i` to this matching
+`input-route-k` ordinary product. No executable was launched, the process
+census remained zero, and runtime observer behavior remains unclaimed. The
+workspace occupies 13.255 GiB, still below the 20 GiB ceiling.

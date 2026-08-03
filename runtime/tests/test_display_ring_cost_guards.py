@@ -14,6 +14,8 @@ required = (
     "display ring aux capture disabled",
     "handle_display_ring_color_stats",
     "handle_display_ring_color_scan",
+    '\\"display_x\\"',
+    '\\"display_y\\"',
 )
 missing = [token for token in required if token not in source]
 if missing:

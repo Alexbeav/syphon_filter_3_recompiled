@@ -9,9 +9,11 @@ import sys
 root = Path(__file__).resolve().parents[2]
 record = root / "lab" / "sf3" / "record_input_route.ps1"
 replay = root / "lab" / "sf3" / "replay_input_route.ps1"
+observer = root / "lab" / "sf3" / "observe_input_route.py"
 
 record_text = record.read_text(encoding="utf-8")
 replay_text = replay.read_text(encoding="utf-8")
+observer_text = observer.read_text(encoding="utf-8")
 
 record_required = (
     "PSX_INPUT_RECORD",
@@ -42,6 +44,22 @@ if "!g_headless && !g_hidden_window" not in runtime:
     raise SystemExit("bounded replay must accept the hidden renderer without accepting visible mode")
 if "bounded input sample limit reached" not in runtime:
     raise SystemExit("bounded replay completion marker missing")
+
+observer_required = (
+    'env["PSX_INPUT_REPLAY"]',
+    'env["PSX_INPUT_STOP_AFTER"]',
+    '"--hidden-window"',
+    '"display_ring_color_scan"',
+    '"display_ring_color_stats"',
+    '"application_transitions"',
+    '"state0_page_samples"',
+)
+missing = [token for token in observer_required if token not in observer_text]
+if missing:
+    raise SystemExit(f"observe_input_route.py contract tokens missing: {missing}")
+for forbidden in ('"set_input"', '"press"', '"write_ram"'):
+    if forbidden in observer_text:
+        raise SystemExit(f"route observer must not use active guest control: {forbidden}")
 
 if sys.platform == "win32":
     for script in (record, replay):

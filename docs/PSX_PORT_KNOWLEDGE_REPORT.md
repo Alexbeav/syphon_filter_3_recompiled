@@ -141,6 +141,16 @@ the ordinary Release links, and 46/46 tests pass. The user prohibited launching
 the product during this interval, so this remains a source/build-validated
 route contract rather than replay evidence.
 
+The paired diagnostic observer now labels every retained display sample with
+its VRAM display origin, records retail application transitions and bounded
+subsystem snapshots, and immediately preserves the first retained frame that
+matches the observed corruption signature. Source guards prohibit active TCP
+input or guest writes. Two 1,132-file generations match (tree SHA-256
+`dea76d13f43caa9a327e48427c4b3fc2510091bfb8c2b60ef486acf77d30dffe`),
+and matching ordinary/diagnostic Release products link from the same source
+identity. Neither was launched, so page coverage and replay behavior remain
+unverified.
+
 ## Quality debt
 
 | Debt | Likely owner | Removal gate |
