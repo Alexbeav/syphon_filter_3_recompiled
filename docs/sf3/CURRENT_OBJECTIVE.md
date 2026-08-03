@@ -171,6 +171,10 @@ a negative signed count and entering a non-terminating loop. Native overlay CRC
 `0x3F64E67F` is narrowed as the preceding state owner; entry-specific
 equivalence and campaign-wide validation remain open.
 
+The accepted test presentation now defaults to 4x internal supersampling and
+ships the SF2 recompilation keyboard profile beside the executable. This does
+not change the 4:3 aspect ratio or the interpreter ownership decision above.
+
 ## Standalone publication
 
 - Project checkpoint `db98b05` contains both generic fixes and 42/42 tests.
