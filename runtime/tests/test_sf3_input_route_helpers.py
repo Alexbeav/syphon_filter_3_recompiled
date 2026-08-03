@@ -56,11 +56,17 @@ if "bounded input sample limit reached" not in runtime:
 observer_required = (
     'env["PSX_INPUT_REPLAY"]',
     'env["PSX_INPUT_STOP_AFTER"]',
+    'env["PSX_INPUT_STOP_AFTER"] = str(stop_after)',
     '"--memcard-source"',
+    '"--stop-after"',
+    '"--capture-frame"',
+    '"--capture-frame-range"',
+    '"--capture-frame-step"',
     "shutil.copy2",
     '"--hidden-window"',
     '"display_ring_color_scan"',
     '"display_ring_color_stats"',
+    '"display_ring_get"',
     '"fmv_state"',
     '"mdec_state"',
     '"irq_state"',
@@ -69,6 +75,7 @@ observer_required = (
     '"application_transitions"',
     '"state0_page_samples"',
     "newest - 1",
+    '"missing_capture_frames": sorted(pending_capture_frames)',
 )
 missing = [token for token in observer_required if token not in observer_text]
 if missing:

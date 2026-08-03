@@ -683,3 +683,43 @@ The acceptance status advances from `bootstrap_verified` to
 `representative_slice_verified`. This does not erase the brief start-of-level
 graphical defect or establish Missions 2–19. Those become the next compatibility
 and campaign-coverage work, ahead of or alongside optional enhancements.
+
+### R11 — compatibility baseline closed; unsafe Mission 2 shards rejected
+
+The accepted 42,480-sample route was reused as the compatibility oracle. The
+diagnostic observer gained bounded `--stop-after`, exact-frame and stepped-range
+capture requests. OpenGL reads the authoritative FBO while software reads its
+CPU-owned VRAM; requested but absent frames are explicit evidence failures.
+Dense captures across frames 2169–2300 and stepped captures through frame 3000
+show correct geometry, pages and textures in both renderers. Three bounded
+cache-complete attempts contradict recurrence of the earlier catastrophic
+blue-plane/red-checkered failure. Across the later 71-frame comparison, the
+largest mean RGB delta is 3.723/255 and is visually limited to shading/raster
+edges, consistent with the already documented host 8-bit versus PSX 5-bit
+Gouraud precision debt. No generated retail code was changed.
+
+The immutable overlay history contained eight new exact-byte compilable
+variants. Promoting the complete set into a diagnostic cache was falsified: the
+route stopped progressing in TITLE near frame 11,377 with starvation exit 2.
+The three newly loaded early overlapping partial regions and their metadata
+were moved into an ignored quarantine. The four later regions at `0x0014D000`,
+`0x0014E000`, `0x00162000` and `0x00163000` passed a bounded diagnostic and the
+entire route, so only those four were promoted to the ordinary cache.
+
+The safe diagnostic endpoint loads seven regions, registers 164 candidates and
+reports 9,810,330 native overlay dispatches, 270,891 fallbacks, 70,947,707 dirty
+instructions, zero candidate overflow/static misses, ten invalidations and 27
+CRC revalidations. Its stable retail-state sequence and slot-1 card match the
+earlier diagnostic; 19 rather than 14 sampled transitions expose transient
+observer-visible stack-depth steps without changing following-state/page
+origins.
+
+Two fresh ordinary hidden-OpenGL processes consumed all 42,480 samples in about
+717 seconds each. Their logs match apart from isolated writable-state paths.
+Both end orderly at frame 42,480 with exactly 124,850,811 dirty instructions.
+Slot 1 is byte-identical at SHA-256
+`ab79103084f591b122eff13803b64dec166102454ac10144b5a55399e1e2cf1f`;
+slot 2 is byte-identical at
+`7706c7d43edaf8cb7618e574f03457105153e3bdc196db803a600ad96a8f58e8`.
+The compatibility baseline is therefore closed. Campaign-wide correctness and
+the subtle native-resolution raster-precision delta remain explicit debt.

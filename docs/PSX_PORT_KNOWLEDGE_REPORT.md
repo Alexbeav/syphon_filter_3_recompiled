@@ -248,13 +248,23 @@ byte-identical card images. A passive diagnostic replay records 14 retail state
 transitions, 1,011 state-0 display samples and zero known-corruption matches.
 
 This closes the SF3 representative-slice validation gap and narrows the earlier
-fatal to a cache-empty release-closure failure. It does not promote the brief
-Mission 1 start-frame graphical defect as fixed. It also exposes the next
-execution-tier boundary: Mission 2 raises ordinary dirty execution to 125.35M
-instructions; the diagnostic endpoint measures 9.72M native overlay dispatches
-and 292K fallbacks with four regions loaded. SF2 recomp remains the independent
-validator for additive-history compilation; SF3 now independently demonstrates
-that deterministic card artifacts can strengthen a long retail lifecycle route.
+fatal to a cache-empty release-closure failure. Follow-up authoritative
+software/OpenGL capture across the startup window did not reproduce the
+catastrophic defect in three bounded cache-complete attempts. The residual
+renderer difference is small raster precision rather than corrupt page/texture
+ownership; its worst sampled mean RGB delta is 3.723/255.
+
+Mission 2 additive history produced eight compilable variants. Four overlapping
+early partial shards changed TITLE progress and were rejected and quarantined.
+Only four later exact-byte shards were promoted. A full diagnostic route then
+loaded seven regions with 164 candidates, 9.81M native dispatches, 270,891
+fallbacks and 70.95M dirty instructions. Two ordinary replays consumed all
+42,480 samples, matched both cards exactly and each ended at 124,850,811 dirty
+instructions. This is an important negative contract: individually compilable
+runtime shards are not safe merely because their address and bytes match; the
+ordinary retail route remains the promotion oracle. SF2 recomp remains the
+independent validator for additive-history compilation and partial-shard
+rejection.
 
 ## Provenance
 

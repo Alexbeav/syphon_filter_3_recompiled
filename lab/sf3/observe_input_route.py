@@ -37,6 +37,17 @@ def safe_call(port: int, command: str, **fields: Any) -> dict[str, Any]:
         return {"ok": False, "error": str(exc)}
 
 
+def parse_frame_range(value: str) -> tuple[int, int]:
+    try:
+        lo_text, hi_text = value.split(":", 1)
+        lo, hi = int(lo_text, 10), int(hi_text, 10)
+    except (ValueError, TypeError) as exc:
+        raise argparse.ArgumentTypeError("frame range must be START:END") from exc
+    if lo < 0 or hi < lo:
+        raise argparse.ArgumentTypeError("frame range must satisfy 0 <= START <= END")
+    return lo, hi
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("cue", type=Path, help="user-owned USA SCUS-94640 cue")
@@ -52,6 +63,32 @@ def main() -> int:
         help="copy an existing card directory into the isolated replay directory",
     )
     parser.add_argument("--display-ring-aux", action="store_true")
+    parser.add_argument(
+        "--stop-after",
+        type=int,
+        help="stop after this many route samples instead of consuming the full route",
+    )
+    parser.add_argument(
+        "--capture-frame",
+        type=int,
+        action="append",
+        default=[],
+        help="dump an exact authoritative display-ring frame (repeatable)",
+    )
+    parser.add_argument(
+        "--capture-frame-range",
+        type=parse_frame_range,
+        action="append",
+        default=[],
+        metavar="START:END",
+        help="attempt every authoritative display-ring frame in an inclusive range",
+    )
+    parser.add_argument(
+        "--capture-frame-step",
+        type=int,
+        default=1,
+        help="sample inclusive capture ranges at this positive frame interval",
+    )
     parser.add_argument("--observed-red-limit-bp", type=int, default=1500)
     parser.add_argument("--observed-hot-red-limit-bp", type=int, default=500)
     args = parser.parse_args()
@@ -87,13 +124,24 @@ def main() -> int:
             if card.is_file():
                 shutil.copy2(card, out / "memcard" / card.name)
     sample_count = route_sample_count(route)
+    stop_after = args.stop_after if args.stop_after is not None else sample_count
+    if not 1 <= stop_after <= sample_count:
+        parser.error("--stop-after must be between 1 and the route sample count")
+    capture_frame_set = set(args.capture_frame)
+    if args.capture_frame_step < 1:
+        parser.error("--capture-frame-step must be positive")
+    for lo, hi in args.capture_frame_range:
+        capture_frame_set.update(range(lo, hi + 1, args.capture_frame_step))
+    capture_frames = sorted(capture_frame_set)
+    if any(frame < 0 or frame > stop_after for frame in capture_frames):
+        parser.error("--capture-frame must be between 0 and --stop-after")
 
     env = os.environ.copy()
     env["SDL_AUDIODRIVER"] = "dummy"
     env["PSX_DEBUG_FMV_QUIET"] = "1"
     env["PSX_INPUT_REPLAY"] = str(route)
     env.pop("PSX_INPUT_RECORD", None)
-    env["PSX_INPUT_STOP_AFTER"] = str(sample_count)
+    env["PSX_INPUT_STOP_AFTER"] = str(stop_after)
     env["PSX_DISPLAY_RING_AUX"] = "1" if args.display_ring_aux else "0"
     command = [
         str(exe),
@@ -114,6 +162,9 @@ def main() -> int:
     evidence: dict[str, Any] = {
         "renderer": args.renderer,
         "sample_count": sample_count,
+        "stop_after": stop_after,
+        "capture_frames_requested": capture_frames,
+        "capture_frames": [],
         "memcard_source": str(memcard_source) if memcard_source else None,
         "display_ring_aux": args.display_ring_aux,
         "observed_corruption_limits_bp": {
@@ -143,6 +194,7 @@ def main() -> int:
         last_page_sample = -60
         last_periodic = -600
         last_scanned = 0
+        pending_capture_frames = set(capture_frames)
         deadline = time.monotonic() + args.timeout
         try:
             def server_ready() -> dict[str, Any]:
@@ -162,6 +214,32 @@ def main() -> int:
                     time.sleep(0.02)
                     continue
                 last_frame = frame
+                if pending_capture_frames:
+                    ring = safe_call(args.port, "display_ring_stats")
+                    if ring.get("ok"):
+                        oldest = int(ring["oldest_frame"])
+                        newest = int(ring["newest_frame"])
+                        ready = sorted(
+                            target
+                            for target in pending_capture_frames
+                            if oldest <= target <= newest
+                        )
+                        for target in ready:
+                            capture = safe_call(
+                                args.port,
+                                "display_ring_get",
+                                frame=target,
+                                path=(out / f"display-frame-{target}.png").as_posix(),
+                            )
+                            if args.display_ring_aux:
+                                capture["vram"] = safe_call(
+                                    args.port,
+                                    "display_ring_aux",
+                                    frame=target,
+                                    path=(out / f"display-frame-{target}-vram.bin").as_posix(),
+                                )
+                            evidence["capture_frames"].append(capture)
+                            pending_capture_frames.remove(target)
                 if pair != last_pair:
                     event: dict[str, Any] = {
                         "frame": frame,
@@ -251,15 +329,18 @@ def main() -> int:
             stdout.flush()
             stderr.flush()
             stdout_text = stdout_path.read_text(encoding="utf-8", errors="replace")
-            completion = f"bounded input sample limit reached ({sample_count})"
+            completion = f"bounded input sample limit reached ({stop_after})"
             evidence["result"] = {
                 "exit_code": exit_code,
                 "last_observed_frame": last_frame,
                 "bounded_completion": completion in stdout_text,
+                "missing_capture_frames": sorted(pending_capture_frames),
             }
-            if exit_code != 0 or completion not in stdout_text:
+            if exit_code != 0 or completion not in stdout_text or pending_capture_frames:
                 raise ProbeError(
-                    f"route did not complete cleanly (exit={exit_code}, marker={completion in stdout_text})"
+                    "route did not complete cleanly "
+                    f"(exit={exit_code}, marker={completion in stdout_text}, "
+                    f"missing_frames={sorted(pending_capture_frames)})"
                 )
             (out / "evidence.json").write_text(
                 json.dumps(evidence, indent=2) + "\n", encoding="utf-8"

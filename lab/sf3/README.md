@@ -119,13 +119,22 @@ the first retained display frame is dumped immediately. Add
 `--display-ring-aux` only when the extra same-frame 1024×512 VRAM evidence is
 needed.
 
+Focused presentation work can stop at an exact retail-PAD sample with
+`--stop-after N` and request authoritative display captures with repeatable
+`--capture-frame N` or `--capture-frame-range START:END`. Use
+`--capture-frame-step N` to bound dense ranges. OpenGL captures are read from
+the authoritative FBO; software captures use its CPU-owned VRAM. Missing
+requested frames are reported in `evidence.json` rather than silently ignored.
+
 ```powershell
 python .\lab\sf3\observe_input_route.py `
   'Z:\Emulators\PS1 Games\Syphon Filter 3 (USA).cue' `
   .\lab\sf3\traces\human-mission1.psxpad `
   --project .\lab\sf3\generated\input-route-m `
   --out .\lab\sf3\traces\human-mission1-observed-a `
-  --renderer opengl
+  --renderer opengl `
+  --stop-after 3000 `
+  --capture-frame-range 2169:2300
 ```
 
 This diagnostic route is intentionally timing-perturbing. Acceptance still

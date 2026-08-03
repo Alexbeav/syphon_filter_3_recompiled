@@ -60,11 +60,21 @@ following FMV, creation and save of a new memory card, Mission 2 FMV/briefing/
 cutscene and live Mission 2 gameplay. Brief graphical defects were visible only
 at the start of Mission 1; no other deviation from retail was reported.
 
-Two ordinary hidden OpenGL replays consumed all 42,480 samples with clean zero
-exits. Their slot-1 save images match byte-for-byte at SHA-256
+After promoting only replay-safe Mission 2 shards, two ordinary hidden OpenGL
+replays consumed all 42,480 samples with clean zero exits. Their slot-1 save
+images match byte-for-byte at SHA-256
 `ab79103084f591b122eff13803b64dec166102454ac10144b5a55399e1e2cf1f`;
-slot 2 also matches. A passive diagnostic replay completed at observed frame
-42,476 with 14 retail application transitions, 1,011 state-0 display samples,
-live GPU/SPU/CD/PAD evidence and zero matches for the known red/checkered
-signature. This closes the representative Mission 1 slice, not the remaining
-start-frame defect or campaign-wide validation.
+slot 2 matches at
+`7706c7d43edaf8cb7618e574f03457105153e3bdc196db803a600ad96a8f58e8`.
+Their terminal dirty-instruction count is exactly 124,850,811. A passive
+diagnostic replay completed the bounded route with 19 sampled transitions,
+seven loaded regions, 164 registered candidates, 9,810,330 native overlay
+dispatches and 270,891 fallbacks. Its stable retail-state sequence and card
+artifact match the earlier accepted observation; extra transitions are
+short-lived observer samples, not altered retail flow.
+
+Dense authoritative software/OpenGL captures around startup and three bounded
+cache-complete attempts did not reproduce the prior catastrophic corruption.
+The remaining renderer delta is subtle raster precision, with a worst sampled
+mean RGB difference of 3.723/255. This closes the compatibility baseline, not
+campaign-wide validation or renderer-enhancement correctness.

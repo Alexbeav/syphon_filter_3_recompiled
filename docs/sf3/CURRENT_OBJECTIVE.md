@@ -2,11 +2,13 @@
 
 Updated: 2026-08-03
 
-Graduation state: `representative_slice_verified`. A connected human route now
+Graduation state: `compatibility_baseline_verified`. A connected human route now
 covers cold boot, Story/Mission 1, death, checkpoint reload, full mission
 completion, FMV, new-card save and the retail Mission 2 handoff through live
-gameplay. Two ordinary hidden OpenGL replays and one passive diagnostic replay
-consume the same complete route. Brief start-of-level graphical defects remain
+gameplay. Two ordinary hidden OpenGL replays and a passive diagnostic replay
+consume the same complete route after safe Mission 2 overlay promotion. The
+previous catastrophic start-of-level corruption does not reproduce with the
+cache-complete product; a small software/OpenGL raster-precision delta remains
 presentation debt and campaign-wide correctness is not yet claimed.
 
 ## Objective
@@ -22,14 +24,14 @@ of playability.
 
 - No representative-slice P0 remains. The cache-complete visible countercheck
   and three complete replays supersede the earlier cache-empty fatal.
-- Brief graphical defects remain visible at the start of Mission 1. They did
-  not recur during the rest of the mission, but require a focused presentation
-  capture before enhancement work can claim a clean compatibility baseline.
-- Mission 2 introduces substantial new interpreted ownership. The diagnostic
-  route ends with four loaded regions, 9.72M native overlay dispatches, 292K
-  fallbacks and 71.18M dirty instructions; the ordinary run reaches 125.35M
-  dirty instructions after entering Mission 2. Correct flow is proven, not
-  campaign-wide native closure.
+- No compatibility-baseline P0 remains. Dense software/OpenGL captures around
+  Mission 1 startup and three bounded cache-complete falsification runs do not
+  reproduce the earlier blue-plane, corrupt-geometry or red/checkered failure.
+- Mission 2 safe overlay coverage is compiled and replay-validated. The passive
+  endpoint loads seven regions, registers 164 candidates, executes 9.81M native
+  overlay dispatches and 270,891 fallbacks with 70.95M dirty instructions.
+  Four overlapping early partial shards were rejected after they changed TITLE
+  timing/flow; correct flow is proven, not campaign-wide native closure.
 
 ## Representative-slice exit gate
 
@@ -49,8 +51,8 @@ of playability.
 
 | Debt | Owner | User impact | Evidence | Removal gate |
 | --- | --- | --- | --- | --- |
-| Brief graphical defects at Mission 1 start | GPU/presentation unresolved | transient incorrect presentation | human full-route report; broad red/checkered detector did not match | focused first-divergence capture against the native-resolution oracle |
-| Mission 2 overlay remains heavily interpreted | overlay coverage | performance risk and incomplete recompilation ownership | ordinary terminal heartbeat 125.35M dirty instructions; diagnostic 292K fallback dispatches | capture and safely compile Mission 2 code variants, then measure two clean runs |
+| Small OpenGL/software raster delta at Mission 1 start | GPU raster precision | subtle shading/facet differences at native resolution | 115 dense common startup frames plus 71 later sampled frames; worst sampled mean RGB delta 3.723/255 | independently validate PSX 5-bit versus host 8-bit Gouraud/edge precision before changing presentation |
+| Campaign overlays beyond early Mission 2 | overlay coverage | performance risk and incomplete recompilation ownership | safe Mission 2 endpoint: seven regions, 9.81M native dispatches, 270,891 fallbacks | extend only from exact-byte additive history and replay each promotion |
 | Diagnostic display readback can alter host timing | validation observer | a clean observed run may not represent ordinary Release timing | OpenGL ring capture flushes/reads back even without CPU-VRAM synchronization; route observer is source/build validated only | reproduce under a recorded route, localize with bounded capture, then confirm the fix twice in ordinary Release with the observer disabled |
 | Campaign beyond Mission 1 unverified | retail/content lifecycle | no campaign claim | no connected mission matrix | later campaign-complete gate; not part of this representative slice |
 
@@ -163,3 +165,8 @@ and CD remain live. Repeat from two clean processes.
   code, overlays, traces, cards, saves, captures and media.
 - The lab retains its fetch-only upstream remote and has no writable project
   remote. `SF3_Redux` enhancement work has not begun.
+
+The older public snapshot predates the stricter publication gate and includes
+an OpenBIOS binary plus local/private workflow references. It must be replaced
+by a newly audited parentless source snapshot before Redux work begins; the
+claims above describe the intended publication contract, not the old remote.
