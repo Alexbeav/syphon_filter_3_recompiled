@@ -102,6 +102,7 @@ void overlay_loader_take_hot_native(uint32_t *pc, uint64_t *calls);
 /* Serialize bounded state already collected by the ordinary Release loader.
  * These are called only after a crash/freeze has stopped useful execution. */
 int overlay_loader_dump_native_ring(char *out, int cap);
+void overlay_loader_set_native_exec(int on);
 int overlay_loader_dump_shadow(char *out, int cap);
 int overlay_loader_dump_shadow_detail(char *out, int cap);
 /* Exact shadow-differential summary for opt-in perf diagnostics. */
