@@ -8790,7 +8790,56 @@ void debug_server_trace_write_check(uint32_t phys, uint32_t old_val,
                                     uint32_t new_val, uint8_t width)
 {
 #ifdef PSX_NO_DEBUG_TOOLS
-    (void)phys; (void)old_val; (void)new_val; (void)width;
+    /* Ordinary Release builds normally leave every reverse-debug ring
+     * unallocated.  Intermittent, presentation-sensitive failures must still
+     * be diagnosable without recompiling generated retail code with the full
+     * debug toolchain (which materially changes its timing).  This opt-in
+     * path retains the ordinary generated code and allocates only the existing
+     * focused write ring.  With the variable absent, initialization is paid
+     * once and the hot path remains a single predictable branch.
+     *
+     * Format: PSX_RELEASE_WTRACE=lo,hi[;lo,hi...] (physical or KSEG aliases).
+     * The normal freeze report serializes the ring through its existing
+     * `wtrace` field, so no TCP observer is required. */
+    static int release_wtrace_initialized = 0;
+    static int release_wtrace_active = 0;
+    if (!release_wtrace_initialized) {
+        const char *spec = getenv("PSX_RELEASE_WTRACE");
+        PSXDebugTraceRange parsed[8];
+        int count = (spec && *spec)
+            ? psx_debug_parse_trace_ranges(
+                  spec, parsed, (int)(sizeof(parsed) / sizeof(parsed[0])))
+            : 0;
+        release_wtrace_initialized = 1;
+        if (count > 0 && count <= WTRACE_MAX_RANGES) {
+            s_wtrace = (WriteTraceEntry *)calloc(WRITE_TRACE_CAP,
+                                                  sizeof(WriteTraceEntry));
+            if (s_wtrace) {
+                for (int i = 0; i < count; ++i) {
+                    s_wtrace_ranges[i].lo = parsed[i].lo & 0x1FFFFFFFu;
+                    s_wtrace_ranges[i].hi = parsed[i].hi & 0x1FFFFFFFu;
+                }
+                s_wtrace_range_count = count;
+                release_wtrace_active = 1;
+                fprintf(stderr,
+                        "psxrecomp: ordinary-Release focused write trace "
+                        "armed for %d range(s)\n", count);
+            }
+        } else if (count < 0) {
+            fprintf(stderr,
+                    "psxrecomp: ignoring invalid PSX_RELEASE_WTRACE='%s' "
+                    "(expected lo,hi[;lo,hi...])\n", spec ? spec : "");
+        }
+    }
+    if (release_wtrace_active) {
+        for (int i = 0; i < s_wtrace_range_count; ++i) {
+            if (phys >= s_wtrace_ranges[i].lo &&
+                phys < s_wtrace_ranges[i].hi) {
+                wtrace_record(phys, old_val, new_val, width);
+                break;
+            }
+        }
+    }
     return;
 #endif
     if (s_fmv_quiet) return;

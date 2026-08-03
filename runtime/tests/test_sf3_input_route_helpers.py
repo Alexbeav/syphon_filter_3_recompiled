@@ -10,10 +10,12 @@ root = Path(__file__).resolve().parents[2]
 record = root / "lab" / "sf3" / "record_input_route.ps1"
 replay = root / "lab" / "sf3" / "replay_input_route.ps1"
 observer = root / "lab" / "sf3" / "observe_input_route.py"
+transition = root / "lab" / "sf3" / "capture_transition_failure.ps1"
 
 record_text = record.read_text(encoding="utf-8")
 replay_text = replay.read_text(encoding="utf-8")
 observer_text = observer.read_text(encoding="utf-8")
+transition_text = transition.read_text(encoding="utf-8")
 
 record_required = (
     "PSX_INPUT_RECORD",
@@ -46,6 +48,16 @@ for path, source, tokens in (
     missing = [token for token in tokens if token not in source]
     if missing:
         raise SystemExit(f"{path.name} contract tokens missing: {missing}")
+
+transition_required = (
+    "ConvertTo-NativeArgument", "$start.Arguments =", "PSX_INPUT_RECORD",
+    "manual-input.psxpad", "psx_freeze_dump_*.json", ".partial",
+)
+missing = [token for token in transition_required if token not in transition_text]
+if missing:
+    raise SystemExit(f"{transition.name} contract tokens missing: {missing}")
+if "$start.ArgumentList" in transition_text:
+    raise SystemExit("transition capture regressed to PowerShell-7-only ArgumentList")
 
 runtime = (root / "runtime" / "src" / "main.cpp").read_text(encoding="utf-8")
 if "!g_headless && !g_hidden_window" not in runtime:
@@ -85,7 +97,7 @@ for forbidden in ('"set_input"', '"press"', '"write_ram"'):
         raise SystemExit(f"route observer must not use active guest control: {forbidden}")
 
 if sys.platform == "win32":
-    for script in (record, replay):
+    for script in (record, replay, transition):
         command = (
             "$e=$null; $t=$null; "
             f"[System.Management.Automation.Language.Parser]::ParseFile('{script}',[ref]$t,[ref]$e)"

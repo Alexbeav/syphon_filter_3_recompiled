@@ -155,6 +155,22 @@ and CD remain live. Repeat from two clean processes.
   both Release products normalize to
   `6d1cbdd2c1aa5e325ed0e86f3b405b6cd6ee6b15135ef355cc34b7e2c5852032`.
 
+## Visible compatibility correction (2026-08-04)
+
+Visible/manual testing revoked the native-overlay compatibility claim. The
+Mission 1 handoff succeeds with runtime overlay native execution disabled and
+fails with a compiled overlay active. SF3 therefore uses
+`[runtime] overlay_native = false`: resident executable code remains static
+native code, while runtime-installed overlays remain interpreter-owned and are
+still captured for audit. Hidden replay is secondary evidence only; a visible
+manual run is the acceptance gate.
+
+The first localized black-screen divergence is resident function `0x8001E278`
+receiving loaded overlay code at `0x801D8680` as a geometry descriptor, reading
+a negative signed count and entering a non-terminating loop. Native overlay CRC
+`0x3F64E67F` is narrowed as the preceding state owner; entry-specific
+equivalence and campaign-wide validation remain open.
+
 ## Standalone publication
 
 - Project checkpoint `db98b05` contains both generic fixes and 42/42 tests.

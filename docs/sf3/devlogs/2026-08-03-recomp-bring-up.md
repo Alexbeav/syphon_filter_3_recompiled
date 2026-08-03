@@ -723,3 +723,41 @@ slot 2 is byte-identical at
 `7706c7d43edaf8cb7618e574f03457105153e3bdc196db803a600ad96a8f58e8`.
 The compatibility baseline is therefore closed. Campaign-wide correctness and
 the subtle native-resolution raster-precision delta remain explicit debt.
+
+### R12 — visible validation revokes native-overlay compatibility baseline
+
+Repeated visible/manual launches contradicted the hidden-replay acceptance.
+After briefing, the ordinary build intermittently entered either a fatal GTE
+loop or a black-screen spin while SPU output continued. Quarantining the
+resident `0x8001E000` control-flow-only capture was necessary but did not fix
+the visible transition.
+
+The ordinary-Release focused write trace in
+`human-transition-20260804-020449` localized the black-screen run without
+recompiling retail translation units with diagnostic instrumentation. Runtime
+code was installed at `0x801D8680` through normal retail/BIOS ownership. At
+frame 2386 resident function `0x8001E278` received that code address as a
+geometry descriptor. Its signed count at `a0+6` was negative, so the loop at
+`0x8001E664..0x8001E6AC` could never decrement to zero and began overwriting
+the loaded code region. The freeze report ends at frame 2458 with guest PC
+zero, VBlank pending, interrupts masked, MDEC/CD work complete and SPU still
+active. This explains the black display and repeating audio without assigning
+ownership to FMV, CD-ROM or presentation.
+
+Native overlay CRC `0x3F64E67F` executed 407,248 calls immediately before the
+first proven invalid geometry ownership. The previously rejected resident CRC
+`0x714A5E16` did not dispatch. A subsequent ordinary visible/manual run with
+`PSX_OVERLAY_NATIVE_OFF=1` passed the same briefing-to-Mission-1 gate. This
+confirms compiled runtime-overlay ownership as the bounded compatibility
+owner; it does not yet prove which native entry first diverges. Hidden replay
+is retained only as a secondary deterministic regression and can no longer
+close the visible compatibility gate.
+
+SF3 now defaults runtime-installed overlays to interpreter ownership through
+the source-owned `overlay_native = false` game setting. Capture remains active
+for audit and future native promotion. Static resident executable code remains
+recompiled. The prior 82% native-overlay measurements are historical evidence,
+not the ownership of the accepted build; current runtime-overlay native
+ownership is intentionally 0% until entry-level equivalence is proved. The
+campaign remains unverified beyond the user's earlier Mission 1/Mission 2
+slice.

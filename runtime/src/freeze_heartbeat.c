@@ -4,6 +4,9 @@
 #include "debug_server.h"
 #include "crash_trace.h"   /* g_psx_fatal_reason */
 #include "cpu_state.h"     /* g_psx_bail_* call-contract counters */
+#include "cdrom.h"
+#include "mdec.h"
+#include "spu.h"
 
 #include <stdint.h>
 #include <stdio.h>
@@ -70,6 +73,7 @@ extern int      g_present_vsync_disabled;
  * debug_cpu_ptr (CPUState*) is declared in debug_server.h; CPUState layout
  * (gpr[32], pc) in cpu_state.h — both already included above. */
 extern uint8_t *memory_get_scratchpad_ptr(void);   /* memory.c */
+extern void psx_scheduler_freeze_dump_json(FILE *f, CPUState *cpu);
 
 static int s_started = 0;
 static char s_backend[32] = "psx-runtime";
@@ -523,6 +527,59 @@ static void freeze_dump_write(long long wall, uint64_t frame, uint64_t cyc,
     fputs("  \"dirty_block\":", f);
     debug_server_freeze_dump_dirty_block_json(f, DUMP_CAP_DIRTY_BLOCK);
     fputs(",\n", f);
+
+    fputs("  \"scheduler\":", f);
+    psx_scheduler_freeze_dump_json(f, debug_cpu_ptr);
+    fputs(",\n", f);
+
+    {
+        CDROMDebugState cd;
+        MDECDebugState mdec;
+        SpuDebugInfo spu;
+        memset(&cd, 0, sizeof(cd));
+        memset(&mdec, 0, sizeof(mdec));
+        memset(&spu, 0, sizeof(spu));
+        cdrom_debug_snapshot(&cd);
+        mdec_debug_get_state(&mdec);
+        spu_debug_info(&spu);
+        fprintf(f,
+            "  \"devices\":{"
+            "\"cdrom\":{\"seq\":%llu,\"has_disc\":%d,\"reading\":%d,"
+            "\"read_cmd\":%u,\"read_lba\":%d,\"read_delay\":%d,"
+            "\"pending_cmd\":%u,\"pending_pending\":%d,\"pending_delay\":%d,"
+            "\"sector_available\":%d,\"sector_read_pos\":%d,"
+            "\"irq_enable\":%u,\"irq_flag\":%u,\"i_stat\":\"0x%08X\","
+            "\"int1_pended\":%llu,\"int1_lost\":%llu,\"int1_pending_now\":%u},"
+            "\"mdec\":{\"command\":\"0x%08X\",\"busy\":%u,"
+            "\"input_count\":%u,\"expected_halfwords\":%u,"
+            "\"output_size\":%u,\"output_pos\":%u,\"output_depth\":%u,"
+            "\"macroblocks\":%u,\"blocks\":%u,\"stop_reason\":%u,"
+            "\"dma_in_words\":%u,\"dma_out_words\":%u,\"underflows\":%u,"
+            "\"event_total\":%llu},"
+            "\"spu\":{\"ctrl\":\"0x%08X\",\"active_mask\":\"0x%08X\","
+            "\"key_on_count\":%u,\"render_frames\":%llu,"
+            "\"nonzero_frames\":%llu,\"peak\":%d,\"cd_frames\":%u,"
+            "\"cd_push_frames\":%llu,\"cd_overflow_frames\":%llu,"
+            "\"cd_underflow_frames\":%llu}},\n",
+            (unsigned long long)cd.seq, cd.has_disc, cd.reading,
+            (unsigned)cd.read_cmd, cdrom_get_setloc_lba(), cd.read_delay,
+            (unsigned)cd.pending_cmd, cd.pending_pending, cd.pending_delay,
+            cd.sector_available, cd.sector_read_pos,
+            (unsigned)cd.irq_enable, (unsigned)cd.irq_flag, cd.i_stat,
+            (unsigned long long)cd.int1_pended,
+            (unsigned long long)cd.int1_lost, (unsigned)cd.int1_pending_now,
+            mdec.command, mdec.busy, mdec.input_count, mdec.expected_halfwords,
+            mdec.output_size, mdec.output_pos, mdec.output_depth,
+            mdec.decode_macroblocks, mdec.decode_blocks, mdec.decode_stop_reason,
+            mdec.dma_in_words, mdec.dma_out_words, mdec.dma_read_underflows,
+            (unsigned long long)mdec_debug_get_event_total(),
+            spu.ctrl, spu.active_mask, spu.key_on_count,
+            (unsigned long long)spu.render_frames,
+            (unsigned long long)spu.nonzero_frames, spu.peak, spu.cd_frames,
+            (unsigned long long)spu.cd_push_frames,
+            (unsigned long long)spu.cd_overflow_frames,
+            (unsigned long long)spu.cd_underflow_frames);
+    }
 
 #ifdef _WIN32
     /* Main-thread call stack. Hard freeze (wedge_kind==1): one snapshot of the

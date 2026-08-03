@@ -1556,6 +1556,27 @@ static int cache_filename_equal(const char *a, const char *b) {
  * passes the ordinary per-function live-byte CRC guard, so a different BIOS or
  * boot-time patch fails closed to the interpreter. */
 #define BIOS_RESIDENT_MARKER_SCHEMA "psxrecomp bios resident shard v1"
+/* Captures can be valid evidence without being safe native authority. The
+ * compiler publishes this sidecar when promotion is deliberately refused. */
+#define UNPROMOTED_MARKER_SCHEMA "psxrecomp unpromoted shard v1"
+static int cache_path_is_unpromoted(const char *dll_path) {
+    char path[800];
+    snprintf(path, sizeof(path), "%s", dll_path);
+    size_t n = strlen(path);
+    if (n < OVERLAY_SHARED_EXT_LEN ||
+        strcmp(path + n - OVERLAY_SHARED_EXT_LEN, OVERLAY_SHARED_EXT) != 0)
+        return 0;
+    snprintf(path + n - OVERLAY_SHARED_EXT_LEN,
+             sizeof(path) - (n - OVERLAY_SHARED_EXT_LEN), ".unpromoted");
+    FILE *f = fopen(path, "rb");
+    if (!f) return 0;
+    char buf[256] = {0};
+    size_t got = fread(buf, 1, sizeof(buf) - 1, f);
+    fclose(f);
+    buf[got] = '\0';
+    return strstr(buf, UNPROMOTED_MARKER_SCHEMA) != NULL;
+}
+
 static int cache_path_is_bios_resident(const char *dll_path) {
     char path[800];
     snprintf(path, sizeof(path), "%s", dll_path);
@@ -1613,6 +1634,7 @@ static int add_posix_cache_file(const PsxOverlayCacheFile *file, void *opaque) {
      * migration, but never let them suppress or execute instead of a bound
      * immutable 8_8_8 repair. */
     if (!cache_name_is_immutable(file->name)) return 0;
+    if (cache_path_is_unpromoted(file->path)) return 0;
     if (s_cache_idx_count >= CACHE_IDX_CAP) {
         loader_log("*** CACHE INDEX FULL (%d): further DLLs near %s are being "
                    "IGNORED — their regions will run interpreted. Raise "
@@ -1660,6 +1682,7 @@ static void scan_one_cache_dir(const char *dir, int tier) {
         }
         char full[768];
         snprintf(full, sizeof(full), "%s/%s", dir, fd.cFileName);
+        if (cache_path_is_unpromoted(full)) continue;
         /* Same full path means a rescan duplicate. Same logical name with a
          * different artifact suffix is an additive repair and is retained. */
         if (cache_idx_has_path(full)) continue;
@@ -2830,6 +2853,13 @@ static void overlay_library_close(OverlayLibraryHandle handle) {
  * retains that reference for process lifetime, matching the ordinary loader. */
 static int load_one_dll(const char *dll_path,
                         OverlayLibraryHandle prepared) {
+    /* Recheck at the final load boundary: a live compiler may publish the
+     * fail-closed marker after this process performed its initial cache scan. */
+    if (cache_path_is_unpromoted(dll_path)) {
+        loader_log("unpromoted shard left to interpreter: %s", dll_path);
+        overlay_library_close(prepared);
+        return 0;
+    }
     /* Fail CLOSED at the tracking cap, BEFORE registering anything: past this
      * point dll_already_loaded() would lose track of the DLL and a later
      * rescan could double-register its candidates (stale-chain execution).

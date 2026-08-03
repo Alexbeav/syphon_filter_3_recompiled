@@ -17,6 +17,8 @@ python tools\build_cli.py release
 ctest --test-dir recompiler\build-cli --output-on-failure
 & .\dist\psxrecomp-cli-windows-x86_64\psxrecomp.exe build --disc $Sf3Cue --bios .\bios\openbios.bin --output .\lab\sf3\generated\run-a --name 'Syphon Filter 3'
 & .\dist\psxrecomp-cli-windows-x86_64\psxrecomp.exe build --disc $Sf3Cue --bios .\bios\openbios.bin --output .\lab\sf3\generated\run-b --name 'Syphon Filter 3'
+python .\lab\sf3\configure_compatibility.py .\lab\sf3\generated\run-a
+python .\lab\sf3\configure_compatibility.py .\lab\sf3\generated\run-b
 python tools\compare_generated_projects.py .\lab\sf3\generated\run-a .\lab\sf3\generated\run-b
 & .\lab\sf3\generated\run-a\build.ps1
 & .\lab\sf3\generated\run-b\build.ps1
@@ -25,6 +27,12 @@ python tools\compare_generated_projects.py .\lab\sf3\generated\run-a .\lab\sf3\g
 
 The retail executable, generated sources, builds, traces and captures are
 ignored and must remain local.
+
+The compatibility configurator disables native execution of runtime-installed
+overlays for SF3. Visible testing proved the current compiled Mission 1 overlay
+can return invalid geometry ownership while the same retail route succeeds
+with interpreter ownership. Capture remains enabled for audit and future
+promotion after native/interpreter equivalence is proved.
 
 ## Hidden-renderer Story/Mission 1 probe
 

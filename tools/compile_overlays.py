@@ -457,6 +457,7 @@ HOSTED_OWNER_REASONS = EXACT_FRAGMENT_REASONS - {'DISPATCH_ROOT'}
 FATAL_SEED_REASONS = {'BRANCH_TARGET_ONLY', 'OBSERVED_PC_ONLY', 'UNKNOWN'}
 BIOS_RESIDENT_PRODUCER = 'bios_resident_manifest'
 BIOS_RESIDENT_MARKER = 'psxrecomp bios resident shard v1'
+UNPROMOTED_MARKER = 'psxrecomp unpromoted shard v1'
 
 # Hosted aliases are supplemental optimizations, never correctness authority.
 # Keep every phase deterministically bounded so adversarial/malformed capture
@@ -684,6 +685,71 @@ def _is_control_flow(word) -> bool:
                    0x14, 0x15, 0x16, 0x17) or
             (op == 0 and fn in (0x08, 0x09)) or
             (op in (0x11, 0x12) and ((word >> 21) & 0x1F) == 0x08))
+
+
+def resident_control_flow_patch(data: bytes, phys_addr: int,
+                                resident: tuple[int, bytes] | None) -> bool:
+    """Identify resident-text variants changed only at CFG boundaries.
+
+    The capture remains valid self-modifying-code evidence, but it is not safe
+    to promote as a standalone native shard: inserting or removing a control
+    flow edge can merge blocks across the resident function partition and
+    alter interrupt/service boundaries. Genuine overlays also change ordinary
+    words and therefore do not match this deliberately narrow classifier.
+    """
+    if resident is None or not data or (phys_addr & 3) or (len(data) & 3):
+        return False
+    resident_addr, resident_data = resident
+    offset = phys_addr - resident_addr
+    if offset < 0 or offset + len(data) > len(resident_data):
+        return False
+    changed = 0
+    for pos in range(0, len(data), 4):
+        captured = struct.unpack_from('<I', data, pos)[0]
+        original = struct.unpack_from('<I', resident_data, offset + pos)[0]
+        if captured == original:
+            continue
+        if _is_control_flow(captured) == _is_control_flow(original):
+            return False
+        changed += 1
+    return changed > 0
+
+
+def load_game_resident_text(game_toml: str, toml_doc: dict):
+    """Load the configured resident executable text for promotion checks."""
+    game = toml_doc.get('game', {})
+    exe_name = game.get('exe')
+    if not exe_name:
+        return None
+    exe_path = os.path.join(os.path.dirname(os.path.abspath(game_toml)),
+                            str(exe_name))
+    try:
+        with open(exe_path, 'rb') as source:
+            image = source.read()
+    except OSError:
+        return None
+    if image.startswith(b'PS-X EXE') and len(image) >= 0x800:
+        load_addr, text_size = struct.unpack_from('<II', image, 0x18)
+        if text_size <= len(image) - 0x800:
+            return load_addr & 0x1FFFFFFF, image[0x800:0x800 + text_size]
+        return None
+    load = game.get('load_address')
+    size = game.get('text_size')
+    if load is None or size is None:
+        return None
+    text_size = min(_parse_addr(size), len(image))
+    return _parse_addr(load) & 0x1FFFFFFF, image[:text_size]
+
+
+def update_unpromoted_marker(dll_path: str, reason: str | None) -> None:
+    marker = os.path.splitext(dll_path)[0] + '.unpromoted'
+    if reason is None:
+        _best_effort_unlink(marker)
+        return
+    _write_json_atomic(marker, {
+        'schema': UNPROMOTED_MARKER,
+        'reason': reason,
+    })
 
 
 def _is_valid_mips_word(word) -> bool:
@@ -5317,6 +5383,7 @@ def main():
         raw = f.read().lstrip(b'\xef\xbb\xbf')  # UTF-8 BOM
     toml = tomllib.loads(raw.decode('utf-8'))
     game_id = toml.get('game', {}).get('id', 'UNKNOWN')
+    resident_text = load_game_resident_text(args.game_toml, toml)
     print(f'Game ID: {game_id}')
 
     # Stale-recompiler-binary guard — BOTH modes (static overlays are just as
@@ -5389,6 +5456,17 @@ def main():
         crc32     = binascii.crc32(data) & 0xFFFFFFFF
         phys_addr = (load_addr & 0x1FFFFFFF)
         _label = f'overlay 0x{load_addr:08X} crc {crc32:08X}'
+        if not args.static:
+            dll_path = os.path.join(
+                cache_dir,
+                f'{phys_addr:08X}_{crc32:08X}{overlay_ext()}')
+            if resident_control_flow_patch(data, phys_addr, resident_text):
+                update_unpromoted_marker(
+                    dll_path, 'resident-control-flow-patch')
+                print(f'SKIP: {_label} is resident text changed only at '
+                      'control-flow words; retained for interpreter ownership')
+                return
+            update_unpromoted_marker(dll_path, None)
         if args.static:
             for captured_entry in _parse_addr_list(
                     cap.get('dispatch_entry_pcs', [])):
