@@ -179,20 +179,44 @@ audio quality, pause/death/checkpoint and mission-completion gates open.
 Timestamped recorder output preserves intermittent failed routes instead of
 blocking or overwriting the next attempt.
 
-The first timestamped route is now structurally validated and captures the
-audio-only stall. With explicit launch permission, the decisive localization
-experiment is an exact hidden, silent diagnostic replay: first compare retail
-state, XA and MDEC counters; then inspect CD/IRQ and MDEC DMA only if decoding
-does not advance; finally inspect dirty/static lifecycle ownership only if
-decode completes without a retail transition. No diagnostic process has yet
-been launched for this route, and instrumented output will not be promoted to
-ordinary-Release acceptance evidence.
+The first timestamped route structurally validates and captures the audio-only
+stall. Its localization order was an exact hidden, silent diagnostic replay:
+first compare retail state, XA and MDEC counters; inspect CD/IRQ and MDEC DMA if
+decoding does not advance; and inspect dirty/static lifecycle ownership only if
+decode completes without a retail transition. Instrumented output is not
+promoted to ordinary-Release acceptance evidence.
+
+Permissioned replay narrowed the audio-only failure away from deterministic
+guest ownership. The exact route reaches state 8/state 0 with 215 decoded movie
+frames, advancing CD delivery, zero dispatch misses and clean two-page output
+under repeated diagnostic OpenGL, software, copied-card and corrected ordinary
+Release runs. The ordinary replay helper itself required a generic Windows
+process-wait correction: a GUI-subsystem executable must be waited through its
+process object before logs or exit status are evidence.
+
+The remaining visible-only symptom matches a pre-existing runtime diagnosis:
+an NVIDIA swap queue can block `wglSwapBuffers` for about 1.5 seconds while the
+audio callback continues, making video, emulation and input appear frozen. The
+generic vsync self-heal covered only SDL renderer presents; direct OpenGL swaps
+bypassed it. All guest-vblank OpenGL paths now share the same recovery threshold,
+while the wall-clock pacer preserves guest rate. This is a strong owner inference,
+not confirmed end-to-end causality, until the user's visible run passes or
+records recovery activation.
+
+The corrected framework passes 48/48. Two 1,132-file generations match at tree
+SHA-256 `ebb7812bed9a129f1e0a2df21c6cdfcdcf3f6fc28d1b636c3f1ec660ee68983b`;
+ordinary products normalize to
+`d503db02073df5f35979b936f2a20604a6f1233499fb4fe64e3daec042187ea5`.
+Two ordinary bounded replays complete and the matching diagnostic route reaches
+state 8 at frame 2317 and state 0 at 2386 with clean subsystem evidence. The
+desktop candidate is retargeted, but representative readiness remains open
+pending visible and connected Mission 1 acceptance.
 
 ## Quality debt
 
 | Debt | Likely owner | Removal gate |
 | --- | --- | --- |
-| Briefing can fail to hand off to gameplay | lifecycle/device/control unresolved | two clean ordinary Release transitions with matching semantic state |
+| Briefing can appear to fail while audio continues | strong visible OpenGL swap-backpressure inference; human confirmation pending | visible candidate plus two connected ordinary Release transitions |
 | State-0 world textures can be corrupt | GPU/VRAM unresolved | authoritative software/OpenGL comparison and correct two-page multi-room output |
 | Existing probe ends after initial movement | validation harness | connected death/restart, checkpoint and Mission 1 completion replay |
 

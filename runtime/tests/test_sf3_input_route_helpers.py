@@ -29,9 +29,12 @@ replay_required = (
     "PSX_INPUT_STOP_AFTER",
     "SDL_AUDIODRIVER",
     "--hidden-window",
-    "--renderer $Renderer",
+    "'--renderer', $Renderer",
     "bounded input sample limit reached",
     "PSXPAD2",
+    "Start-Process",
+    "-Wait -PassThru",
+    "$process.ExitCode",
 )
 for path, source, tokens in (
     (record, record_text, record_required),
@@ -50,9 +53,14 @@ if "bounded input sample limit reached" not in runtime:
 observer_required = (
     'env["PSX_INPUT_REPLAY"]',
     'env["PSX_INPUT_STOP_AFTER"]',
+    '"--memcard-source"',
+    "shutil.copy2",
     '"--hidden-window"',
     '"display_ring_color_scan"',
     '"display_ring_color_stats"',
+    '"fmv_state"',
+    '"mdec_state"',
+    '"irq_state"',
     '"application_transitions"',
     '"state0_page_samples"',
     "newest - 1",

@@ -7,6 +7,7 @@ import argparse
 import json
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import time
@@ -45,6 +46,11 @@ def main() -> int:
     parser.add_argument("--port", type=int, default=4388)
     parser.add_argument("--timeout", type=float, default=7200.0)
     parser.add_argument("--renderer", choices=("software", "opengl"), default="opengl")
+    parser.add_argument(
+        "--memcard-source",
+        type=Path,
+        help="copy an existing card directory into the isolated replay directory",
+    )
     parser.add_argument("--display-ring-aux", action="store_true")
     parser.add_argument("--observed-red-limit-bp", type=int, default=1500)
     parser.add_argument("--observed-hot-red-limit-bp", type=int, default=500)
@@ -60,6 +66,7 @@ def main() -> int:
     route = args.route.resolve()
     project = args.project.resolve()
     out = args.out.resolve()
+    memcard_source = args.memcard_source.resolve() if args.memcard_source else None
     exe = project / "build-r1" / "Syphon_Filter_3_Recompiled.exe"
     game_toml = project / "game.toml"
     for path, label in (
@@ -72,7 +79,13 @@ def main() -> int:
             raise ProbeError(f"missing {label}: {path}")
     if out.exists():
         raise ProbeError(f"output directory must not exist: {out}")
+    if memcard_source is not None and not memcard_source.is_dir():
+        raise ProbeError(f"missing memory-card source directory: {memcard_source}")
     (out / "memcard").mkdir(parents=True)
+    if memcard_source is not None:
+        for card in memcard_source.iterdir():
+            if card.is_file():
+                shutil.copy2(card, out / "memcard" / card.name)
     sample_count = route_sample_count(route)
 
     env = os.environ.copy()
@@ -101,6 +114,7 @@ def main() -> int:
     evidence: dict[str, Any] = {
         "renderer": args.renderer,
         "sample_count": sample_count,
+        "memcard_source": str(memcard_source) if memcard_source else None,
         "display_ring_aux": args.display_ring_aux,
         "observed_corruption_limits_bp": {
             "red_dominant": args.observed_red_limit_bp,
@@ -157,6 +171,10 @@ def main() -> int:
                     if pair in ((2, 4), (2, 8), (1, 0)):
                         event["gpu"] = safe_call(args.port, "gpu_state")
                         event["cdrom"] = safe_call(args.port, "cdrom_state")
+                        event["fmv"] = safe_call(args.port, "fmv_state")
+                        event["mdec"] = safe_call(args.port, "mdec_state")
+                        event["irq"] = safe_call(args.port, "irq_state")
+                        event["dispatch"] = safe_call(args.port, "dispatch_stats")
                     evidence["application_transitions"].append(event)
                     last_pair = pair
 
@@ -211,6 +229,9 @@ def main() -> int:
                             "spu": safe_call(args.port, "spu_status"),
                             "audio": safe_call(args.port, "audio_stats"),
                             "cdrom": safe_call(args.port, "cdrom_state"),
+                            "fmv": safe_call(args.port, "fmv_state"),
+                            "mdec": safe_call(args.port, "mdec_state"),
+                            "irq": safe_call(args.port, "irq_state"),
                             "pad": safe_call(args.port, "pad_status"),
                             "dispatch": safe_call(args.port, "dispatch_stats"),
                         }

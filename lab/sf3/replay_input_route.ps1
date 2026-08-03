@@ -59,15 +59,19 @@ try {
 
     $stdoutPath = Join-Path $outPath 'stdout.log'
     $stderrPath = Join-Path $outPath 'stderr.log'
-    Push-Location (Split-Path -Parent $exe)
-    try {
-        & $exe --hidden-window --no-launcher --renderer $Renderer `
-            --game $game --memcard-dir $memcardPath `
-            1> $stdoutPath 2> $stderrPath
-        $exitCode = $LASTEXITCODE
-    } finally {
-        Pop-Location
-    }
+    # PowerShell does not reliably wait for a Windows GUI-subsystem executable
+    # invoked with `&`.  Waiting on the process object is required before the
+    # bounded-completion marker and exit code can be treated as evidence.
+    $process = Start-Process -FilePath $exe `
+        -ArgumentList @(
+            '--hidden-window', '--no-launcher', '--renderer', $Renderer,
+            '--game', $game, '--memcard-dir', $memcardPath
+        ) `
+        -WorkingDirectory (Split-Path -Parent $exe) `
+        -RedirectStandardOutput $stdoutPath `
+        -RedirectStandardError $stderrPath `
+        -WindowStyle Hidden -Wait -PassThru
+    $exitCode = $process.ExitCode
 } finally {
     if ($null -eq $savedReplay) { Remove-Item Env:PSX_INPUT_REPLAY -ErrorAction SilentlyContinue }
     else { $env:PSX_INPUT_REPLAY = $savedReplay }

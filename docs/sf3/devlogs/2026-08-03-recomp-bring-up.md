@@ -539,3 +539,65 @@ the retail transition, inspect execution-tier/lifecycle ownership at the first
 dirty-overlay handoff. The observer remains a localization instrument, not an
 ordinary-Release oracle. No replay was launched because the user's prior
 no-run instruction remains in force pending explicit permission.
+
+### R8 — ordinary visible-path presentation recovery candidate
+
+After explicit permission, the failed 3,194-sample route was replayed in two
+clean diagnostic OpenGL processes and one software process against the original
+`input-route-k` product. Every run reached retail state 8 near frame 2317 and
+state-0 gameplay near frame 2387, completed 215 MDEC frames, advanced CD
+data-ready/delivered-IRQ counts, reported zero dispatch misses, covered both
+display origins and avoided the known red/checkered signature. A fourth OpenGL
+run used copies of the failed session's memory cards and also succeeded without
+changing either card. This contradicts a deterministic guest MDEC, CD/IRQ,
+overlay, input-route, renderer-content or memory-card owner.
+
+The ordinary replay helper initially returned while its GUI-subsystem process
+was still running. Windows PowerShell's call operator had not provided a valid
+wait boundary, so the empty logs were rejected rather than misclassified as a
+runtime freeze. The helper now uses a hidden `Start-Process -Wait -PassThru`
+process object and checks that object's exit code before reading the bounded
+completion marker. Its source guard covers the wait contract. With the corrected
+helper, the original ordinary Release completed the same route normally.
+
+The remaining environment delta was visible direct-OpenGL presentation. The
+runtime already documented a Windows/NVIDIA swap-queue failure in which
+`wglSwapBuffers` blocks for roughly 1.5 seconds, audio continues on its callback
+thread, and emulation/input appears frozen. Its generic self-heal existed only
+around the SDL renderer's `SDL_RenderPresent`; SF3's configured OpenGL backend
+calls `SDL_GL_SwapWindow` directly and bypassed it. This matches all observed
+parts of the human symptom, but remains a strong owner inference until a visible
+run either records the slow-swap counter or passes the previously failing gate.
+
+All guest-vblank direct-OpenGL paths now time the swap, preserve latency-ring
+markers and disable driver vsync for the remainder of the session after three
+swaps exceed 250 ms. The existing wall-clock pacer continues to own 59.94 Hz,
+so the recovery changes host presentation backpressure rather than guest time.
+The interval setter cannot accidentally re-enable vsync after recovery. The
+interpolation worker retains its intentional raw interval-zero swap. A focused
+source regression covers all four guest-vblank paths, raising the framework
+suite to 48/48.
+
+Two fresh generations match across 1,132/1,132 files with tree SHA-256
+`ebb7812bed9a129f1e0a2df21c6cdfcdcf3f6fc28d1b636c3f1ec660ee68983b`.
+Their 97,748,212-byte ordinary Release products normalize to SHA-256
+`d503db02073df5f35979b936f2a20604a6f1233499fb4fe64e3daec042187ea5`.
+The selected tree's raw ordinary SHA-256 is
+`d82a4c530267f7e6692ed359345f510f83e8436be568bff1e5f11b7e58726fff`;
+its 100,921,608-byte diagnostic SHA-256 is
+`8312169b201214e12f0444592ed791def5e173496c55c624197597633aabefe6`.
+
+Because the timeline compatibility contract currently hashes all runtime
+sources, this presentation-only change intentionally rejected the old route.
+Comparison found all 1,130 guest/generated/input-boundary files identical; only
+the GL presenter and source-only CMake/ignore files differ. An ignored receipt
+therefore records a one-run header migration while proving the 3,194 sample rows
+byte-identical. The new ordinary product completed that route twice. A matching
+diagnostic run reached state 8 at frame 2317 and state 0 at 2386, decoded 215
+movie frames, advanced CD delivery, reported zero dispatch misses, sampled
+display origins `0,0`, `0,2` and `0,240`, and found no corruption match.
+
+Both desktop shortcuts now target `input-route-m`; neither was opened. The
+workspace is 15.160 GiB, below the 20 GiB ceiling. The candidate is ready for a
+visible human falsification, but the P0 remains open until that check passes and
+the longer representative Mission 1 gates are completed.

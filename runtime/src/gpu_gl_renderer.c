@@ -304,6 +304,8 @@ static SDL_Window   *s_win = NULL;
 static SDL_GLContext s_ctx = NULL;
 static uint16_t     *s_vram = NULL;       /* CPU VRAM array (gpu.c's storage) */
 static int           s_swap_interval = 1; /* SDL_GL swap interval (vsync mode) */
+extern uint32_t      g_present_slow_count;
+extern int           g_present_vsync_disabled;
 
 static int           s_scale = 1;          /* internal-res scale (hr FBO) */
 static int           s_req_scale = 1;      /* requested before context init */
@@ -2517,11 +2519,38 @@ int gl_renderer_init_context(SDL_Window *win) {
  * Safe to call before or after context creation; applies live when a context
  * exists. Adaptive falls back to vsync if unsupported. */
 void gl_renderer_set_swap_interval(int interval) {
+    if (g_present_vsync_disabled && interval != 0) interval = 0;
     s_swap_interval = interval;
     if (s_ctx) {
         if (SDL_GL_SetSwapInterval(interval) != 0 && interval < 0) {
             SDL_GL_SetSwapInterval(1);
             s_swap_interval = 1;
+        }
+    }
+}
+
+/* Guard direct OpenGL presents with the same session-level vsync self-heal as
+ * the SDL_Renderer path.  A wedged Windows/NVIDIA swap queue can block
+ * wglSwapBuffers for roughly 1.5 seconds at a time: the audio callback keeps
+ * playing while the emulation/input thread appears frozen.  The runtime's
+ * wall-clock pacer already owns 59.94 Hz, so dropping driver vsync after three
+ * pathological swaps preserves guest timing and restores forward progress. */
+static void swap_window_guarded(void) {
+    const Uint64 t0 = SDL_GetPerformanceCounter();
+    latency_ring_mark(LAT_SWAP_BEGIN);
+    SDL_GL_SwapWindow(s_win);
+    latency_ring_mark(LAT_SWAP_END);
+    const Uint64 t1 = SDL_GetPerformanceCounter();
+    const Uint64 freq = SDL_GetPerformanceFrequency();
+    const Uint64 present_ms =
+        (t1 >= t0 && freq) ? ((t1 - t0) * 1000u) / freq : 0;
+    if (!g_present_vsync_disabled && s_swap_interval != 0 && present_ms > 250) {
+        g_present_slow_count++;
+        if (g_present_slow_count >= 3 && SDL_GL_SetSwapInterval(0) == 0) {
+            s_swap_interval = 0;
+            g_present_vsync_disabled = 1;
+            fprintf(stderr,
+                    "psxrecomp: OpenGL swap blocked repeatedly; disabled driver vsync\n");
         }
     }
 }
@@ -2625,9 +2654,7 @@ void gl_renderer_present(const uint32_t *pixels, int src_w, int src_h, int linea
     p_glBindVertexArray(s_present_vao); glDrawArrays(GL_TRIANGLES, 0, 3);
     p_glBindVertexArray(0); p_glUseProgram(0);
     pres_record(GL_PRES_CPU, 0, 0, src_w, src_h, lx, ly, lw, lh);
-    latency_ring_mark(LAT_SWAP_BEGIN);
-    SDL_GL_SwapWindow(s_win);
-    latency_ring_mark(LAT_SWAP_END);
+    swap_window_guarded();
     present_force_consumed();
     s_last_present_path = GL_PRES_CPU;
 }
@@ -2639,9 +2666,7 @@ void gl_renderer_present_blank(void) {
     glDisable(GL_SCISSOR_TEST);
     glViewport(0, 0, ww, wh); glClearColor(0.f,0.f,0.f,1.f); glClear(GL_COLOR_BUFFER_BIT);
     pres_record(GL_PRES_BLANK, 0, 0, 0, 0, 0, 0, ww, wh);
-    latency_ring_mark(LAT_SWAP_BEGIN);
-    SDL_GL_SwapWindow(s_win);
-    latency_ring_mark(LAT_SWAP_END);
+    swap_window_guarded();
     present_force_consumed();
     s_last_present_path = GL_PRES_BLANK;
 }
@@ -3605,9 +3630,7 @@ void gl_renderer_present_vram(int disp_x, int disp_y, int w, int h, int linear,
     present_target_quad(s_hr_tex, VRAM_W, VRAM_H,
                         disp_x, disp_y, w, h, linear, lx, ly, lw, lh);
     pres_record(GL_PRES_VRAM, disp_x, disp_y, w, h, lx, ly, lw, lh);
-    latency_ring_mark(LAT_SWAP_BEGIN);
-    SDL_GL_SwapWindow(s_win);
-    latency_ring_mark(LAT_SWAP_END);
+    swap_window_guarded();
     gl_perf_present_exit(0);
     present_dirty_rect(disp_x, disp_y, disp_x + w - 1, disp_y + h - 1, 0);
     present_force_consumed();
@@ -3701,9 +3724,7 @@ int gl_renderer_present_wide_fbo(int disp_x, int disp_y, int disp_h, int linear)
     present_target_quad(tex, g_wide_w, VRAM_H,
                         0, disp_y, g_wide_w, disp_h, linear, lx, ly, lw, lh);
     pres_record(GL_PRES_WIDE, disp_x, disp_y, g_wide_w, disp_h, lx, ly, lw, lh);
-    latency_ring_mark(LAT_SWAP_BEGIN);
-    SDL_GL_SwapWindow(s_win);
-    latency_ring_mark(LAT_SWAP_END);
+    swap_window_guarded();
     gl_perf_present_exit(1);
     present_dirty_rect(0, disp_y, VRAM_W - 1, disp_y + disp_h - 1, 0);
     present_force_consumed();

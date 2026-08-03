@@ -68,7 +68,7 @@ silently consuming stale input.
 
 ```powershell
 .\lab\sf3\record_input_route.ps1 `
-  -Project .\lab\sf3\generated\input-route-k `
+  -Project .\lab\sf3\generated\input-route-m `
   -Route .\lab\sf3\traces\human-mission1.psxpad `
   -Renderer opengl
 ```
@@ -83,7 +83,7 @@ extension and still refuses to overwrite any existing final or partial route.
 The connected human checklist is [MISSION1_ACCEPTANCE.md](../../docs/sf3/MISSION1_ACCEPTANCE.md).
 
 The desktop has two distinct entry points targeting the same compatible
-`input-route-k` ordinary Release: **Syphon Filter 3 Recomp Lab** for an ordinary
+`input-route-m` ordinary Release: **Syphon Filter 3 Recomp Lab** for an ordinary
 visible run, and **Syphon Filter 3 Recomp - Record Mission 1** for a timestamped
 input witness. Neither shortcut enables diagnostic TCP tooling or modifies
 retail state.
@@ -93,12 +93,12 @@ same hidden renderer and stop at the exact recorded retail-SIO sample count:
 
 ```powershell
 .\lab\sf3\replay_input_route.ps1 `
-  -Project .\lab\sf3\generated\input-route-k `
+  -Project .\lab\sf3\generated\input-route-m `
   -Route .\lab\sf3\traces\human-mission1.psxpad `
   -Out .\lab\sf3\traces\human-mission1-replay-a `
   -Renderer opengl
 .\lab\sf3\replay_input_route.ps1 `
-  -Project .\lab\sf3\generated\input-route-k `
+  -Project .\lab\sf3\generated\input-route-m `
   -Route .\lab\sf3\traces\human-mission1.psxpad `
   -Out .\lab\sf3\traces\human-mission1-replay-b `
   -Renderer opengl
@@ -123,7 +123,7 @@ needed.
 python .\lab\sf3\observe_input_route.py `
   'Z:\Emulators\PS1 Games\Syphon Filter 3 (USA).cue' `
   .\lab\sf3\traces\human-mission1.psxpad `
-  --project .\lab\sf3\generated\input-route-k `
+  --project .\lab\sf3\generated\input-route-m `
   --out .\lab\sf3\traces\human-mission1-observed-a `
   --renderer opengl
 ```

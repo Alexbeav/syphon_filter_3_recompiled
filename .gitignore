@@ -100,6 +100,7 @@ _wip/
 /lab/sf3/generated/
 /lab/sf3/captures/
 /lab/sf3/traces/
+/lab/sf3/evidence/
 **/overlay_captures.json
 *.cue
 *.iso

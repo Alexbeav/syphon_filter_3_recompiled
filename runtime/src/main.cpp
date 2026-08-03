@@ -928,8 +928,8 @@ static bool          g_vk_active = false;    /* Vulkan context live -> VK presen
  * keeps CPU VRAM current every frame (so screenshots reflect the screen). */
 static int           g_gl_fbo_present = 1;
 
-/* Vsync self-heal state (see SDL_RenderPresent wrapper in
- * sdl_vblank_present). C linkage: freeze_heartbeat.c includes both in
+/* Vsync self-heal state (see SDL_RenderPresent in sdl_vblank_present and the
+ * direct-OpenGL guarded swap). C linkage: freeze_heartbeat.c includes both in
  * the freeze dump so a slow-frames wedge can be attributed to driver
  * present backpressure from the dump alone. */
 extern "C" {

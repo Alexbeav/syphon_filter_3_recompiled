@@ -18,9 +18,10 @@ of playability.
 
 ## Current P0 blockers
 
-- Ordinary Release can accept the Mission 1 briefing without beginning the
-  mission.
-- A recorded ordinary run plays the intro's XA audio but displays no video,
+- Ordinary Release previously accepted the Mission 1 briefing without beginning
+  the mission; a generic visible-OpenGL swap-backpressure recovery candidate is
+  now built and awaits the human countercheck.
+- The recorded failing run plays the intro's XA audio but displays no video,
   consumes no visible retail input and never progresses into the mission. Its
   neutral-bookended 3,194-sample route contains 333 active retail-SIO samples,
   so missing host input delivery is contradicted while guest consumption is
@@ -54,7 +55,7 @@ of playability.
 
 | Debt | Owner | User impact | Evidence | Removal gate |
 | --- | --- | --- | --- | --- |
-| Briefing/movie handoff intermittently fails | MDEC/CD/IRQ or lifecycle/control owner unresolved | audio continues without video, input response or mission progress | captured 3,194-sample ordinary route with repeated Cross/Start runs | first divergence fixed; two ordinary Release routes pass |
+| Briefing/movie handoff intermittently fails | strong visible OpenGL swap-backpressure inference; human confirmation pending | audio continues while presentation/emulation/input appears frozen | captured route succeeds through state 8/state 0 under diagnostic/software/ordinary hidden replays; direct GL bypassed existing vsync self-heal | visible candidate passes, then two ordinary connected routes pass |
 | Mission textures can sample corrupt data | unresolved GPU/VRAM owner | gameplay is visually invalid | user cold-launch screenshot | software/OpenGL oracle comparison plus correct multi-room two-page presentation |
 | Probe covers only initial state-0 movement | validation harness | false confidence in playability | prior `probe_story.py` exit boundary | extend through sustained play, failure/restart, checkpoint and completion |
 | Human route recorder/replayer not runtime-validated | validation harness | offered playthrough cannot yet serve as deterministic witness | serializer, hidden-renderer helper guards and fresh Release link only | record one neutral-bookended Mission 1 route and replay it twice with matching semantic/GPU evidence |
