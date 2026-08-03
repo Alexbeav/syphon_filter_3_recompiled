@@ -203,3 +203,72 @@ boundary behavior, not an SF3 application or CPU defect.
 
 Current footprint including ignored generations, builds, captures and all
 probe evidence is 2.187 GiB, below the 20 GiB ceiling.
+
+### R3 — retail FMV coherency and New Game intro
+
+The first user playtest exposed two superficially similar symptoms: colorful
+stale bands around a correctly decoded Mission 1 movie, and an apparently
+missing intro. The mandatory corpus pass matched the presentation symptom to
+`FAIL-009` / `PSX-GPU-002`: a hardware-renderer FBO and the CPU VRAM mirror can
+disagree when packed 24-bit movie uploads take ownership. The SF2 recomp lab's
+`09be64b` correction was treated only as a candidate. Its generic invariant
+was checked against SCUS-94640 with a fresh OpenGL diagnostic build.
+
+The OpenGL backend now receives GP1(08h) depth transitions. On 15-to-24-bit
+entry it first flushes/readbacks authoritative 15-bit FBO state, then permits
+packed RGB uploads to own the CPU mirror. GP0 fills issued in 24-bit mode update
+both representations, and upload policy runs before the first CPU write. No
+SCUS address, movie geometry, generated retail code or native movie presenter
+is involved. A title-neutral structural/model regression covers ordering,
+fills and upload ownership; the complete Release suite is 41/41 passing.
+
+The intro hypothesis required separate falsification. A persistent neutral
+PAD (`0xFFFF`) and disabled auto-skip showed the natural retail sequence:
+
+| Gate | Observed evidence |
+| --- | --- |
+| SCEA stream | decode 1 at frame 919/920; decode 45 at frame 1096 |
+| post-logo transition | title substate 3; XA inactive around frame 1414/1415 |
+| TITLE stream/menu | decode resumes at frame 1501/1506; title substate 0 |
+| New Game intro | retail-selected transition captures the Tokyo car arrival |
+| briefing/state 8 | decode total 414/415; state-8 PAD gate at frame 3499 |
+| state-0 control | state-8 pop at frame 3509/3511; zero dispatch misses |
+
+Thus SCUS-94640 does not request ZINTRO before its main menu. The Tokyo intro
+is retail-owned by the New Game transition. The earlier automation was able to
+misreport a skip because it considered state 4 sufficient while SCEA was still
+playing, then left an eight-frame Cross injection armed after retail accepted
+the menu edge. The remaining input could legitimately cross the next state
+boundary. The corrected probe waits until the TITLE stream itself is decoding
+and immediately replaces an accepted press with neutral input. This changes no
+guest state and fabricates no callback.
+
+Two fresh hidden-window/dummy-audio runs followed the complete retail path.
+Both captured clean SCEA, TITLE and Tokyo intro frames with black letterbox
+regions and no stale colored bands. They reached the same state-8 call shape,
+state-0 Mission 1 control, and `miss_total=0`. Their semantic checkpoints were:
+
+| Run | TITLE frame/decode | accepted decode | state-8 frame/decode | pop frame |
+| --- | --- | ---: | --- | ---: |
+| C | `1556 / 60` | 217 | `3499 / 415` | 3511 |
+| D | `1556 / 60` | 216 | `3499 / 414` | 3509 |
+
+The one-frame/decode arrival variation is host TCP sampling, not divergent
+retail behavior. SDL used a hidden OpenGL window and the dummy audio driver, so
+the hardware presentation path was exercised without a visible window or
+sound device.
+
+Two new clean projects generated from the gated disc are identical across
+1,128/1,128 files with tree SHA-256
+`096032a2bd37ca13bc163b94693d21281eb17d60829eb68e6a753559f18b3918`.
+Both 97,723,953-byte Release products built successfully. They differ only in
+the same eight PE/build timestamp bytes and normalize to SHA-256
+`3a43b1461cc82f07d86179ec56d8e2509df6d4235c108416299f2ea79e016dfe`.
+The repository plus ignored generations/builds/traces occupies 4.182 GiB.
+
+Corpus disposition: `FAIL-009` / `PSX-GPU-002` is confirmed for the SF3 user
+symptom and fixed at the generic ownership invariant; early-input startup skip
+is narrowed to probe press lifetime rather than a retail playlist or MDEC
+failure; neutral input, MDEC underflow and auto-skip causes are contradicted.
+SF2 recomp is the independent validator for the GPU handoff. SF2 hybrid can
+independently validate the corrected release-on-transition probe contract.

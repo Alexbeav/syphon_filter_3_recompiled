@@ -1,8 +1,8 @@
 # Local SF3 recompilation artifacts
 
-Only `reference-manifest.toml` is tracked here. Put user-owned inputs,
-generated projects, runtime overlay captures and traces beneath ignored local
-subdirectories. Never commit their contents.
+Only the reference manifest and source-only probes are tracked here. Put
+user-owned inputs, generated projects, runtime overlay captures and traces
+beneath ignored local subdirectories. Never commit their contents.
 
 ## Reproduction gate
 
@@ -26,7 +26,7 @@ python tools\compare_generated_projects.py .\lab\sf3\generated\run-a .\lab\sf3\g
 The retail executable, generated sources, builds, traces and captures are
 ignored and must remain local.
 
-## Headless Story/Mission 1 probe
+## Hidden-renderer Story/Mission 1 probe
 
 After creating the Release-optimized diagnostic build (`build-r1`) and
 publishing the captured overlay cache as described in the devlog, run:
@@ -37,9 +37,12 @@ python .\lab\sf3\probe_story.py $Sf3Cue --out .\lab\sf3\traces\clean-story-a --p
 python .\lab\sf3\probe_story.py $Sf3Cue --out .\lab\sf3\traces\clean-story-b --port 4388
 ```
 
-Each output directory must not already exist. The probe opens no window or
-audio device. It waits on retail state and call gates, supplies only active-low
-physical PAD words through SIO, records bounded JSON/screenshots beneath the
-ignored output directory, and exits only after state `0/1`, Mission 1 PAD
-polling and a movement sample. It never writes guest RAM, invokes a retail
-callback or patches generated code.
+Each output directory must not already exist. The probe creates an SDL/OpenGL
+window in hidden state and selects SDL's dummy audio driver, exercising the
+hardware presentation path without a visible window or sound device. It waits
+for SCEA to complete and the retail TITLE stream to begin before supplying only
+active-low physical PAD words through SIO. Accepted edges are released
+immediately so input cannot bleed into the next movie state. It records bounded
+JSON/screenshots beneath the ignored output directory and exits only after
+state `0/1`, Mission 1 PAD polling and a movement sample. It never writes guest
+RAM, invokes a retail callback or patches generated code.

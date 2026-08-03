@@ -2,7 +2,8 @@
 
 Updated: 2026-08-03
 
-Status: minimum and stretch gates achieved; validation/package audit in progress.
+Status: feasibility, stretch and FMV correction gates achieved; user test and
+provenance-clean publication checkpoint in progress.
 
 ## Objective
 
@@ -59,7 +60,8 @@ and CD remain live. Repeat from two clean processes.
 
 ## Achieved minimum evidence
 
-- Release framework suite: 40/40 with `PYTHONUTF8=1`.
+- Release framework suite: 41/41 with `PYTHONUTF8=1`, including the generic
+  OpenGL 15/24-bit coherency regression.
 - Generated trees: 1,128/1,128 normalized-identical files, tree SHA-256
   `09043b8c29b5c34a0364d0fd36778fa7002ef14d29128938a60b272bf915433e`.
 - Clean Release products: normalized SHA-256
@@ -89,3 +91,20 @@ and CD remain live. Repeat from two clean processes.
 - Both runs retained live world-3D GPU traffic, SPU key-on activity, nonzero
   decoded XA input, retail CD service and silent host output. A movement-only
   Up press changed the rendered player position while state remained `0/1`.
+
+## Achieved FMV correction evidence
+
+- The corpus-matched FBO/CPU-mirror ownership fault is corrected generically
+  at GP1 display-depth transitions; generated retail code is untouched.
+- A neutral cold boot naturally plays SCEA and then the animated TITLE stream.
+  SCUS-94640 requests the Tokyo intro only after retail accepts New Game.
+- The prior story probe could bleed an accepted Cross press into the following
+  movie. It now gates on active TITLE decoding and releases immediately at the
+  observed retail transition.
+- Two hidden-OpenGL, dummy-audio runs captured clean Tokyo intro frames, reached
+  state 8 at frame 3499, and returned to state-0 control with zero dispatch
+  misses.
+- Fresh generation A/B tree SHA-256 is
+  `096032a2bd37ca13bc163b94693d21281eb17d60829eb68e6a753559f18b3918`;
+  both Release products normalize to
+  `3a43b1461cc82f07d86179ec56d8e2509df6d4235c108416299f2ea79e016dfe`.

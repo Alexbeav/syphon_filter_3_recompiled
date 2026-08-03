@@ -16,7 +16,9 @@ call `Game_Main` and its retail application loop, and reach stable TITLE
 depth/state `2/4` with exact matching frame fingerprints. Two further clean,
 packaged-probe processes select retail New Game, reach Mission 1 state `8/2`,
 pop to state `0/1`, poll the retail Mission 1 PAD path and visibly move the
-player in the rendered Tokyo scene.
+player in the rendered Tokyo scene. The first user FMV report is also resolved:
+two hidden-OpenGL runs render the retail New Game Tokyo intro without stale
+colored VRAM bands and continue through the same Mission 1 gates.
 
 ## Consumed leads
 
@@ -28,9 +30,12 @@ SF2 fix independently causal for SF3.
 
 `PSX-HLE-001` is irrelevant to this boundary because the active image is
 verified OpenBIOS and the backend is LLE. `PSX-GPU-001` remains relevant: SF3
-uses alternating 320x240x15 draw/display pages, and both clean runs retain live
-GP0 draw/copy/environment traffic. No 24-bit coherence symptom appeared, so
-`PSX-GPU-002` is currently irrelevant.
+uses alternating draw/display pages and both clean runs retain live GP0
+draw/copy/environment traffic. `FAIL-009` / `PSX-GPU-002` is now confirmed by
+the user symptom and clean counterfactual: entering packed 24-bit ownership
+must first synchronize authoritative OpenGL FBO state into CPU VRAM. Depth-24
+fills are dual-owned and packed movie uploads become CPU-owned. The generic
+fix and regression contain no SF3 addresses or presentation substitutes.
 
 Confirmed project finding and corpus candidate: a PS-X EXE header text extent is not an immutable-code
 boundary. SCUS-94640 declares text through physical `0x1DC000`, then installs
@@ -59,12 +64,22 @@ physical edge is accepted. The probe permits at most three state-checked edges
 and records the count; both clean runs required two at TITLE and one at each
 later gate. No guest state, processed-PAD record or callback is fabricated.
 
+A second input-boundary finding is narrowed. Retail installs TITLE behind the
+SCEA stream, so state `4/2` alone is not a movie-completion gate. The earlier
+probe also left part of an eight-frame Cross pulse active after New Game was
+accepted, allowing that physical input to skip the following intro. With a
+persistent neutral pad, active TITLE-decode readiness and immediate release on
+the observed transition, SCUS-94640 naturally plays the Tokyo car-arrival
+movie before state 8. Neutral/auto-skip and MDEC-underflow hypotheses were
+contradicted.
+
 ## Next decisive experiment
 
-Independently validate the below-floor dirty-text capture finding in Tenchu;
-use SF2 hybrid to validate persistent-page GPU composition. Productization is
-explicitly out of scope for this PolyForm Noncommercial lab; remaining work is
-the final reproducibility/provenance audit and normalized corpus return.
+Independently validate the below-floor dirty-text capture finding in Tenchu.
+SF2 recomp independently validates the OpenGL 15/24-bit ownership handoff; SF2
+hybrid should validate release-on-transition input automation. Remaining work
+is a user-visible build check, the final reproducibility/provenance audit and
+normalized corpus return before a clean public source publication.
 
 ## Provenance
 

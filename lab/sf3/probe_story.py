@@ -111,7 +111,12 @@ def bounded_press_until(
     for attempt in range(1, attempts + 1):
         press(port, buttons, 8)
         try:
-            return wait_for(label, 5.0, predicate), attempt
+            value = wait_for(label, 5.0, predicate)
+            # Release immediately when retail acknowledges the edge.  Leaving
+            # the remainder of an injected press armed can bleed through the
+            # next state transition and legitimately skip a newly started FMV.
+            tcp_call(port, "set_input", buttons=0xFFFF)
+            return value, attempt
         except ProbeError:
             tcp_call(port, "clear_input")
             time.sleep(0.10)
@@ -152,6 +157,7 @@ def main() -> int:
     (out / "memcard").mkdir(parents=True)
 
     env = os.environ.copy()
+    env["SDL_AUDIODRIVER"] = "dummy"
     env["PSX_DEBUG_FMV_QUIET"] = "1"
     env["PSX_FNTRACE_ARM"] = ",".join(
         f"0x{x:08X}"
@@ -167,7 +173,7 @@ def main() -> int:
     )
     command = [
         str(exe),
-        "--headless",
+        "--hidden-window",
         "--no-launcher",
         "--game",
         str(game_toml),
@@ -197,22 +203,22 @@ def main() -> int:
                 return tcp_call(args.port, "frame")
 
             wait_for("debug server", 20.0, server_ready)
+            tcp_call(args.port, "set_input", buttons=0xFFFF)
 
             def title_ready() -> dict[str, Any] | None:
                 frame = tcp_call(args.port, "frame")["frame"]
+                fmv = tcp_call(args.port, "fmv_state")
                 traces = latest_trace(args.port, TITLE_PAD_RETURN, 16)
-                ready_calls = [
-                    row for row in traces
-                    if row["a1"] == "0x00000000" and row["s3"] == "0x00000000"
-                ]
                 if (
-                    frame >= 1000
+                    # The title overlay is installed behind SCEA.  Wait until
+                    # the subsequent retail TITLE stream is actually decoding
+                    # before supplying the first menu edge.
+                    int(fmv["mdec_decode_count"]) >= 60
                     and app_pair(args.port) == (2, 4)
                     and read_u32(args.port, TITLE_SUBSTATE) == 0
                     and read_u32(args.port, TITLE_HEAP) != 0
-                    and len(ready_calls) >= 4
                 ):
-                    return {"frame": frame, "pad_calls": ready_calls[:4]}
+                    return {"frame": frame, "pad_calls": traces[:4], "fmv": fmv}
                 return None
 
             evidence["title"] = wait_for("stable retail TITLE", args.timeout, title_ready)
@@ -249,6 +255,33 @@ def main() -> int:
                     "depth": accepted[0], "state": accepted[1], "substate": accepted[2],
                     "pad_attempts": accept_attempts,
                 }
+                evidence["story_choice"]["accepted"]["fmv"] = tcp_call(args.port, "fmv_state")
+
+                accepted_decode = int(
+                    evidence["story_choice"]["accepted"]["fmv"]["mdec_decode_count"]
+                )
+
+                def new_game_movie(delta: int) -> dict[str, Any] | None:
+                    fmv = tcp_call(args.port, "fmv_state")
+                    if (
+                        int(fmv["xa_stream_active"]) != 0
+                        and int(fmv["mdec_decode_count"]) >= accepted_decode + delta
+                    ):
+                        return fmv
+                    return None
+
+                evidence["story_choice"]["movie_early"] = wait_for(
+                    "retail New Game movie decode", args.timeout, lambda: new_game_movie(20)
+                )
+                evidence["story_choice"]["movie_early"]["screenshot"] = screenshot(
+                    args.port, out / "new-game-movie-early.png"
+                )
+                evidence["story_choice"]["movie_late"] = wait_for(
+                    "later retail New Game movie decode", args.timeout, lambda: new_game_movie(100)
+                )
+                evidence["story_choice"]["movie_late"]["screenshot"] = screenshot(
+                    args.port, out / "new-game-movie-late.png"
+                )
 
             def state8_ready() -> dict[str, Any] | None:
                 depth, state = app_pair(args.port)
@@ -258,6 +291,7 @@ def main() -> int:
                 return None
 
             evidence["state8"] = wait_for("Mission 1 state 8", args.timeout, state8_ready)
+            evidence["state8"]["fmv"] = tcp_call(args.port, "fmv_state")
             evidence["state8"]["screenshot"] = screenshot(args.port, out / "state8.png")
 
             def state8_accepted() -> tuple[int, int] | None:
