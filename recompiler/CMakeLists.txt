@@ -280,6 +280,16 @@ if(BUILD_TESTING)
     endif()
     add_test(NAME mouse_camera_test COMMAND mouse_camera_test)
 
+    add_executable(user_settings_mouse_camera_test
+        tests/user_settings_mouse_camera_test.cpp
+        src/config_loader.cpp
+        src/ps1_exe_parser.cpp)
+    target_include_directories(user_settings_mouse_camera_test PRIVATE
+        include src lib/fmt/include lib/toml11)
+    target_link_libraries(user_settings_mouse_camera_test PRIVATE fmt)
+    add_test(NAME user_settings_mouse_camera_test
+             COMMAND user_settings_mouse_camera_test)
+
     add_executable(input_timeline_contract_test
         ../runtime/tests/test_input_timeline.cpp
         ../runtime/src/input_timeline.cpp)

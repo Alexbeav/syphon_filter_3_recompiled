@@ -807,3 +807,26 @@ contract only after checking whole-file SHA-256; its 42,480-sample payload is
 byte-identical. The 4x diagnostic product reaches state 0, records exact hook
 hits and terminates cleanly at sample 3000. Visible mouse feel and scripted
 handoff remain human acceptance items; widescreen is still disabled.
+
+### R14 — compatibility and enhanced input become runtime-selectable
+
+Human acceptance subsequently covered the complete first mission: death,
+checkpoint reload, Mission 1 completion, FMV, new memory-card creation, save,
+Mission 2 FMV/briefing/cutscene and entry into gameplay. The tester reported
+no further Mission 1 discrepancy after the bounded startup-render fix. This is
+strong compatibility-oracle evidence, but it does not replace the replay gate.
+
+Audit then found that direct camera enablement still lived only in the bundled
+game profile. The verified hook remains identical, while per-install
+`settings.toml [controller]` can now enable/disable the host bridge and tune
+chase/aim X/Y sensitivity plus Y inversion. A `PSX_MOUSE_CAMERA` override makes
+headless A/B explicit. Launcher saves preserve the fields.
+
+Release tests pass 54/54 with forced UTF-8 (the unforced Greek Windows code
+page produced three Python decode errors, all absent under the deterministic
+test environment). One rebuilt Release executable then completed paired
+hidden, dummy-audio 3,000-sample runs with camera enabled and disabled. Both
+produced identical card hashes; the route payload remained SHA-256
+`6d26b87efb8b9cf935d73a156581edb899d2891896bd761d7d0ab7ec1499840f`
+and was retagged only after its whole-file source hash was verified. This
+closes runtime switch ownership; the full accepted-route matrix remains next.

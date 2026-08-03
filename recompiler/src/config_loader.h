@@ -1050,6 +1050,16 @@ struct UserSettings {
     // Analog-stick deadzone, raw SDL axis units (0..32767). The launcher edits
     // this as 0-100% (raw = pct*32767/100), mirroring snesrecomp's GamepadDeadzone.
     bool has_deadzone  = false; int  deadzone  = 12000;
+    // Optional direct relative-mouse camera override.  The game profile owns
+    // the verified guest hook/addresses; user settings may only enable it and
+    // tune its host-side response.  This keeps compatibility mode selectable
+    // without regenerating or patching retail code.
+    bool has_mouse_camera = false; bool mouse_camera = false;
+    bool has_mouse_chase_yaw_sensitivity = false; double mouse_chase_yaw_sensitivity = 1.0;
+    bool has_mouse_chase_pitch_sensitivity = false; double mouse_chase_pitch_sensitivity = 1.0;
+    bool has_mouse_aim_yaw_sensitivity = false; double mouse_aim_yaw_sensitivity = 1.0;
+    bool has_mouse_aim_pitch_sensitivity = false; double mouse_aim_pitch_sensitivity = 1.0;
+    bool has_mouse_invert_y = false; bool mouse_invert_y = false;
     // Localization: the launcher's chosen language code (feeds RuntimeConfig
     // .language / g_lang). "off"/"jp"/"" = untranslated native game. Persisted to
     // settings.toml [localization].language.

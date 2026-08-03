@@ -83,3 +83,19 @@ not human camera feel.
 First unresolved invariant: visible chase/aim feel and seamless ownership
 handoff across scripted cameras. This requires a human windowed run; hidden
 evidence cannot close it.
+
+## Runtime profile boundary
+
+The exact-word-guarded SCUS-94640 hook is present in both modes; enhancement
+selection does not regenerate or edit retail code. Per-install
+`settings.toml [controller]` now owns `mouse_camera`, four independent chase/
+aim sensitivities, and `mouse_invert_y`. `PSX_MOUSE_CAMERA=0|1` is a bounded
+per-run override for automated A/B checks. Launcher writes preserve all six
+fields even though dedicated camera widgets are not yet exposed.
+
+The 2026-08-03 Release A/B used one executable and the same retagged,
+payload-identical accepted route. Camera-on and camera-off hidden/silent runs
+both stopped cleanly at sample 3,000 and produced matching card hashes. The
+framework suite passes 54/54 under `PYTHONUTF8=1`, including a parse/save/
+reload regression for the new settings. Full 42,480-sample Redux closure
+remains pending; this short check proves switch ownership, not mission flow.

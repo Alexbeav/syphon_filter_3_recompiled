@@ -13,3 +13,11 @@ frame_interpolation = false
 
 [launcher]
 skip_launcher = true
+
+[controller]
+mouse_camera = true
+mouse_chase_yaw_sensitivity = 1.0
+mouse_chase_pitch_sensitivity = 1.0
+mouse_aim_yaw_sensitivity = 1.0
+mouse_aim_pitch_sensitivity = 1.0
+mouse_invert_y = false

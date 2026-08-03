@@ -2263,6 +2263,33 @@ UserSettings load_user_settings(const fs::path& path) {
             const auto n = toml::find<int64_t>(ct, "deadzone");
             if (n >= 0 && n <= 32767) { s.deadzone = (int)n; s.has_deadzone = true; }
         });
+        if (ct.contains("mouse_camera")) try_get([&]{
+            s.mouse_camera = toml::find<bool>(ct, "mouse_camera");
+            s.has_mouse_camera = true;
+        });
+        auto mouse_sensitivity = [&](const char* key, double& value, bool& present) {
+            if (!ct.contains(key)) return;
+            try_get([&]{
+                const double n = toml::find<double>(ct, key);
+                if (n >= 0.01 && n <= 20.0) { value = n; present = true; }
+            });
+        };
+        mouse_sensitivity("mouse_chase_yaw_sensitivity",
+                          s.mouse_chase_yaw_sensitivity,
+                          s.has_mouse_chase_yaw_sensitivity);
+        mouse_sensitivity("mouse_chase_pitch_sensitivity",
+                          s.mouse_chase_pitch_sensitivity,
+                          s.has_mouse_chase_pitch_sensitivity);
+        mouse_sensitivity("mouse_aim_yaw_sensitivity",
+                          s.mouse_aim_yaw_sensitivity,
+                          s.has_mouse_aim_yaw_sensitivity);
+        mouse_sensitivity("mouse_aim_pitch_sensitivity",
+                          s.mouse_aim_pitch_sensitivity,
+                          s.has_mouse_aim_pitch_sensitivity);
+        if (ct.contains("mouse_invert_y")) try_get([&]{
+            s.mouse_invert_y = toml::find<bool>(ct, "mouse_invert_y");
+            s.has_mouse_invert_y = true;
+        });
     }
     return s;
 }
@@ -2358,7 +2385,10 @@ bool save_user_settings(const fs::path& path, const UserSettings& s) {
     }
 
     if (s.has_p1_device || s.has_p2_device || s.has_p1_mode || s.has_p2_mode ||
-        s.has_deadzone) {
+        s.has_deadzone || s.has_mouse_camera ||
+        s.has_mouse_chase_yaw_sensitivity || s.has_mouse_chase_pitch_sensitivity ||
+        s.has_mouse_aim_yaw_sensitivity || s.has_mouse_aim_pitch_sensitivity ||
+        s.has_mouse_invert_y) {
         f << "\n[controller]\n";
         if (s.has_p1_device)
             f << "p1_device = \"" << s.p1_device << "\"\n";
@@ -2370,6 +2400,18 @@ bool save_user_settings(const fs::path& path, const UserSettings& s) {
             f << "p2_mode   = \"" << pad_mode_to_string(s.p2_mode) << "\"\n";
         if (s.has_deadzone)
             f << "deadzone  = " << s.deadzone << "\n";
+        if (s.has_mouse_camera)
+            f << "mouse_camera = " << (s.mouse_camera ? "true" : "false") << "\n";
+        if (s.has_mouse_chase_yaw_sensitivity)
+            f << "mouse_chase_yaw_sensitivity = " << s.mouse_chase_yaw_sensitivity << "\n";
+        if (s.has_mouse_chase_pitch_sensitivity)
+            f << "mouse_chase_pitch_sensitivity = " << s.mouse_chase_pitch_sensitivity << "\n";
+        if (s.has_mouse_aim_yaw_sensitivity)
+            f << "mouse_aim_yaw_sensitivity = " << s.mouse_aim_yaw_sensitivity << "\n";
+        if (s.has_mouse_aim_pitch_sensitivity)
+            f << "mouse_aim_pitch_sensitivity = " << s.mouse_aim_pitch_sensitivity << "\n";
+        if (s.has_mouse_invert_y)
+            f << "mouse_invert_y = " << (s.mouse_invert_y ? "true" : "false") << "\n";
     }
 
     if (s.has_language) {

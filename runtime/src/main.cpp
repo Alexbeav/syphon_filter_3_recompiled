@@ -521,6 +521,7 @@ static int           g_mouse_pad_enabled = 0;
 static int           g_mouse_pad_counts_per_frame = 12;
 static int           g_mouse_pad_aim_counts_per_frame = 4;
 static int           g_mouse_camera_enabled = 0;
+static PsxMouseCameraConfig g_mouse_camera_config{};
 static bool          g_video_aa    = true;  /* linear present filtering */
 static int           g_video_texfilter = 0; /* 0=nearest, 1=bilinear */
 static int           g_video_renderer = PSXRecompV4::DEFAULT_VIDEO_RENDERER;
@@ -5365,46 +5366,26 @@ int main(int argc, char** argv) {
                 gc.runtime.controller_mouse_counts_per_frame;
             g_mouse_pad_aim_counts_per_frame =
                 gc.runtime.controller_mouse_aim_counts_per_frame;
-            PsxMouseCameraConfig mouse_camera{};
-            mouse_camera.enabled = gc.runtime.controller_mouse_camera_enabled ? 1 : 0;
-            mouse_camera.facing_site = gc.runtime.controller_mouse_camera_facing_site;
-            mouse_camera.facing_expected = gc.runtime.controller_mouse_camera_facing_expected;
-            mouse_camera.application_state_addr = gc.runtime.controller_mouse_camera_application_state_addr;
-            mouse_camera.player_state_offset = gc.runtime.controller_mouse_camera_player_state_offset;
-            mouse_camera.wrapper_offset = gc.runtime.controller_mouse_camera_wrapper_offset;
-            mouse_camera.base_offset = gc.runtime.controller_mouse_camera_base_offset;
-            mouse_camera.owner_offset = gc.runtime.controller_mouse_camera_owner_offset;
-            mouse_camera.desired_pitch_offset = gc.runtime.controller_mouse_camera_desired_pitch_offset;
-            mouse_camera.rendered_pitch_offset = gc.runtime.controller_mouse_camera_rendered_pitch_offset;
-            mouse_camera.vector_x_offset = gc.runtime.controller_mouse_camera_vector_x_offset;
-            mouse_camera.vector_y_offset = gc.runtime.controller_mouse_camera_vector_y_offset;
-            mouse_camera.vector_z_offset = gc.runtime.controller_mouse_camera_vector_z_offset;
-            mouse_camera.player_reg = gc.runtime.controller_mouse_camera_player_reg;
-            mouse_camera.controller_reg = gc.runtime.controller_mouse_camera_controller_reg;
-            mouse_camera.chase_yaw_sensitivity = gc.runtime.controller_mouse_chase_yaw_sensitivity;
-            mouse_camera.chase_pitch_sensitivity = gc.runtime.controller_mouse_chase_pitch_sensitivity;
-            mouse_camera.aim_yaw_sensitivity = gc.runtime.controller_mouse_aim_yaw_sensitivity;
-            mouse_camera.aim_pitch_sensitivity = gc.runtime.controller_mouse_aim_pitch_sensitivity;
-            mouse_camera.invert_y = gc.runtime.controller_mouse_invert_y ? 1 : 0;
-            psx_mouse_camera_configure(&mouse_camera);
-            g_mouse_camera_enabled = mouse_camera.enabled;
-            mouse_pad_configure(g_mouse_pad_enabled || g_mouse_camera_enabled,
-                                g_mouse_pad_counts_per_frame,
-                                g_mouse_pad_aim_counts_per_frame);
-            if (g_mouse_pad_enabled) {
-                std::fprintf(stdout,
-                    "psxrecomp: mouse PAD adapter enabled "
-                    "(%d chase, %d aim counts/frame)\n",
-                    g_mouse_pad_counts_per_frame,
-                    g_mouse_pad_aim_counts_per_frame);
-            }
-            if (g_mouse_camera_enabled) {
-                std::fprintf(stdout,
-                    "psxrecomp: direct relative-mouse camera enabled "
-                    "(site=0x%08X, player=$%d, controller=$%d)\n",
-                    mouse_camera.facing_site, mouse_camera.player_reg,
-                    mouse_camera.controller_reg);
-            }
+            g_mouse_camera_config.enabled = gc.runtime.controller_mouse_camera_enabled ? 1 : 0;
+            g_mouse_camera_config.facing_site = gc.runtime.controller_mouse_camera_facing_site;
+            g_mouse_camera_config.facing_expected = gc.runtime.controller_mouse_camera_facing_expected;
+            g_mouse_camera_config.application_state_addr = gc.runtime.controller_mouse_camera_application_state_addr;
+            g_mouse_camera_config.player_state_offset = gc.runtime.controller_mouse_camera_player_state_offset;
+            g_mouse_camera_config.wrapper_offset = gc.runtime.controller_mouse_camera_wrapper_offset;
+            g_mouse_camera_config.base_offset = gc.runtime.controller_mouse_camera_base_offset;
+            g_mouse_camera_config.owner_offset = gc.runtime.controller_mouse_camera_owner_offset;
+            g_mouse_camera_config.desired_pitch_offset = gc.runtime.controller_mouse_camera_desired_pitch_offset;
+            g_mouse_camera_config.rendered_pitch_offset = gc.runtime.controller_mouse_camera_rendered_pitch_offset;
+            g_mouse_camera_config.vector_x_offset = gc.runtime.controller_mouse_camera_vector_x_offset;
+            g_mouse_camera_config.vector_y_offset = gc.runtime.controller_mouse_camera_vector_y_offset;
+            g_mouse_camera_config.vector_z_offset = gc.runtime.controller_mouse_camera_vector_z_offset;
+            g_mouse_camera_config.player_reg = gc.runtime.controller_mouse_camera_player_reg;
+            g_mouse_camera_config.controller_reg = gc.runtime.controller_mouse_camera_controller_reg;
+            g_mouse_camera_config.chase_yaw_sensitivity = gc.runtime.controller_mouse_chase_yaw_sensitivity;
+            g_mouse_camera_config.chase_pitch_sensitivity = gc.runtime.controller_mouse_chase_pitch_sensitivity;
+            g_mouse_camera_config.aim_yaw_sensitivity = gc.runtime.controller_mouse_aim_yaw_sensitivity;
+            g_mouse_camera_config.aim_pitch_sensitivity = gc.runtime.controller_mouse_aim_pitch_sensitivity;
+            g_mouse_camera_config.invert_y = gc.runtime.controller_mouse_invert_y ? 1 : 0;
             g_frame_interpolation = gc.runtime.video_frame_interpolation ? 1 : 0;
             g_frame_interpolation_fps = gc.runtime.video_frame_interpolation_fps;
             g_fmv_skip_total_table = gc.runtime.video_fmv_skip_total_table;
@@ -5940,6 +5921,18 @@ int main(int argc, char** argv) {
         if (us.has_p1_mode) p1_mode = us.p1_mode;
         if (us.has_p2_mode) p2_mode = us.p2_mode;
         if (us.has_deadzone)  resolved_deadzone = us.deadzone;
+        if (us.has_mouse_camera)
+            g_mouse_camera_config.enabled = us.mouse_camera ? 1 : 0;
+        if (us.has_mouse_chase_yaw_sensitivity)
+            g_mouse_camera_config.chase_yaw_sensitivity = us.mouse_chase_yaw_sensitivity;
+        if (us.has_mouse_chase_pitch_sensitivity)
+            g_mouse_camera_config.chase_pitch_sensitivity = us.mouse_chase_pitch_sensitivity;
+        if (us.has_mouse_aim_yaw_sensitivity)
+            g_mouse_camera_config.aim_yaw_sensitivity = us.mouse_aim_yaw_sensitivity;
+        if (us.has_mouse_aim_pitch_sensitivity)
+            g_mouse_camera_config.aim_pitch_sensitivity = us.mouse_aim_pitch_sensitivity;
+        if (us.has_mouse_invert_y)
+            g_mouse_camera_config.invert_y = us.mouse_invert_y ? 1 : 0;
         if (us.has_low_latency_input) g_low_latency_input = us.low_latency_input ? 1 : 0;
         if (us.has_vsync)             g_video_vsync       = us.vsync;
         if (us.has_frame_interpolation)
@@ -6212,6 +6205,18 @@ int main(int argc, char** argv) {
             seed.p2_mode = p2_mode; seed.has_p2_mode = true;
             seed.deadzone = resolved_deadzone >= 0 ? resolved_deadzone : 12000;
             seed.has_deadzone = true;
+            seed.mouse_camera = g_mouse_camera_config.enabled != 0;
+            seed.has_mouse_camera = true;
+            seed.mouse_chase_yaw_sensitivity = g_mouse_camera_config.chase_yaw_sensitivity;
+            seed.has_mouse_chase_yaw_sensitivity = true;
+            seed.mouse_chase_pitch_sensitivity = g_mouse_camera_config.chase_pitch_sensitivity;
+            seed.has_mouse_chase_pitch_sensitivity = true;
+            seed.mouse_aim_yaw_sensitivity = g_mouse_camera_config.aim_yaw_sensitivity;
+            seed.has_mouse_aim_yaw_sensitivity = true;
+            seed.mouse_aim_pitch_sensitivity = g_mouse_camera_config.aim_pitch_sensitivity;
+            seed.has_mouse_aim_pitch_sensitivity = true;
+            seed.mouse_invert_y = g_mouse_camera_config.invert_y != 0;
+            seed.has_mouse_invert_y = true;
             seed.window_width = g_video_win_w; seed.has_window_width = true;
             seed.parappa_timing_mode =
                 g_parappa_timing_mode == 1 ? "medium" :
@@ -6626,6 +6631,29 @@ int main(int argc, char** argv) {
         }
     }
 #endif
+
+    /* Finalize mouse ownership only after game defaults and per-install settings
+     * have been layered.  The verified guest hook remains generated in both
+     * modes; disabling this host adapter is therefore a true runtime A/B. */
+    if (const char *e = std::getenv("PSX_MOUSE_CAMERA"))
+        g_mouse_camera_config.enabled = atoi(e) ? 1 : 0;
+    psx_mouse_camera_configure(&g_mouse_camera_config);
+    g_mouse_camera_enabled = g_mouse_camera_config.enabled;
+    mouse_pad_configure(g_mouse_pad_enabled || g_mouse_camera_enabled,
+                        g_mouse_pad_counts_per_frame,
+                        g_mouse_pad_aim_counts_per_frame);
+    if (g_mouse_pad_enabled) {
+        std::fprintf(stdout,
+            "psxrecomp: mouse PAD adapter enabled (%d chase, %d aim counts/frame)\n",
+            g_mouse_pad_counts_per_frame, g_mouse_pad_aim_counts_per_frame);
+    }
+    std::fprintf(stdout,
+        "psxrecomp: direct relative-mouse camera %s "
+        "(site=0x%08X, player=$%d, controller=$%d)%s\n",
+        g_mouse_camera_enabled ? "enabled" : "disabled",
+        g_mouse_camera_config.facing_site, g_mouse_camera_config.player_reg,
+        g_mouse_camera_config.controller_reg,
+        std::getenv("PSX_MOUSE_CAMERA") ? " (environment override)" : "");
 
     /* Resolve the actual stock image before mod resolution. In particular,
      * --disc is a late CLI override and must participate in target hashing;
