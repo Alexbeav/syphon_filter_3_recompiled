@@ -285,3 +285,26 @@ press lifetime remains a narrowed secondary input hazard; MDEC underflow and
 neutral/auto-skip hypotheses are contradicted. SF2 recomp and SF3 now
 independently validate the GPU and CD invariants. SF2 hybrid can independently
 validate the release-on-transition probe contract.
+
+### R4 — standalone checkpoint and source publication
+
+The completed generic CD correction, regression and corrected evidence package
+were checkpointed as `db98b05`. Private-corpus commit `87e6c7a` adds candidate
+`PSX-CD-001`, records SF2 recomp `485b79b` as the first proof and SF3 as the
+independent validator, and corrects the earlier provisional intro attribution.
+Pre-existing unrelated Tenchu/shared-runtime work in the corpus checkout was
+not staged or altered by that commit.
+
+The ordinary lab history inherited local development cards, so publishing that
+history would not satisfy the proprietary-data boundary. A fresh parentless
+tree was instead built from the final tracked source and explicitly excluded
+all root/test cards, `.mcp.json`, retail inputs, generated SF3 code, caches,
+traces, captures and media. The snapshot contains 1,478 source/documentation
+paths and no prohibited retail artifact. It was published to the public
+`Alexbeav/syphon_filter_3_recompiled` repository without adding a writable
+remote to this lab; the existing upstream remains fetch-only with push disabled.
+
+The local desktop shortcut targets the fixed normal Release build and isolated
+play memory-card directory. `SF3_Redux` enhancement work remains deliberately
+outside this standalone checkpoint pending the user's visible FMV/intro and
+campaign-flow test.

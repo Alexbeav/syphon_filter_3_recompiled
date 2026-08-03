@@ -10,8 +10,8 @@ or redistributed game data.
 Current validated scope:
 
 - deterministic game-project generation and reproducible Release products;
-- authentic executable entry, `Game_Main`, TITLE, New Game, Tokyo intro,
-  briefing, state-8 load and state-0 Mission 1 control;
+- authentic executable entry, `Game_Main`, cemetery intro, TITLE, New Game,
+  Tokyo intro, briefing, state-8 load and state-0 Mission 1 control;
 - OpenGL FMV coherency across the 15/24-bit VRAM ownership transition;
 - retail GPU, SPU/XA, CD-ROM and PAD activity with measured native-overlay and
   interpreter ownership;

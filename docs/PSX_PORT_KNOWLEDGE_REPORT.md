@@ -85,12 +85,13 @@ causes were contradicted.
 Independently validate the below-floor dirty-text capture finding in Tenchu.
 SF2 recomp and SF3 independently validate the OpenGL 15/24-bit ownership
 handoff and CD seek-retarget contract; SF2 hybrid should validate
-release-on-transition input automation. Remaining work
-is a user-visible build check, the final reproducibility/provenance audit and
-normalized corpus return before a clean public source publication.
+release-on-transition input automation. Remaining work is the user's visible
+build confirmation and broader campaign playtest before enhancement work
+begins.
 
 ## Provenance
 
 No retail input, executable, generated C, overlay capture, RAM/state, card or
-media payload is tracked. Oracle projects are read-only. Reusable findings will
-be normalized into the private corpus only after a committed project result.
+media payload is tracked. Oracle projects are read-only. Reusable findings were
+returned to the private corpus in `87e6c7a`; the parentless public source
+snapshot is published as `Alexbeav/syphon_filter_3_recompiled`.

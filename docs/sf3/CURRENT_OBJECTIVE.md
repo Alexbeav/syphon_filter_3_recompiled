@@ -2,8 +2,8 @@
 
 Updated: 2026-08-03
 
-Status: feasibility, stretch and FMV correction gates achieved; user test and
-provenance-clean publication checkpoint in progress.
+Status: feasibility, stretch, FMV/intro correction and provenance-clean public
+source publication gates achieved; visible user confirmation remains.
 
 ## Objective
 
@@ -112,3 +112,14 @@ and CD remain live. Repeat from two clean processes.
   `b2994894e7b921b6e56adffa7c824ba65815c8dff9ea1974cb2c79f3e3757475`;
   both Release products normalize to
   `6d1cbdd2c1aa5e325ed0e86f3b405b6cd6ee6b15135ef355cc34b7e2c5852032`.
+
+## Standalone publication
+
+- Project checkpoint `db98b05` contains both generic fixes and 42/42 tests.
+- Private-corpus commit `87e6c7a` records the independently confirmed
+  `PSX-CD-001` candidate and corrected SF3 project snapshot.
+- Public `Alexbeav/syphon_filter_3_recompiled` main is a parentless,
+  provenance-clean source snapshot. It excludes retail inputs, generated SF3
+  code, overlays, traces, cards, saves, captures and media.
+- The lab retains its fetch-only upstream remote and has no writable project
+  remote. `SF3_Redux` enhancement work has not begun.
