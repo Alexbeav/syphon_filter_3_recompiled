@@ -1,3 +1,35 @@
+# Syphon Filter 3 Recompiled
+
+This repository is the isolated, source-only feasibility project for the USA
+release of *Syphon Filter 3* (`SCUS-94640`) on PSXRecomp. It boots the authentic
+retail executable through OpenBIOS, runs retail-installed overlays, presents
+the original title and menus, and reaches Mission 1 player control without
+forced application states, patched generated code, native substitute gameplay,
+or redistributed game data.
+
+Current validated scope:
+
+- deterministic game-project generation and reproducible Release products;
+- authentic executable entry, `Game_Main`, TITLE, New Game, Tokyo intro,
+  briefing, state-8 load and state-0 Mission 1 control;
+- OpenGL FMV coherency across the 15/24-bit VRAM ownership transition;
+- retail GPU, SPU/XA, CD-ROM and PAD activity with measured native-overlay and
+  interpreter ownership;
+- two matching clean hidden-renderer runs with zero static dispatch misses.
+
+You must supply your own legally obtained USA BIN/CUE image. Retail executable,
+disc sectors, generated retail C, overlay captures, memory cards, screenshots
+and save states are intentionally excluded. Reproduction and validation steps
+are in [`lab/sf3/README.md`](lab/sf3/README.md); the chronological evidence is
+in [`docs/sf3/devlogs/2026-08-03-recomp-bring-up.md`](docs/sf3/devlogs/2026-08-03-recomp-bring-up.md).
+
+This feasibility source inherits PSXRecomp's PolyForm Noncommercial 1.0.0
+license. OpenBIOS and all other bundled third-party components retain their own
+licenses and notices; see [`THIRD_PARTY_ATTRIBUTION.md`](THIRD_PARTY_ATTRIBUTION.md).
+No enhanced `SF3_Redux` presentation work is included in this checkpoint.
+
+---
+
 <p align="center">
   <img src="docs/assets/psxrecomp-logo.png" alt="PSXRecomp" width="640">
 </p>
