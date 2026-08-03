@@ -20,11 +20,12 @@ Current validated compatibility scope:
 - two matching complete 42,480-sample Release replays plus a passive diagnostic
   run, with matching card images and measured Mission 2 overlay ownership.
 
-This project is `compatibility_baseline_verified` through Mission 1 and live
-Mission 2 entry. It is not a campaign-complete claim. The earlier catastrophic
-Mission 1 corruption does not reproduce with the cache-complete product; a
-small native-resolution software/OpenGL raster-precision difference remains
-documented presentation debt.
+Visible/manual validation revoked the earlier native-overlay compatibility
+claim. SF3 currently keeps runtime-installed overlays on the interpreter while
+retaining capture for audit; resident executable code remains statically
+recompiled. With that ownership the briefing-to-Mission-1 transition succeeds.
+This is not yet a campaign-complete claim, and native overlay promotion remains
+disabled until entry-level native/interpreter equivalence is proved.
 
 You must supply your own legally obtained USA BIN/CUE image. Retail executable,
 disc sectors, generated retail C, overlay captures, memory cards, screenshots
@@ -36,7 +37,8 @@ This feasibility source inherits PSXRecomp's PolyForm Noncommercial 1.0.0
 license. OpenBIOS is not redistributed in this source snapshot; its build pin,
 license notice and all other bundled third-party notices are retained in
 [`THIRD_PARTY_ATTRIBUTION.md`](THIRD_PARTY_ATTRIBUTION.md).
-No enhanced `SF3_Redux` presentation work is included in this checkpoint.
+No widescreen, freelook or other `SF3_Redux` presentation work is included in
+this compatibility checkpoint.
 
 ---
 

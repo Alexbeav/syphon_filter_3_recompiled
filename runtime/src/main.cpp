@@ -3068,6 +3068,9 @@ std::uint64_t g_input_sample_index = 0;
 std::uint64_t g_input_stop_after = 0;
 bool g_input_timeline_initialized = false;
 bool g_input_replay_complete_logged = false;
+/* Recording is opt-in. Publish a replayable prefix every ten nominal seconds
+ * so a hard guest/runtime failure cannot erase the route that reached it. */
+constexpr std::uint64_t kInputPartialFlushSamples = 600u;
 
 std::string input_timeline_compatibility_id() {
 #ifndef PSX_INPUT_COMPAT_BASE
@@ -3242,7 +3245,8 @@ bool sample_input_timeline(int override) {
         }
         g_recorded_input.append(sample);
         ++g_input_sample_index;
-        if ((g_input_sample_index % 3600u) == 0u) flush_recorded_input(false);
+        if ((g_input_sample_index % kInputPartialFlushSamples) == 0u)
+            flush_recorded_input(false);
         stop_after_input_sample_if_requested();
         return true;
     } catch (const std::exception& e) {
@@ -5577,6 +5581,12 @@ int main(int argc, char** argv) {
                 std::fprintf(stdout,
                     "psxrecomp: overlay codegen config hash = %08x\n",
                     (unsigned)overlay_config_hash);
+                if (!gc.runtime.overlay_native) {
+                    overlay_loader_set_native_exec(0);
+                    std::fprintf(stdout,
+                        "psxrecomp: native runtime overlays disabled by game config; "
+                        "interpreter owns runtime-installed code\n");
+                }
                 for (uint32_t addr : gc.runtime.overlay_native_block) {
                     overlay_loader_native_block_add(addr);
                 }

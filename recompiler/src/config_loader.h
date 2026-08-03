@@ -289,6 +289,11 @@ struct RuntimeConfig {
     // gcc shards still load). The env var PSX_OVERLAY_BACKEND overrides at runtime.
     std::string           overlay_backend;
 
+    // overlay_native: master per-game ownership gate for compiled runtime
+    // overlays. False leaves every runtime-installed overlay on the generic
+    // interpreter while preserving capture/audit. Defaults true.
+    bool                  overlay_native = true;
+
     // overlay_native_block: per-game overlay function entries that must stay on
     // the dirty-RAM interpreter even when a matching native DLL exists. Intended
     // for small timing-sensitive setup/task routines while the rest of the

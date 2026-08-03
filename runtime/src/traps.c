@@ -395,6 +395,68 @@ static uint32_t psx_tcb_state(CPUState* cpu, uint32_t tcb)
     return psx_is_valid_tcb(cpu, tcb) ? cpu->read_word(tcb) : 0;
 }
 
+void psx_scheduler_freeze_dump_json(FILE* f, CPUState* cpu)
+{
+    if (!f) return;
+
+    uint32_t current_tcb = cpu ? psx_current_tcb_ptr(cpu) : 0u;
+    uint32_t current_valid = cpu ? (uint32_t)psx_is_valid_tcb(cpu, current_tcb) : 0u;
+    uint32_t current_state = (cpu && current_valid) ? psx_tcb_state(cpu, current_tcb) : 0u;
+    uint32_t current_epc = (cpu && current_valid) ? cpu->read_word(current_tcb + 128u) : 0u;
+    uint64_t escape_total = g_sched_escape_seq;
+    uint64_t escape_start = escape_total > SCHED_ESCAPE_RING_CAP
+                          ? escape_total - SCHED_ESCAPE_RING_CAP : 0u;
+    uint64_t ctx_total = g_thread_ctx_ring_seq;
+    uint64_t ctx_start = ctx_total > THREAD_CTX_RING_CAP
+                       ? ctx_total - THREAD_CTX_RING_CAP : 0u;
+
+    fprintf(f,
+            "{\"enabled\":%d,\"reason\":%u,\"target_tcb\":\"0x%08X\","
+            "\"resume_pc\":\"0x%08X\",\"return_tcb\":\"0x%08X\","
+            "\"current_tcb\":\"0x%08X\",\"current_valid\":%u,"
+            "\"current_state\":\"0x%08X\",\"current_epc\":\"0x%08X\","
+            "\"escape_total\":%llu,\"escape_tail\":[",
+            psx_hle_scheduler_enabled(), (unsigned)g_sched_escape.reason,
+            g_sched_escape.target_tcb, g_sched_escape.resume_pc,
+            g_sched_return_tcb, current_tcb, current_valid,
+            current_state, current_epc, (unsigned long long)escape_total);
+
+    int first = 1;
+    for (uint64_t seq = escape_start; seq < escape_total; seq++) {
+        const SchedEscapeEntry* e =
+            &g_sched_escape_ring[seq & (SCHED_ESCAPE_RING_CAP - 1u)];
+        if (e->seq != (uint32_t)seq) continue;
+        fprintf(f,
+                "%s{\"seq\":%u,\"frame\":%u,\"reason\":%u,"
+                "\"current_tcb\":\"0x%08X\",\"target_tcb\":\"0x%08X\","
+                "\"resume_pc\":\"0x%08X\",\"pc\":\"0x%08X\","
+                "\"ra\":\"0x%08X\",\"sp\":\"0x%08X\"}",
+                first ? "" : ",", e->seq, e->frame, e->reason,
+                e->current_tcb, e->target_tcb, e->resume_pc,
+                e->pc, e->ra, e->sp);
+        first = 0;
+    }
+
+    fprintf(f, "],\"thread_ctx_total\":%llu,\"thread_ctx_tail\":[",
+            (unsigned long long)ctx_total);
+    first = 1;
+    for (uint64_t seq = ctx_start; seq < ctx_total; seq++) {
+        const ThreadCtxRingEntry* e =
+            &g_thread_ctx_ring[seq & (THREAD_CTX_RING_CAP - 1u)];
+        if (e->seq != (uint32_t)seq) continue;
+        fprintf(f,
+                "%s{\"seq\":%u,\"frame\":%u,\"op\":%u,"
+                "\"tcb\":\"0x%08X\",\"resume_pc\":\"0x%08X\","
+                "\"sp\":\"0x%08X\",\"ra\":\"0x%08X\","
+                "\"sr\":\"0x%08X\",\"epc\":\"0x%08X\"}",
+                first ? "" : ",", e->seq, e->frame, (unsigned)e->op,
+                e->tcb, e->resume_pc, e->gpr_29, e->gpr_31,
+                e->cop0_sr, e->cop0_epc);
+        first = 0;
+    }
+    fputs("]}", f);
+}
+
 static psx_fiber_t psx_current_host_fiber(void)
 {
     if (!s_main_fiber) {

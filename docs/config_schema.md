@@ -313,6 +313,19 @@ turbo_audio_sink = true
 the guest SPU timeline advancing but discards accelerated samples before host
 playback, then fades normal output back in.
 
+Runtime-overlay native execution is enabled by default. A game may retain
+capture while assigning all runtime-installed code to the interpreter:
+
+```toml
+[runtime]
+overlay_native = false
+```
+
+This is a correctness ownership gate, not a performance preference. Use it
+only when visible validation disproves native/interpreter equivalence for a
+captured overlay; `overlay_native_block` remains available for proven,
+entry-specific exclusions.
+
 ## Audio Block
 
 Game projects may choose the host playback cushion after validating their

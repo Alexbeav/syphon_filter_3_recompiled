@@ -155,12 +155,34 @@ and CD remain live. Repeat from two clean processes.
   both Release products normalize to
   `6d1cbdd2c1aa5e325ed0e86f3b405b6cd6ee6b15135ef355cc34b7e2c5852032`.
 
+## Visible compatibility correction (2026-08-04)
+
+Visible/manual testing revoked the native-overlay compatibility claim. The
+Mission 1 handoff succeeds with runtime overlay native execution disabled and
+fails with a compiled overlay active. SF3 therefore uses
+`[runtime] overlay_native = false`: resident executable code remains static
+native code, while runtime-installed overlays remain interpreter-owned and are
+still captured for audit. Hidden replay is secondary evidence only; a visible
+manual run is the acceptance gate.
+
+The first localized black-screen divergence is resident function `0x8001E278`
+receiving loaded overlay code at `0x801D8680` as a geometry descriptor, reading
+a negative signed count and entering a non-terminating loop. Native overlay CRC
+`0x3F64E67F` is narrowed as the preceding state owner; entry-specific
+equivalence and campaign-wide validation remain open.
+
 ## Standalone publication
 
-- Compatibility checkpoint `6aa349e` contains the bounded capture observer,
-  the safe Mission 2 ownership measurements and 49/49 passing tests.
-- The public main branch is a newly audited parentless source snapshot. It
-  excludes retail inputs, executable/disc data, generated SF3 code, runtime
-  overlays, captures, routes, cards, saves, BIOS images and machine-local
-  workflow material.
-- `SF3_Redux` enhancement work is intentionally absent from this checkpoint.
+- Project checkpoint `db98b05` contains both generic fixes and 42/42 tests.
+- Private-corpus commit `87e6c7a` records the independently confirmed
+  `PSX-CD-001` candidate and corrected SF3 project snapshot.
+- Public `Alexbeav/syphon_filter_3_recompiled` main is a parentless,
+  provenance-clean source snapshot. It excludes retail inputs, generated SF3
+  code, overlays, traces, cards, saves, captures and media.
+- The lab retains its fetch-only upstream remote and has no writable project
+  remote. `SF3_Redux` enhancement work has not begun.
+
+The older public snapshot predates the stricter publication gate and includes
+an OpenBIOS binary plus local/private workflow references. It must be replaced
+by a newly audited parentless source snapshot before Redux work begins; the
+claims above describe the intended publication contract, not the old remote.

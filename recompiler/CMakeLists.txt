@@ -415,9 +415,12 @@ if(BUILD_TESTING)
         #       built; not a source-only guard
         foreach(_t IN ITEMS
                 capture_history
+                crash_overlay_ring_guards
                 default_renderer_guards
                 display_ring_cost_guards
                 fmv_quiet_guards
+                freeze_scheduler_snapshot
+                input_recording_recovery_guards
                 fps_telemetry_opt_in
                 frame_interpolation_display_rate
                 gl_depth24_coherency
@@ -432,9 +435,13 @@ if(BUILD_TESTING)
                 overlay_decodable_fallback
                 overlay_additive_capture_loader
                 overlay_init_guard
+                overlay_native_config_guards
+                overlay_resident_patch_promotion
                 sdl3_main_single_include
                 sf3_input_route_helpers
+                sf3_approved_capture_selector
                 sf3_route_evidence_compare
+                sf3_route_rebind_guards
                 vk_build_default
                 vk_color_self_barrier
                 vk_command_buffer_batching
