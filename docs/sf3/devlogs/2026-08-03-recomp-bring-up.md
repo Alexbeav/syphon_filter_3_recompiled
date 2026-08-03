@@ -452,3 +452,10 @@ Per the user's continuing instruction, the helper and product were not run;
 the process census remained zero. The 11.723 GiB footprint remains below the
 20 GiB limit. Runtime replay equivalence, presentation and semantic route
 evidence therefore remain unclaimed.
+
+A separate desktop shortcut, `Syphon Filter 3 Recomp - Record Mission 1`, now
+targets the source-owned recorder and replay-compatible `input-route-i`
+ordinary Release. It fixes the output to the ignored
+`lab/sf3/traces/human-mission1.psxpad` path and selects OpenGL. The older normal
+play shortcut was preserved. Creating and inspecting the new shortcut did not
+launch the executable.
