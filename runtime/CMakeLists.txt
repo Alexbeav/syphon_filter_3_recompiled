@@ -24,6 +24,12 @@ if(BUILD_TESTING)
     target_include_directories(input_timeline_test PRIVATE include)
     add_test(NAME input_timeline_test COMMAND input_timeline_test)
 
+    add_executable(frame_color_stats_test
+        tests/test_frame_color_stats.c
+        src/frame_color_stats.c)
+    target_include_directories(frame_color_stats_test PRIVATE include)
+    add_test(NAME frame_color_stats_test COMMAND frame_color_stats_test)
+
     add_executable(launcher_device_roundtrip_test
         tests/test_launcher_device_roundtrip.cpp)
     target_include_directories(launcher_device_roundtrip_test PRIVATE include)

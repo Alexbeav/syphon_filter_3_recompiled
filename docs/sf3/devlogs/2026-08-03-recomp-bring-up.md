@@ -338,7 +338,7 @@ withdrawn pending sustained correct presentation, input/audio/pause,
 death/restart, checkpoint restore, Mission 1 completion and its following
 retail transition in two clean deterministic routes plus a human completion.
 
-### R6 — non-perturbing repro and retail-boundary input witness
+### R6 — bounded observer repro and retail-boundary input witness
 
 The user subsequently reported that another ordinary launch looked and played
 correctly. This narrows both P0 symptoms to intermittent behavior; it does not
@@ -347,13 +347,26 @@ not promote the project beyond `bootstrap_verified`.
 
 The first bounded renderer checks reached clean Mission 1 state-0 output in one
 OpenGL run and one software run. A second OpenGL run omitted all intermediate
-screenshots and captured the always-on display ring instead. It was also clean,
-contradicting the hypothesis that screenshot-triggered OpenGL-to-CPU VRAM sync
-was required to heal the route. The check did expose a validation hazard:
-`screenshot_file` synchronizes the OpenGL FBO into CPU VRAM for 15-bit output,
-so it is not a transparent witness for a split-representation ownership bug.
-Future first-divergence work must use the display ring before requesting a
-screenshot. No same-frame corrupt software/OpenGL pair has yet been captured.
+screenshots and captured the display ring instead. It was also clean. This
+contradicts only the hypothesis that `screenshot_file`'s OpenGL-to-CPU VRAM
+writeback was required to heal the route. It does not establish that the ring
+is non-perturbing: OpenGL display capture still flushes and reads back the FBO,
+and the original ring also read the entire 1024×512 VRAM every frame. The ring
+does avoid changing CPU VRAM, which makes it a safer ownership witness than
+`screenshot_file`, but its possible host-timing effect remains explicit. No
+same-frame corrupt software/OpenGL pair has yet been captured.
+
+The ring's full-VRAM auxiliary capture is now separately opt-in through
+`PSX_DISPLAY_RING_AUX=1`; the default retains only the visible display and
+reduces allocation from roughly 84 MiB to 20 MiB. A source-owned guard prevents
+accidental restoration of unconditional full-VRAM capture. Generic BGR555
+color statistics also let the SF3 probe alarm on the exact observed failure:
+the supplied corrupt screenshot is 55.82% red-dominant and 34.08% hot-red,
+where clean OpenGL/software samples are about 0.15%/0.01%. The default
+15%/5% limits are deliberately described as a symptom-specific oracle, not a
+general visual-correctness test. These changes pass the 45-test framework suite
+without launching the game, as requested; runtime handler behavior remains
+unclaimed until a later permitted diagnostic run.
 
 To turn the user's connected Mission 1 playthrough into a repeatable witness,
 the runtime now records and replays normalized two-port pad packets at the
@@ -395,8 +408,25 @@ adapter and ordering-table renderer and is not a drop-in recomp-runtime patch.
 High-resolution, native mouse/freelook, widescreen and PGXP therefore remain
 Redux work after the representative compatibility gate.
 
-Source checkpoint `cbae3a9` contains the recorder, non-perturbing probe,
-regression and documentation. Private-corpus checkpoint `76393af` records the
-bounded status and names Tenchu as the independent generic-format validator;
-it explicitly leaves SF3 runtime capture/replay unverified. Neither checkpoint
-contains a retail input, generated image, route, overlay cache or save.
+Source checkpoint `cbae3a9` contains the recorder and earlier probe form;
+the subsequent bounded-observer checkpoint corrects its transparency claim and
+adds the opt-in auxiliary capture and color-signature regression.
+Private-corpus checkpoint `76393af` records the earlier bounded status and
+names Tenchu as the independent generic-format validator; it explicitly leaves
+SF3 runtime capture/replay unverified. Neither checkpoint contains a retail
+input, generated image, route, overlay cache or save.
+
+After the observer correction, two further clean SCUS-94640 generations match
+across 1,132/1,132 files with tree SHA-256
+`0c4de43aa0af9f1dbc1df4379d91876582e0f760c4bb458dc0d250adea6df05e`.
+The packaged runtime copies of `debug_server.c` and `frame_color_stats.c` are
+byte-identical to their owning sources. The untouched ordinary Release links
+to a 97,748,156-byte product (SHA-256
+`690b8f91a96ba7dc2faf8323af4b8b99fcb77cdb79cc9c59fc0aa875e65c2211`),
+and the Release-optimized diagnostic configuration that contains the new TCP
+handlers links to a 100,921,552-byte product (SHA-256
+`2109e69864fa909b71e1057e9c87b7cfa41dbb89ad06957beb3374762de212fa`).
+The framework suite is 45/45 passing. Per the user's explicit instruction,
+neither executable was launched; the process census remained zero and runtime
+observer behavior is not claimed. The complete local footprint is 10.569 GiB,
+below the 20 GiB limit.

@@ -105,7 +105,11 @@ no-intermediate-screenshot route have not reproduced the corrupt surface. The
 no-screenshot run contradicts a required screenshot-sync healing theory, while
 the screenshot implementation itself remains a perturbing observer because it
 synchronizes FBO-owned 15-bit state into CPU VRAM. A corrupt same-frame display
-ring/software comparison is still required.
+ring/software comparison is still required. The display ring must not be called
+non-perturbing either: it avoids the CPU-VRAM write, but OpenGL pack/readback
+can still affect host timing. Full-VRAM ring capture is now explicit opt-in;
+the default stores only the displayed surface and applies a tested,
+symptom-specific BGR555 color-ratio alarm for the observed red/checkered case.
 
 Candidate reuse from `_shared/runtime` was converted into an SF3-bounded check:
 the title-neutral `PSXPAD2` input timeline is integrated exactly at SF3's
@@ -118,6 +122,14 @@ Runtime capture/replay is deliberately unclaimed
 until the user records a neutral-bookended Mission 1 route and two clean
 replays match. Tenchu remains the independent validator for the generic input
 timeline; SF3 will independently validate the complete connected route.
+
+The bounded-observer revision is reproducible across two fresh 1,132-file
+generations (tree SHA-256
+`0c4de43aa0af9f1dbc1df4379d91876582e0f760c4bb458dc0d250adea6df05e`).
+Both ordinary Release and Release-optimized diagnostic configurations link,
+and the source suite passes 45/45. Neither product was launched after the
+user's no-run instruction, so the new TCP color handlers remain compile-tested
+but runtime-unclaimed.
 
 ## Quality debt
 

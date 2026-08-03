@@ -42,6 +42,7 @@
 #include "gpu_gl_renderer.h"
 #include "lockstep.h"
 #include "debug_trace_ranges.h"
+#include "frame_color_stats.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -7888,7 +7889,7 @@ static void handle_get_snapshots(int id, const char *json)
  * the old "screenshot" inline-hex-row variant streamed h+1 response lines
  * per request, which violated the one-request/one-response protocol and
  * poisoned every client connection that used it. */
-/* ---- Always-on display ring ----------------------------------------------
+/* ---- Opt-in-cost display ring --------------------------------------------
  * The last DISP_RING_CAP vblanks' display areas, raw 15-bit VRAM halfwords,
  * captured in debug_server_record_frame (ring-buffer rule: continuous
  * capture, observers query a window after the fact). Purpose: FRAME-EXACT
@@ -7898,10 +7899,11 @@ static void handle_get_snapshots(int id, const char *json)
  * deterministic runs (GL vs software) can each serve the display for the
  * SAME frame number, giving a pixel-exact renderer-divergence census.
  * GL reads GPU-side truth via the fbo peek; software reads CPU VRAM (its
- * authoritative surface). depth24 scanout frames are tagged and refused
- * (15-bit only). */
-#define DISP_RING_CAP   64    /* full-VRAM entries are 1MB each; 32 frames of
-                               * lookback (~0.3-0.5s) for exact-frame forensics */
+ * authoritative surface). This avoids writing GL truth into CPU VRAM, but GL
+ * pack/readback still flushes work and can perturb host timing. Full-VRAM aux
+ * capture is therefore separately opt-in with PSX_DISPLAY_RING_AUX=1.
+ * depth24 scanout frames are tagged and refused (15-bit only). */
+#define DISP_RING_CAP   64    /* ~1 second of exact-frame display lookback */
 #define DISP_RING_MAX_W 640
 #define DISP_RING_MAX_H 256
 /* Full-VRAM aux capture alongside the display: the entire 1024x512 raw VRAM
@@ -7920,12 +7922,21 @@ typedef struct {
 static DispRingEntry s_disp_ring[DISP_RING_CAP];
 static uint16_t     *s_disp_ring_px = NULL;   /* one block for all entries */
 
+static int disp_ring_aux_enabled(void)
+{
+    static int enabled = -1;
+    if (enabled < 0) {
+        const char *e = getenv("PSX_DISPLAY_RING_AUX");
+        enabled = (e && *e && *e != '0') ? 1 : 0;
+    }
+    return enabled;
+}
+
 static void disp_ring_capture(void)
 {
-    /* Full-VRAM GL readback is intentionally expensive and can perturb the
-     * performance issue being measured. Keep the forensic ring default-on, but
-     * allow a controlled acceptance run to disable continuous capture while
-     * retaining the TCP server and one-shot screenshot command. */
+    /* Even display-only GL readback can perturb host timing. Keep the forensic
+     * ring default-on for diagnostic builds, with an explicit off switch for
+     * acceptance runs. Ordinary Release has no debug server/ring. */
     static int enabled = -1;
     if (enabled < 0) {
         const char *e = getenv("PSX_DISPLAY_RING");
@@ -7934,13 +7945,14 @@ static void disp_ring_capture(void)
     if (!enabled) return;
     if (!s_disp_ring_px) {
         size_t per  = (size_t)DISP_RING_MAX_W * DISP_RING_MAX_H;
-        size_t vram = (size_t)1024 * 512;
-        s_disp_ring_px = (uint16_t *)malloc(DISP_RING_CAP * (per + vram) * sizeof(uint16_t));
+        size_t vram = disp_ring_aux_enabled() ? (size_t)1024 * 512 : 0;
+        s_disp_ring_px = (uint16_t *)malloc(
+            DISP_RING_CAP * (per + vram) * sizeof(uint16_t));
         if (!s_disp_ring_px) return;
         for (int i = 0; i < DISP_RING_CAP; i++) {
             uint16_t *base = s_disp_ring_px + (size_t)i * (per + vram);
             s_disp_ring[i].px   = base;
-            s_disp_ring[i].vram = base + per;
+            s_disp_ring[i].vram = vram ? base + per : NULL;
         }
     }
     DispRingEntry *e = &s_disp_ring[(uint32_t)(s_frame_count % DISP_RING_CAP)];
@@ -7969,10 +7981,13 @@ static void disp_ring_capture(void)
                 e->px[y * w + x] =
                     gpu_vram_peek((int)(di.display_x + x), (int)(di.display_y + y));
     }
-    /* Full-VRAM aux capture (same GL-truth/CPU-truth split as the display). */
-    if (!gl_renderer_fbo_peek(0, 0, 1024, 512, e->vram)) {
-        const uint16_t *v = gpu_get_vram();
-        memcpy(e->vram, v, (size_t)1024 * 512 * sizeof(uint16_t));
+    /* Full-VRAM aux capture (same GL-truth/CPU-truth split as the display),
+     * only when explicitly requested before startup. */
+    if (e->vram) {
+        if (!gl_renderer_fbo_peek(0, 0, 1024, 512, e->vram)) {
+            const uint16_t *v = gpu_get_vram();
+            memcpy(e->vram, v, (size_t)1024 * 512 * sizeof(uint16_t));
+        }
     }
     e->valid = 1;
 }
@@ -7992,6 +8007,7 @@ static void handle_display_ring_aux(int id, const char *json)
     if (!e->valid || e->frame != (uint32_t)f) {
         send_err(id, "frame not in display ring"); return;
     }
+    if (!e->vram) { send_err(id, "display ring aux capture disabled"); return; }
     FILE *fp = fopen(path, "wb");
     if (!fp) { send_err(id, "cannot open file"); return; }
     size_t n1 = fwrite(e->vram, sizeof(uint16_t), (size_t)1024 * 512, fp);
@@ -8013,8 +8029,87 @@ static void handle_display_ring_stats(int id, const char *json)
         n++;
     }
     send_fmt("{\"id\":%d,\"ok\":true,\"capacity\":%d,\"valid\":%d,"
-             "\"oldest_frame\":%u,\"newest_frame\":%u}",
-             id, DISP_RING_CAP, n, oldest, newest);
+             "\"oldest_frame\":%u,\"newest_frame\":%u,\"aux\":%s}",
+             id, DISP_RING_CAP, n, oldest, newest,
+             disp_ring_aux_enabled() ? "true" : "false");
+}
+
+static uint64_t color_basis_points(uint64_t value, uint64_t total)
+{
+    return total ? (value * 10000u + total / 2u) / total : 0;
+}
+
+static void handle_display_ring_color_stats(int id, const char *json)
+{
+    int f = json_get_int(json, "frame", -1);
+    if (f < 0) { send_err(id, "missing frame"); return; }
+    if (!s_disp_ring_px) { send_err(id, "display ring not started"); return; }
+    DispRingEntry *e = &s_disp_ring[(uint32_t)((uint64_t)f % DISP_RING_CAP)];
+    if (!e->valid || e->frame != (uint32_t)f) {
+        send_err(id, "frame not in display ring"); return;
+    }
+    if (e->depth24) { send_err(id, "frame is 24bpp scanout (unsupported)"); return; }
+    PsxFrameColorStats stats;
+    psx_frame_color_stats_bgr555(e->px, (size_t)e->w * e->h, &stats);
+    send_fmt("{\"id\":%d,\"ok\":true,\"frame\":%d,\"width\":%u,\"height\":%u,"
+             "\"total\":%llu,\"red_dominant\":%llu,\"hot_red\":%llu,"
+             "\"saturated\":%llu,\"red_dominant_bp\":%llu,"
+             "\"hot_red_bp\":%llu,\"saturated_bp\":%llu}",
+             id, f, (unsigned)e->w, (unsigned)e->h,
+             (unsigned long long)stats.total,
+             (unsigned long long)stats.red_dominant,
+             (unsigned long long)stats.hot_red,
+             (unsigned long long)stats.saturated,
+             (unsigned long long)color_basis_points(stats.red_dominant, stats.total),
+             (unsigned long long)color_basis_points(stats.hot_red, stats.total),
+             (unsigned long long)color_basis_points(stats.saturated, stats.total));
+}
+
+static void handle_display_ring_color_scan(int id, const char *json)
+{
+    int red_limit = json_get_int(json, "red_dominant_bp", 1500);
+    int hot_limit = json_get_int(json, "hot_red_bp", 500);
+    int min_frame = json_get_int(json, "min_frame", 0);
+    if (red_limit < 0 || red_limit > 10000 ||
+        hot_limit < 0 || hot_limit > 10000) {
+        send_err(id, "color threshold out of range"); return;
+    }
+    uint32_t oldest = 0, newest = 0, first = 0, peak_frame = 0;
+    uint64_t peak_red = 0, peak_hot = 0, peak_sat = 0;
+    int scanned = 0, matches = 0;
+    for (int i = 0; i < DISP_RING_CAP; i++) {
+        DispRingEntry *e = &s_disp_ring[i];
+        if (!s_disp_ring_px || !e->valid || e->depth24 ||
+            e->frame < (uint32_t)(min_frame < 0 ? 0 : min_frame)) continue;
+        PsxFrameColorStats stats;
+        psx_frame_color_stats_bgr555(e->px, (size_t)e->w * e->h, &stats);
+        uint64_t red = color_basis_points(stats.red_dominant, stats.total);
+        uint64_t hot = color_basis_points(stats.hot_red, stats.total);
+        uint64_t sat = color_basis_points(stats.saturated, stats.total);
+        if (!scanned || e->frame < oldest) oldest = e->frame;
+        if (!scanned || e->frame > newest) newest = e->frame;
+        if (!scanned || red > peak_red || (red == peak_red && hot > peak_hot)) {
+            peak_frame = e->frame;
+            peak_red = red;
+            peak_hot = hot;
+            peak_sat = sat;
+        }
+        if (red >= (uint64_t)red_limit && hot >= (uint64_t)hot_limit) {
+            if (!matches || e->frame < first) first = e->frame;
+            matches++;
+        }
+        scanned++;
+    }
+    send_fmt("{\"id\":%d,\"ok\":true,\"scanned\":%d,\"matches\":%d,"
+             "\"oldest_frame\":%u,\"newest_frame\":%u,\"first_match_frame\":%d,"
+             "\"peak_frame\":%u,\"peak_red_dominant_bp\":%llu,"
+             "\"peak_hot_red_bp\":%llu,\"peak_saturated_bp\":%llu,"
+             "\"red_dominant_limit_bp\":%d,\"hot_red_limit_bp\":%d,"
+             "\"min_frame\":%d}",
+             id, scanned, matches, oldest, newest, matches ? (int)first : -1,
+             peak_frame, (unsigned long long)peak_red,
+             (unsigned long long)peak_hot, (unsigned long long)peak_sat,
+             red_limit, hot_limit, min_frame < 0 ? 0 : min_frame);
 }
 
 static void handle_display_ring_get(int id, const char *json)
@@ -12706,6 +12801,8 @@ static const CmdEntry s_commands[] = {
     { "display_ring_get",  handle_display_ring_get },
     { "display_ring_aux",  handle_display_ring_aux },
     { "display_ring_stats", handle_display_ring_stats },
+    { "display_ring_color_stats", handle_display_ring_color_stats },
+    { "display_ring_color_scan", handle_display_ring_color_scan },
     { "dump_buffer",       handle_dump_buffer },
     { "wide_full",         handle_wide_full },
     { "wide_shot",         handle_wide_shot },

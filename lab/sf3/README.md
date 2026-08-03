@@ -48,6 +48,16 @@ JSON/screenshots beneath the ignored output directory and exits only after
 state `0/1`, Mission 1 PAD polling and a movement sample. It never writes guest
 RAM, invokes a retail callback or patches generated code.
 
+The diagnostic display ring is CPU-VRAM-nonmutating, not timing-transparent:
+OpenGL capture still flushes and reads back the visible display. Full 1024×512
+VRAM capture is disabled by default; add `--display-ring-aux` only when a
+same-frame texture/CLUT dump is required. During the initial Mission 1 control
+window the probe scans retained BGR555 displays for the user's observed
+red/checkered failure signature (at least 15% red-dominant and 5% hot-red
+pixels by default). Those thresholds distinguish the supplied corrupt capture
+from the clean captures by a wide margin, but are a symptom-specific alarm,
+not proof that arbitrary presentation is correct.
+
 ## Human route capture
 
 The source-owned `record_input_route.ps1` helper records the two normalized PSX

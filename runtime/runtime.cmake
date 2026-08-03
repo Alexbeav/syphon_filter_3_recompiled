@@ -179,6 +179,7 @@ endif()
 set(PSXRECOMP_RUNTIME_SOURCES
     ${PSXRECOMP_ROOT}/runtime/src/main.cpp
     ${PSXRECOMP_ROOT}/runtime/src/input_timeline.cpp
+    ${PSXRECOMP_ROOT}/runtime/src/frame_color_stats.c
     ${PSXRECOMP_ROOT}/runtime/src/psx_sdl_audio.cpp
     ${PSXRECOMP_ROOT}/runtime/src/psx_stick.c
     ${PSXRECOMP_ROOT}/runtime/src/memory.c

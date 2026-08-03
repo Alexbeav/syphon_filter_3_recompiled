@@ -150,7 +150,20 @@ def main() -> int:
         action="store_true",
         help="avoid screenshot-triggered GL→CPU synchronization before gameplay",
     )
+    parser.add_argument(
+        "--display-ring-aux",
+        action="store_true",
+        help="capture full same-frame VRAM for texture/CLUT forensics (expensive)",
+    )
+    parser.add_argument("--observed-red-limit-bp", type=int, default=1500)
+    parser.add_argument("--observed-hot-red-limit-bp", type=int, default=500)
     args = parser.parse_args()
+    for value, label in (
+        (args.observed_red_limit_bp, "--observed-red-limit-bp"),
+        (args.observed_hot_red_limit_bp, "--observed-hot-red-limit-bp"),
+    ):
+        if not 0 <= value <= 10000:
+            parser.error(f"{label} must be between 0 and 10000")
 
     # Preserve mapped-drive spelling.  Path.resolve() expands a mapped drive to
     # UNC on Windows, while the current runtime CLI deliberately accepts the
@@ -170,6 +183,7 @@ def main() -> int:
     env = os.environ.copy()
     env["SDL_AUDIODRIVER"] = "dummy"
     env["PSX_DEBUG_FMV_QUIET"] = "1"
+    env["PSX_DISPLAY_RING_AUX"] = "1" if args.display_ring_aux else "0"
     env["PSX_FNTRACE_ARM"] = ",".join(
         f"0x{x:08X}"
         for x in (
@@ -208,7 +222,14 @@ def main() -> int:
             creationflags=creationflags,
         )
         evidence: dict[str, Any] = {
-            "pid": process.pid, "port": args.port, "renderer": args.renderer
+            "pid": process.pid,
+            "port": args.port,
+            "renderer": args.renderer,
+            "display_ring_aux": args.display_ring_aux,
+            "observed_corruption_limits_bp": {
+                "red_dominant": args.observed_red_limit_bp,
+                "hot_red": args.observed_hot_red_limit_bp,
+            },
         }
         try:
             def server_ready() -> dict[str, Any]:
@@ -342,28 +363,60 @@ def main() -> int:
 
             evidence["state0"] = wait_for("state-0 Mission 1 PAD polling", args.timeout, state0_ready)
             pop_frame = evidence["state0"]["pop"]["frame"]
+
+            corruption_scans: list[dict[str, Any]] = []
+            last_scan_frame = -30
+
+            def post_intro_control_ready() -> dict[str, Any] | None:
+                nonlocal last_scan_frame
+                frame = int(tcp_call(args.port, "frame")["frame"])
+                if frame - last_scan_frame >= 30:
+                    scan = tcp_call(
+                        args.port,
+                        "display_ring_color_scan",
+                        min_frame=pop_frame,
+                        red_dominant_bp=args.observed_red_limit_bp,
+                        hot_red_bp=args.observed_hot_red_limit_bp,
+                    )
+                    corruption_scans.append(scan)
+                    last_scan_frame = frame
+                    if int(scan["matches"]) > 0:
+                        evidence["state0"]["observed_corruption_scans"] = corruption_scans
+                        raise ProbeError(
+                            "observed red/checkered corruption signature at display frame "
+                            f"{scan['first_match_frame']}"
+                        )
+                if frame >= pop_frame + 2000:
+                    return {"frame": frame, "target": pop_frame + 2000}
+                return None
+
             wait_for(
                 "post-intro control frame",
                 args.timeout,
-                lambda: tcp_call(args.port, "frame")["frame"] >= pop_frame + 2000,
+                post_intro_control_ready,
             )
+            evidence["state0"]["observed_corruption_scans"] = corruption_scans
             ring = tcp_call(args.port, "display_ring_stats")
             ring_frame = int(ring["newest_frame"])
             evidence["state0"]["ring_before_move"] = {
                 "stats": ring,
+                "color": tcp_call(
+                    args.port, "display_ring_color_stats", frame=ring_frame
+                ),
                 "display": tcp_call(
                     args.port,
                     "display_ring_get",
                     frame=ring_frame,
                     path=(out / "state0-before-move-ring.png").as_posix(),
                 ),
-                "vram": tcp_call(
+            }
+            if args.display_ring_aux:
+                evidence["state0"]["ring_before_move"]["vram"] = tcp_call(
                     args.port,
                     "display_ring_aux",
                     frame=ring_frame,
                     path=(out / "state0-before-move-vram.bin").as_posix(),
-                ),
-            }
+                )
             if args.renderer == "opengl":
                 evidence["state0"]["gl_vram_diff_before_move"] = tcp_call(
                     args.port, "gl_vram_diff"
@@ -383,19 +436,23 @@ def main() -> int:
             ring_frame = int(ring["newest_frame"])
             evidence["state0"]["ring_after_move"] = {
                 "stats": ring,
+                "color": tcp_call(
+                    args.port, "display_ring_color_stats", frame=ring_frame
+                ),
                 "display": tcp_call(
                     args.port,
                     "display_ring_get",
                     frame=ring_frame,
                     path=(out / "state0-after-move-ring.png").as_posix(),
                 ),
-                "vram": tcp_call(
+            }
+            if args.display_ring_aux:
+                evidence["state0"]["ring_after_move"]["vram"] = tcp_call(
                     args.port,
                     "display_ring_aux",
                     frame=ring_frame,
                     path=(out / "state0-after-move-vram.bin").as_posix(),
-                ),
-            }
+                )
             if args.renderer == "opengl":
                 evidence["state0"]["gl_vram_diff_after_move"] = tcp_call(
                     args.port, "gl_vram_diff"

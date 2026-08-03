@@ -264,6 +264,21 @@ target_include_directories(l2_structural_test PRIVATE
 target_link_libraries(l2_structural_test PRIVATE fmt rabbitizer)
 
 if(BUILD_TESTING)
+    add_executable(input_timeline_contract_test
+        ../runtime/tests/test_input_timeline.cpp
+        ../runtime/src/input_timeline.cpp)
+    target_include_directories(input_timeline_contract_test PRIVATE
+        ../runtime/include)
+    add_test(NAME input_timeline_contract_test
+             COMMAND input_timeline_contract_test)
+
+    add_executable(frame_color_stats_test
+        ../runtime/tests/test_frame_color_stats.c
+        ../runtime/src/frame_color_stats.c)
+    target_include_directories(frame_color_stats_test PRIVATE
+        ../runtime/include)
+    add_test(NAME frame_color_stats_test COMMAND frame_color_stats_test)
+
     add_executable(debug_trace_ranges_test
         ../runtime/tests/test_debug_trace_ranges.c
         ../runtime/src/debug_trace_ranges.c
@@ -401,6 +416,7 @@ if(BUILD_TESTING)
         foreach(_t IN ITEMS
                 capture_history
                 default_renderer_guards
+                display_ring_cost_guards
                 fmv_quiet_guards
                 fps_telemetry_opt_in
                 frame_interpolation_display_rate
