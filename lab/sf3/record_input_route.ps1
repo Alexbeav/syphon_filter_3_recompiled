@@ -57,13 +57,17 @@ try {
 
     Write-Host "Recording retail-boundary input to $routePath"
     Write-Host 'Release all controls before closing the game to leave a neutral bookend.'
-    Push-Location (Split-Path -Parent $exe)
-    try {
-        & $exe --no-launcher --renderer $Renderer --game $game --memcard-dir $memcardPath
-        $exitCode = $LASTEXITCODE
-    } finally {
-        Pop-Location
-    }
+    # A GUI-subsystem executable invoked with `&` can return control before the
+    # process exits on Windows.  The route is finalized during orderly runtime
+    # shutdown, so retain the process object and wait for that exact boundary.
+    $process = Start-Process -FilePath $exe `
+        -ArgumentList @(
+            '--no-launcher', '--renderer', $Renderer,
+            '--game', $game, '--memcard-dir', $memcardPath
+        ) `
+        -WorkingDirectory (Split-Path -Parent $exe) `
+        -Wait -PassThru
+    $exitCode = $process.ExitCode
 } finally {
     if ($null -eq $savedRecord) { Remove-Item Env:PSX_INPUT_RECORD -ErrorAction SilentlyContinue }
     else { $env:PSX_INPUT_RECORD = $savedRecord }

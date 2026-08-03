@@ -601,3 +601,49 @@ Both desktop shortcuts now target `input-route-m`; neither was opened. The
 workspace is 15.160 GiB, below the 20 GiB ceiling. The candidate is ready for a
 visible human falsification, but the P0 remains open until that check passes and
 the longer representative Mission 1 gates are completed.
+
+### R9 — visible corruption/fatal contradicts swap ownership; cache closure repaired
+
+The human falsification failed decisively. Mission 1 presented a large blue
+plane, malformed characters and texture/page corruption, then exited shortly
+after gameplay began. The retained fatal dump reached frame 2751 with
+`present_slow_count=0` and `present_vsync_disabled=0`; the direct-OpenGL
+backpressure candidate is therefore irrelevant to this failure. The dump
+records roughly 3.55 million dirty blocks and 134.10 million interpreted
+instructions. Its final `instruction guard` record points at a valid `sltu` and
+is a normal interpreter-slice yield, not an unsupported MIPS opcode.
+
+The ordinary `input-route-m` product had been handed to the user without the
+validated SF3 overlay cache. This was a release-closure error. The compiler
+also contradicted its own additive-history documentation: manual compilation
+read only the replace-on-latest `overlay_captures.json` and ignored immutable
+`overlay_captures.json.d` contributions. A focused generic loader now unions
+the latest file and every valid history snapshot by normalized address plus
+exact bytes, unions evidence for the same variant, preserves different variants
+at reused addresses and skips torn/malformed siblings. The 49-test framework
+suite includes this contract. SF2 recomp is the independent validator.
+
+Compiling the fatal route's large mixed code/data region directly correctly
+rejected unsafe whole-region output and numerous data-as-code fragments. Those
+partial products were not promoted. Instead, the four full SF3 shards from the
+earlier two 82.3%-native clean runs were copied into `input-route-m` only after
+their cache namespace matched exactly: SCUS-94640, gcc/win-x64, codegen 9,
+emitter `9713afe3`, config `cd77ebe4`, ABI 21. This is same-title retail-derived
+coverage under ignored storage, not an SF2 address or artifact.
+
+The corrected diagnostic replay completes all 3,194 samples, reaches state 8
+at frame 2317 and state 0 at 2386, samples display origins `(0,0)`, `(0,2)` and
+`(0,240)`, and finds no red/checkered match. It reports four loaded regions,
+122 registered candidates, 8,826,567 native overlay dispatches and 16,798
+overlay fallbacks near frame 3004, with zero candidate overflow or ordinary
+dispatch misses. Dirty execution remains material at 67.73 million
+instructions, so cache restoration is an execution-tier correction rather than
+proof of the crash's root invariant.
+
+Two further non-diagnostic ordinary OpenGL replays completed the exact route
+through sample 3194 with orderly `atexit` reports. The recorder itself also had
+the Windows GUI-process wait defect already fixed in the replay helper; it now
+uses `Start-Process -Wait -PassThru`, so a crash or normal close cannot return
+before final route publication. The workspace is 15.668 GiB. The desktop
+candidate is cache-complete and ready for one visible human countercheck, but
+representative readiness and the corrupt-texture owner remain open.

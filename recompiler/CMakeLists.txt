@@ -430,6 +430,7 @@ if(BUILD_TESTING)
                 overlay_call_unit_irq_guards
                 overlay_candidate_capacity
                 overlay_decodable_fallback
+                overlay_additive_capture_loader
                 overlay_init_guard
                 sdl3_main_single_include
                 sf3_input_route_helpers

@@ -175,6 +175,10 @@ def main() -> int:
                         event["mdec"] = safe_call(args.port, "mdec_state")
                         event["irq"] = safe_call(args.port, "irq_state")
                         event["dispatch"] = safe_call(args.port, "dispatch_stats")
+                        event["overlay"] = safe_call(
+                            args.port, "overlay_loader_status"
+                        )
+                        event["dirty_ram"] = safe_call(args.port, "dirty_ram_stats")
                     evidence["application_transitions"].append(event)
                     last_pair = pair
 
@@ -234,6 +238,10 @@ def main() -> int:
                             "irq": safe_call(args.port, "irq_state"),
                             "pad": safe_call(args.port, "pad_status"),
                             "dispatch": safe_call(args.port, "dispatch_stats"),
+                            "overlay": safe_call(
+                                args.port, "overlay_loader_status"
+                            ),
+                            "dirty_ram": safe_call(args.port, "dirty_ram_stats"),
                         }
                     )
                     last_periodic = frame

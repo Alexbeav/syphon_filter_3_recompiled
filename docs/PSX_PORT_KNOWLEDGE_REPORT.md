@@ -212,11 +212,29 @@ state 8 at frame 2317 and state 0 at 2386 with clean subsystem evidence. The
 desktop candidate is retargeted, but representative readiness remains open
 pending visible and connected Mission 1 acceptance.
 
+The next visible run contradicted that presentation inference for the observed
+fatal: it recorded zero slow swaps and no vsync recovery, showed catastrophic
+Mission 1 geometry/texture corruption and exited near frame 2751. The product
+was missing its compiled SF3 cache and ran about 134.10 million dirty-interpreter
+instructions. Restoring the exact four-region SF3 cache halves that instruction
+load on the recorded route; a diagnostic run measures 8.83 million native
+overlay dispatches against 16.8 thousand overlay fallbacks and completes with
+clean two-page output. Two ordinary exact-route replays also complete. This is
+a narrowed execution-tier amplifier, not yet the proven corruption owner.
+
+New candidate `PSX-OVL-004`: a release overlay compiler must consume the
+runtime's immutable additive capture history, not only its replace-on-latest
+manifest. The generic loader now unions exact-byte variants and their evidence,
+preserves reused-address variants and tolerates a torn sibling. The registered
+49-test suite covers the contract. SF2 recomp should independently validate it.
+The human recorder now waits on its GUI-subsystem process object before testing
+for a finalized route.
+
 ## Quality debt
 
 | Debt | Likely owner | Removal gate |
 | --- | --- | --- |
-| Briefing can appear to fail while audio continues | strong visible OpenGL swap-backpressure inference; human confirmation pending | visible candidate plus two connected ordinary Release transitions |
+| Briefing can appear to fail while audio continues | unresolved; latest fatal contradicts swap backpressure and exposes missing-cache/heavy-fallback amplification | cache-complete visible candidate plus two connected ordinary Release transitions |
 | State-0 world textures can be corrupt | GPU/VRAM unresolved | authoritative software/OpenGL comparison and correct two-page multi-room output |
 | Existing probe ends after initial movement | validation harness | connected death/restart, checkpoint and Mission 1 completion replay |
 

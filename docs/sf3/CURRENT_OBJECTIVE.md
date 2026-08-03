@@ -18,9 +18,13 @@ of playability.
 
 ## Current P0 blockers
 
-- Ordinary Release previously accepted the Mission 1 briefing without beginning
-  the mission; a generic visible-OpenGL swap-backpressure recovery candidate is
-  now built and awaits the human countercheck.
+- The next visible run contradicted the OpenGL swap-backpressure owner: the
+  fatal frame reported zero slow presents and no vsync recovery. It displayed
+  severe corrupt geometry/textures and exited around frame 2751.
+- That candidate had no compiled overlay cache. The fatal run executed about
+  134 million dirty-interpreter instructions. Four previously validated SF3
+  shards are now restored under the exact codegen/config namespace; two clean
+  ordinary replays complete, but a visible countercheck is still required.
 - The recorded failing run plays the intro's XA audio but displays no video,
   consumes no visible retail input and never progresses into the mission. Its
   neutral-bookended 3,194-sample route contains 333 active retail-SIO samples,
@@ -55,7 +59,7 @@ of playability.
 
 | Debt | Owner | User impact | Evidence | Removal gate |
 | --- | --- | --- | --- | --- |
-| Briefing/movie handoff intermittently fails | strong visible OpenGL swap-backpressure inference; human confirmation pending | audio continues while presentation/emulation/input appears frozen | captured route succeeds through state 8/state 0 under diagnostic/software/ordinary hidden replays; direct GL bypassed existing vsync self-heal | visible candidate passes, then two ordinary connected routes pass |
+| Briefing/movie handoff intermittently fails | unresolved; OpenGL swap-backpressure contradicted for the latest fatal run, missing native cache narrowed as an execution-tier amplifier | audio continues while presentation/emulation/input appears frozen or corrupt before exit | failing frame had `present_slow_count=0`; uncached fatal ran ~134M interpreted instructions; cached exact-route runs complete | cached visible candidate passes, then two ordinary connected routes pass |
 | Mission textures can sample corrupt data | unresolved GPU/VRAM owner | gameplay is visually invalid | user cold-launch screenshot | software/OpenGL oracle comparison plus correct multi-room two-page presentation |
 | Probe covers only initial state-0 movement | validation harness | false confidence in playability | prior `probe_story.py` exit boundary | extend through sustained play, failure/restart, checkpoint and completion |
 | Human route recorder/replayer not runtime-validated | validation harness | offered playthrough cannot yet serve as deterministic witness | serializer, hidden-renderer helper guards and fresh Release link only | record one neutral-bookended Mission 1 route and replay it twice with matching semantic/GPU evidence |

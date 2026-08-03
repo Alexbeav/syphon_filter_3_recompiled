@@ -18,11 +18,14 @@ observer_text = observer.read_text(encoding="utf-8")
 record_required = (
     "PSX_INPUT_RECORD",
     "PSX_INPUT_REPLAY",
-    "--renderer $Renderer",
+    "'--renderer', $Renderer",
     "Release all controls before closing",
     ".partial",
     "[switch]$Unique",
     "yyyyMMdd-HHmmss",
+    "Start-Process",
+    "-Wait -PassThru",
+    "$process.ExitCode",
 )
 replay_required = (
     "PSX_INPUT_REPLAY",
@@ -61,6 +64,8 @@ observer_required = (
     '"fmv_state"',
     '"mdec_state"',
     '"irq_state"',
+    '"overlay_loader_status"',
+    '"dirty_ram_stats"',
     '"application_transitions"',
     '"state0_page_samples"',
     "newest - 1",
