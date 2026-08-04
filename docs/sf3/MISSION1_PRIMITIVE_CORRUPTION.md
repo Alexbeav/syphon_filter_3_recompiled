@@ -73,8 +73,11 @@ The framework suite passes 63/63. Two clean ordinary hidden OpenGL/dummy-audio
 runs consume 3,000 samples and produce matching card hashes, also matching the
 pre-fix smoke route. Two further clean ordinary processes consume the complete
 42,480-sample accepted Mission 1-to-Mission 2 route and produce byte-identical
-card images. This proves lifecycle stability only. Visible Mission 1 acceptance
-remains required to confirm that the shards are gone.
+card images. A subsequent visible 4x human run confirmed that the Mission 1
+opening room renders without the oversized textured shards. The same connected
+session remained visually correct and comfortable under mouse/keyboard control
+through arrival in Mission 4. This closes visible causality for the complete-
+quad correction without extending the claim to untested later campaign content.
 
 No room-specific filter, guest patch or title-state containment was added. The
 independent validating project is SF2 Recomp; it should replay a geometry-heavy

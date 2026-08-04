@@ -295,7 +295,9 @@ selection. Mouse motion bypasses PAD acceleration; left/right buttons remain
 ordinary Square/fire and L1/aim. Wheel notches enter a bounded title-neutral
 queue that emits retail Select edges with a release sample between them, so
 the original weapon ring retains ownership. Focus loss clears motion, button
-and wheel state. Human chase/aim feel and scripted-camera handoff remain open.
+and wheel state. A connected visible 4x session subsequently accepted chase,
+aim, fire, wheel selection and scripted-camera handoff through arrival in
+Mission 4.
 
 The Mission 1 opening-room shards now have a bounded generic GPU owner. Packet
 decoding found no length mismatch, but 41 polygons exceed the PS1 edge limit.
@@ -308,8 +310,10 @@ textured command's TPAGE latch, and also avoids treating the internal split as
 a hardware edge. Synthetic regression plus the full 63/63 suite pass. Two
 ordinary hidden 3,000-sample runs match card hashes. Two more ordinary clean
 processes consume all 42,480 samples of the accepted Mission 1-to-Mission 2
-route and produce byte-identical card images. Visible confirmation is still
-required and hidden output is not promoted to the presentation oracle.
+route and produce byte-identical card images. Visible confirmation then passed:
+the Mission 1 opening room rendered without shards, and the same human session
+remained visually correct and comfortable through arrival in Mission 4. Hidden
+output remains secondary evidence rather than the presentation oracle.
 
 ## Provenance
 
