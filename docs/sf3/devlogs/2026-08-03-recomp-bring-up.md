@@ -830,3 +830,74 @@ produced identical card hashes; the route payload remained SHA-256
 `6d26b87efb8b9cf935d73a156581edb899d2891896bd761d7d0ab7ec1499840f`
 and was retagged only after its whole-file source hash was verified. This
 closes runtime switch ownership; the full accepted-route matrix remains next.
+
+### R15 — visible 4x acceptance exposes localized primitive debt; mouse playtest prepared
+
+The source-only compatibility baseline was frozen at `3dd2f7b` plus the public
+declaration correction `4250697`; the public repository carries the equivalent
+history through `4d6b679`. Human testing then accepted the same visible Mission
+1 entry with runtime overlays interpreter-owned. The deterministic 4x and SF2
+keyboard defaults were checkpointed at `6e654d5` and published as `c64ebef`.
+
+The 4x run confirms correct title, briefing, Mission 1 entry and continued
+gameplay, but contradicts the claim that opening-room presentation debt is only
+a subtle raster delta. The user supplied a repeatable visible capture containing
+oversized textured triangles/quads that form long multicolored shards. The HUD,
+player and parts of the room remain coherent, and later rooms appear normal.
+`MISSION1_PRIMITIVE_CORRUPTION.md` normalizes this as malformed world primitives
+and orders packet/vertex/OT checks ahead of E-state and texture-state leakage.
+The shared GPU/presentation contract was consulted: ordering and persistent
+per-page state remain authoritative, and hidden captures are negative controls,
+not visible acceptance. SF2 Recomp is the independent validator for any generic
+GPU invariant.
+
+The already bounded SCUS-94640 direct-camera work was integrated without
+copying SF2 addresses. Generation emits one exact-word-guarded hook at
+`0x800549C4`; runtime additionally requires state zero, valid live pointers and
+retail camera owner equality. Direct-camera mode keeps mouse motion off the PAD
+path while left/right buttons retain retail Square/fire and L1/aim. A new
+title-neutral wheel queue converts each notch to one retail Select edge and
+inserts a sampled release between queued edges; retail still owns weapon order
+and selection. Focus loss clears all pending input.
+
+The ordinary Release product logs OpenGL 4x, interpreter-owned runtime overlays,
+the enabled guarded camera and the installed tracked keybindings. A hidden,
+dummy-audio replay retagged only after source-hash verification consumed 3,000
+samples and exited at the bounded marker. This is a build/lifecycle smoke test,
+not mouse-feel or visible-graphics acceptance. The desktop shortcut was not
+launched; the next human gate is chase freelook, held-right-button aim,
+left-button fire, wheel weapon changes, scripted-camera handoff and Mission 1
+through Mission 2 entry.
+
+### R16 — original-quad rejection owns the opening-room shard candidate
+
+The bounded GP0 analyzer found no packet-length mismatch in 59 broadly flagged
+world polygons. It did find 41 commands beyond the PS1 primitive edge limit.
+Five shaded textured quads (`GP0 3Ch`) match a sharper invariant: one of the
+runtime's two decomposed triangles was rejected and the other survived. This
+is sufficient to produce the long textured half-quad shards seen by the user.
+All five have coherent packet lengths and world submission provenance at guest
+PC `0x800F5B3C`.
+
+PSX-SPX documents the 1023-horizontal/511-vertical polygon limit. More precise
+SCPH-5501 tests in the pinned PCSX-Redux reference establish that quad rejection
+is performed on the original perimeter (`0-1, 1-3, 3-2, 2-0`) and drops the
+complete command, not each raster triangle independently. The framework's
+2026-07-14 correction had encoded the latter behavior and therefore contained
+both a false-survivor and an internal-split false-reject case.
+
+The generic helper now checks the original polygon edges before draw offsets or
+enhancement transforms. Textured commands retain their TPAGE side effect before
+the rejection boundary. A synthetic regression covers complete-quad rejection
+when one triangle would survive and acceptance when only the internal split is
+oversized. The analyzer labels both `hardware_oversize` and
+`partial_quad_risk`; the captured route contains five such risks.
+
+Release tests pass 63/63. The ordinary and diagnostic candidates rebuild. Two
+clean ordinary hidden OpenGL/dummy-audio runs consume 3,000 samples, exit at the
+bounded marker and produce identical card hashes that also match the pre-fix
+smoke. This is a deterministic compatibility gate, not visual acceptance. The
+desktop shortcut points to the rebuilt ordinary candidate; the next visible
+gate is no shards in the opening room followed by mouse chase/aim/fire/wheel
+and the connected Mission 1-to-Mission 2 route. SF2 Recomp is the independent
+validator for the generic quad-perimeter contract.

@@ -278,6 +278,37 @@ so the reusable contract is exact word + state + valid pointers + owner equality
 not state alone. SF2 Recomp is the independent validator for the live-register
 variant that removes the global-player-pointer dependency.
 
+## Visible 4x and input follow-up — 2026-08-04
+
+Visible testing accepts the interpreter-owned overlay route and 4x plumbing,
+but consistently exposes oversized textured world polygons in the Mission 1
+opening room. Coherent HUD/player rendering and normal later rooms narrow this
+away from global texture loss. The shared GPU contract makes same-frame packet
+order, page state and OT provenance the next owners; prior hidden captures are
+negative controls only. A bounded GP0 frame dump and source-owned primitive
+classifier now flag packet-length and decoded-vertex-span anomalies without
+dropping or rewriting guest submissions. SF2 Recomp is the independent
+validator for any generic decoder or state-restoration result.
+
+The locally proven SCUS-94640 camera boundary is now integrated with runtime
+selection. Mouse motion bypasses PAD acceleration; left/right buttons remain
+ordinary Square/fire and L1/aim. Wheel notches enter a bounded title-neutral
+queue that emits retail Select edges with a release sample between them, so
+the original weapon ring retains ownership. Focus loss clears motion, button
+and wheel state. Human chase/aim feel and scripted-camera handoff remain open.
+
+The Mission 1 opening-room shards now have a bounded generic GPU owner. Packet
+decoding found no length mismatch, but 41 polygons exceed the PS1 edge limit.
+Five `GP0 3Ch` quads expose the exact runtime divergence: the old code tested
+the two decomposed raster triangles independently and drew one surviving half.
+Hardware-backed PCSX-Redux tests establish that the original quad perimeter is
+tested and the entire command is silently dropped if any edge exceeds 1023 by
+511. The correction contains no title address or packet identity, preserves the
+textured command's TPAGE latch, and also avoids treating the internal split as
+a hardware edge. Synthetic regression plus the full 63/63 suite pass. Two
+ordinary hidden 3,000-sample runs match card hashes; visible confirmation is
+still required and hidden output is not promoted to the presentation oracle.
+
 ## Provenance
 
 No retail input, executable, generated C, overlay capture, RAM/state, card or

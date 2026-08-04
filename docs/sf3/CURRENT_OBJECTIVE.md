@@ -7,9 +7,10 @@ covers cold boot, Story/Mission 1, death, checkpoint reload, full mission
 completion, FMV, new-card save and the retail Mission 2 handoff through live
 gameplay. Two ordinary hidden OpenGL replays and a passive diagnostic replay
 consume the same complete route after safe Mission 2 overlay promotion. The
-previous catastrophic start-of-level corruption does not reproduce with the
-cache-complete product; a small software/OpenGL raster-precision delta remains
-presentation debt and campaign-wide correctness is not yet claimed.
+previous catastrophic red/checkered failure is fixed, but visible testing now
+confirms a deterministic opening-room defect: oversized textured world
+primitives form long shards while the player and HUD remain coherent. This is
+not accepted as the earlier small software/OpenGL raster-precision delta.
 
 Redux state: `phase1_direct_camera_structurally_verified`. The isolated branch
 builds with 53 Release tests. It has a clean 4x/4:3 profile, keyboard mapping,
@@ -36,9 +37,11 @@ accepted route, keep an off switch, and record honest native/fallback ownership.
 
 - No representative-slice P0 remains. The cache-complete visible countercheck
   and three complete replays supersede the earlier cache-empty fatal.
-- No compatibility-baseline P0 remains. Dense software/OpenGL captures around
-  Mission 1 startup and three bounded cache-complete falsification runs do not
-  reproduce the earlier blue-plane, corrupt-geometry or red/checkered failure.
+- The visible opening-room primitive defect has a proven generic GPU owner and
+  a rebuilt candidate, but remains a compatibility P0 until visible acceptance.
+  The runtime incorrectly rejected decomposed quad triangles independently;
+  five captured `GP0 3Ch` commands would render one oversized half even though
+  PS1 hardware drops the complete original quad by perimeter-edge limits.
 - Mission 2 safe overlay coverage is compiled and replay-validated. The passive
   endpoint loads seven regions, registers 164 candidates, executes 9.81M native
   overlay dispatches and 270,891 fallbacks with 70.95M dirty instructions.
@@ -63,6 +66,7 @@ accepted route, keep an off switch, and record honest native/fallback ownership.
 
 | Debt | Owner | User impact | Evidence | Removal gate |
 | --- | --- | --- | --- | --- |
+| Oversized textured shards in Mission 1 opening room | confirmed generic complete-quad rejection mismatch; visible closure pending | substantial room occlusion; later rooms appear correct | five captured `GP0 3Ch` partial-quad risks, hardware-backed perimeter contract, 63/63 tests and two clean 3,000-sample runs | visible 4x Mission 1 opening-room pass with no shards, then continue through Mission 2 handoff |
 | Small OpenGL/software raster delta at Mission 1 start | GPU raster precision | subtle shading/facet differences at native resolution | 115 dense common startup frames plus 71 later sampled frames; worst sampled mean RGB delta 3.723/255 | independently validate PSX 5-bit versus host 8-bit Gouraud/edge precision before changing presentation |
 | Campaign overlays beyond early Mission 2 | overlay coverage | performance risk and incomplete recompilation ownership | safe Mission 2 endpoint: seven regions, 9.81M native dispatches, 270,891 fallbacks | extend only from exact-byte additive history and replay each promotion |
 | Diagnostic display readback can alter host timing | validation observer | a clean observed run may not represent ordinary Release timing | OpenGL ring capture flushes/reads back even without CPU-VRAM synchronization; route observer is source/build validated only | reproduce under a recorded route, localize with bounded capture, then confirm the fix twice in ordinary Release with the observer disabled |
