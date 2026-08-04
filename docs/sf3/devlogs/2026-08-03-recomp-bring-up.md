@@ -1055,3 +1055,38 @@ The complete 42,480-sample route was not repeated for this presentation-only
 acceptance delta; its prior two-run compatibility qualification remains the
 control. SF2 Recomp is the independent validator for provenance-scoped HUD and
 matte expansion.
+
+### R22 — list-qualified cinematic mattes complete the accepted widescreen slice
+
+Human acceptance reopened the known 4:3 matte debt. SF2's full-width-effect
+implementation was consulted, but its broad quad predicate could not be copied:
+the earlier SF3 countercheck extended the bars while also turning width-
+spanning world geometry into vertical slabs.
+
+The existing SF3 census supplied a bounded owner. During the Mission 1
+conversation, linked-list 4 repeatedly submits sixteen mono quads (`GP0 28h`)
+spanning authored X `-192..192`; the black top and bottom bands occupy
+`-120..-70` and `70..120`. The dense world owner remains list 3. A temporary
+vertex trace confirmed the complete four-vertex topology, black color, list
+identity and ordering rank, then was removed.
+
+The accepted correction does not widen arbitrary polygon vertices. It
+classifies an authored-width axis-aligned quad only after the caller proves
+screen-space/effect-list ownership, then routes it through the existing flat-
+rectangle backend. That backend already owns native-wide margin coverage and
+avoids the shared-diagonal blend seam. Dense world submissions cannot enter
+the path.
+
+The focused helper regression covers zero/centered origins, reverse winding,
+projected rejection, narrow rejection and explicit world-owner rejection. A
+3,000-sample Mission 1 route completes with the central 384-pixel guest capture
+byte-identical to the accepted control (`542E3553...FC68`), which is expected:
+only the host-wide side margins change. Human testing then confirms full-width
+cinematic bars, HQ rendering, widescreen world presentation and mouse/keyboard
+operation together, with no return of the world-slab defect. HUD relocation
+remains separate low-priority debt.
+
+Post-acceptance qualification passes the UTF-8 Release framework suite 66/66.
+The ordinary `build-wide` Release target rebuilds cleanly from the accepted
+sources; the generated executable remains a local, retail-derived artifact and
+is not eligible for source-repository publication.

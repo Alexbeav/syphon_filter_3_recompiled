@@ -18,9 +18,9 @@ with strict focus, word, state, pointer and retail-owner guards. A generated
 ordinary Release product and separate Release-diagnostic product both link.
 Human mouse feel, aim/fire/wheel controls and scripted-camera handoff are
 accepted through the connected Mission 1-to-Mission 4 session. Native-wide
-world presentation is human-accepted in Mission 1 and two clean 3,000-sample
-runs match frame and card hashes. Cutscene mattes still end at the authored 4:3
-edges, and HUD/UI remains at its original 4:3 coordinates.
+world presentation, full-width cinematic mattes, mouse and keyboard are
+human-accepted in Mission 1, and two clean 3,000-sample runs match frame and
+card hashes. HUD/UI remains at its original 4:3 coordinates.
 
 ## Objective
 
@@ -42,7 +42,8 @@ accepted route, keep an off switch, and record honest native/fallback ownership.
   route. Two ordinary 42,480-sample runs complete with accepted card hashes.
   Visible 16:9 inspection confirms continuous world rendering after disabling
   the unowned blanket HUD-corner shift and full-mirror compositor. Remaining
-  presentation debt is full-width cutscene mattes and optional HUD relocation.
+  Full-width cinematic mattes are accepted through the list-qualified flat-
+  rectangle path. Remaining presentation debt is optional HUD relocation.
 
 - No structural or visible direct-camera blocker remains. Live SCUS-94640
   evidence proves
@@ -87,7 +88,7 @@ accepted route, keep an off switch, and record honest native/fallback ownership.
 | Campaign overlays beyond early Mission 2 | overlay coverage | performance risk and incomplete recompilation ownership | safe Mission 2 endpoint: seven regions, 9.81M native dispatches, 270,891 fallbacks | extend only from exact-byte additive history and replay each promotion |
 | Diagnostic display readback can alter host timing | validation observer | a clean observed run may not represent ordinary Release timing | OpenGL ring capture flushes/reads back even without CPU-VRAM synchronization; route observer is source/build validated only | reproduce under a recorded route, localize with bounded capture, then confirm the fix twice in ordinary Release with the observer disabled |
 | Campaign beyond arrival in Mission 4 unverified | retail/content lifecycle | no whole-campaign claim | connected visible play reached Mission 4; Missions 5–19 and later lifecycle seams remain unverified | campaign qualification matrix covering every mission, transition, checkpoint and save/load seam |
-| Cutscene mattes stop at authored 4:3 edges | screen-space primitive provenance | visible side gaps during letterboxed retail cutscenes | human 16:9 Mission 1 capture; broad polygon/quad expansion was rejected after producing world slabs | identify the exact SF3 screen-space owner and extend only its mattes |
+| Cutscene mattes stop at authored 4:3 edges | **closed 2026-08-04**: auxiliary-list mono-quad ownership | no remaining observed impact in Mission 1 cinematics | list 4 carries `GP0 28h` black bands at authored `-192..192`; list 3 is the dense world owner; focused regression plus visible acceptance | passed: bars cover both 16:9 margins without restoring world slabs |
 | HUD/UI remains at 4:3 coordinates | HUD provenance | low-priority inset HUD at 16:9 | human 16:9 Mission 1 capture; `nw_hud_corners` cannot distinguish HUD from world polygons in SF3 | relocate only structurally proven HUD primitives |
 
 ## Starting evidence
