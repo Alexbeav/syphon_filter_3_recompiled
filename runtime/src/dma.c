@@ -382,6 +382,7 @@ static void cancel_async_transfer(int ch) {
     }
     if (ch == 3) {
         finish_cdrom_dma_capture(channels[3].madr & 0x1FFFFCu, 0);
+        cdrom_dma_end();
         cdrom_async.active = 0;
         cdrom_async.debug_started = 0;
         cdrom_async.total_words = 0;
@@ -463,6 +464,7 @@ static void start_async_cdrom_transfer(void) {
     a->remaining_words = a->total_words;
     a->cycles_accum = 0;
     a->start_addr = channels[3].madr & 0x1FFFFCu;
+    cdrom_dma_begin();
     start_cdrom_dma_capture(a->total_words);
 
     if (a->total_words == 0) {

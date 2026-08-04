@@ -509,6 +509,14 @@ static RuntimeConfig parse_runtime_block(const toml::value& cfg, const fs::path&
             else throw std::runtime_error(fmt::format(
                 "[video] texture_filtering must be \"nearest\" or \"bilinear\": {}", mode));
         }
+        if (video.contains("geometry_precision")) {
+            rt.video_geometry_precision =
+                toml::find<bool>(video, "geometry_precision");
+        }
+        if (video.contains("perspective_textures")) {
+            rt.video_perspective_textures =
+                toml::find<bool>(video, "perspective_textures");
+        }
         if (video.contains("renderer")) {
             const auto mode = toml::find<std::string>(video, "renderer");
             if (mode == "software")     rt.video_renderer = 0;

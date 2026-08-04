@@ -322,6 +322,12 @@ struct RuntimeConfig {
     // (smooths textures and 2D backgrounds). Stored as 0/1.
     int                   video_texture_filter = 0;
 
+    // Derived PGXP-style metadata. Both are opt-in and preserve retail-visible
+    // GTE registers, packet words and RAM; unmatched primitives retain native
+    // integer XY and affine UV interpolation.
+    bool                  video_geometry_precision = false;
+    bool                  video_perspective_textures = false;
+
     // renderer: "software" | "opengl" (default) | "vulkan". Selects the
     // rasterizer/present backend. The software rasterizer remains the explicit
     // fallback. Stored as VIDEO_RENDERER_*.

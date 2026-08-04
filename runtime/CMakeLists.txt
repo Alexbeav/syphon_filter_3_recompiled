@@ -88,6 +88,11 @@ if(BUILD_TESTING)
     target_include_directories(ws_ui_group_test PRIVATE include)
     add_test(NAME ws_ui_group_test COMMAND ws_ui_group_test)
 
+    add_executable(ws_fullwidth_effect_test
+        tests/test_ws_fullwidth_effect.c)
+    target_include_directories(ws_fullwidth_effect_test PRIVATE include)
+    add_test(NAME ws_fullwidth_effect_test COMMAND ws_fullwidth_effect_test)
+
     add_executable(ws_projection_compose_test
         tests/test_ws_projection_compose.c)
     target_include_directories(ws_projection_compose_test PRIVATE include)

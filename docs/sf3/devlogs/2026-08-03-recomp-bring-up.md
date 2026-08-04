@@ -965,3 +965,93 @@ pillarboxing, fades/scopes and mission transitions. SF2 Recomp independently
 validates the generic DMA-submission ownership model; Tenchu independently
 validates the one-projection-owner constraint through a different title-owned
 mechanism.
+
+### R19 — PGXP Gate B exposes a false replay gate and the baseline scheduler race
+
+The first isolated PGXP candidate compiled, initialized the real NVIDIA OpenGL
+3.3 path and completed a short diagnostic route with exact address/generation
+provenance. The user nevertheless rejected it immediately: Mission 1 stayed
+black after the briefing while dialogue and later conversations continued with
+choppy audio. A geometry-only replacement reproduced the same symptom.
+
+The evidence launcher retained the exact 8,619-sample user route. Three bounded
+replays required retail state 8, state 0 and state-0 display-page activity. The
+geometry-only build, the same build with all PGXP switches disabled, and the
+pre-PGXP accepted diagnostic build all reach state 0 and then lose guest work
+at the same boundary. Geometry correction has zero hits before the divergence.
+The geometry and pre-PGXP cases agree at frame 2760, dirty-instruction count
+146,028,664, BIOS function `0x000029CC`, last store `0x8001E6A0`, return address
+`0x8001F49C`, `I_STAT=1` and `I_MASK=0`.
+
+This contradicts PGXP ownership and reopens the generic scheduler/interrupt
+lifecycle. It also invalidates two apparent 42,480-sample PGXP successes: both
+had emitted early freeze dumps before eventually exhausting the host input
+timeline. The observer now rejects semantic depth-0 work stagnation and
+non-startup freeze dumps in addition to requiring explicit retail milestones.
+Full detail and the exact stop boundary are in
+`docs/sf3/PGXP_GATE_B_BLACK_SCREEN.md`. Per the objective, investigation stops
+after corpus consultation and three bounded falsification attempts; no wakeup,
+state force or interrupt-mask containment was added.
+
+### R20 — stable CD DMA ownership restores the visible Mission 1 handoff
+
+The reopened black-screen boundary was localized below PGXP and presentation.
+The CD DMA consumer could observe a different sector buffer after a command or
+device edge changed the live CD state during a split transfer. The runtime now
+latches the completed sector that owns the transfer and keeps that immutable
+payload until the DMA consumer finishes. Bounded diagnostics retain the sector
+identity and transfer progress without changing retail state or fabricating a
+wakeup. A focused split-DMA regression covers the invariant.
+
+The rebuilt visible candidate passed the previously failing briefing-to-
+Mission-1 transition and the user accepted Mission 1 gameplay. This supersedes
+the headless-only compatibility claim: the owning fix was accepted in the same
+visible/manual path that had repeatedly failed. The PGXP experiment remains
+disabled and is not part of this checkpoint. Tab remains the retail R1 binding;
+host turbo moved to keypad plus and has a source-contract regression.
+
+### R21 — native-wide visible acceptance and bounded presentation debt
+
+The first visible candidate was not actually exercising native-wide output:
+its generated game-wide settings lacked `[video] aspect_ratio = "16:9"`.
+After correcting the profile, true 16:9 exposed disconnected right-side world
+slabs. Four bounded A/B checks assigned ownership:
+
+- disabling guest projection did not remove the slabs, contradicting projection
+  ownership;
+- disabling the full-mirror compositor alone did not remove them;
+- disabling `nw_hud_corners` removed the displaced slabs but exposed the
+  mirror compositor's empty center dependency;
+- disabling both produced one continuous authoritative native-wide world.
+
+SF3 has no proven HUD sprite address boundary for the generic corner heuristic.
+It was therefore shifting normal world polygon families as though they were
+screen-space UI. The accepted profile keeps the measured dense-world GTE/DMA
+composition but sets `nw_hud_corners = false` and `nw_full_mirror = false`.
+The user then accepted Mission 1 widescreen world rendering and reported no
+remaining culling defect.
+
+A broad SF2-inspired full-width polygon/quad rule was also falsified: the human
+countercheck produced a large vertical world slab. That rule was removed. A
+narrow helper remains only for partial-height, authored-width PS1 monochrome
+TILE rectangles. It is structurally screen-space, passes its focused C99 test,
+and does not rewrite world polygons. It does not yet classify every SF3
+cutscene matte.
+
+Accepted limitations are explicit: cutscene black bars stop at the original
+4:3 edges, and HUD/UI stays inset at original 4:3 coordinates (low priority).
+No broad heuristic was added to conceal either issue. PGXP remains disabled.
+
+Qualification after human approval:
+
+- Release framework suite: 66/66;
+- CD split-DMA sector-latch, turbo-hotkey, SF3 widescreen-profile and
+  full-width TILE regressions: pass;
+- two clean 3,000-sample OpenGL runs end at the exact bound and match the
+  captured frame SHA-256 `542E3553...FC68` plus both card hashes
+  `A717D08D...CC3F` and `7706C7D4...8E8`.
+
+The complete 42,480-sample route was not repeated for this presentation-only
+acceptance delta; its prior two-run compatibility qualification remains the
+control. SF2 Recomp is the independent validator for provenance-scoped HUD and
+matte expansion.

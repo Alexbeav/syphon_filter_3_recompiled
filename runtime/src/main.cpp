@@ -33,6 +33,8 @@ extern "C" void psx_event_step_conservative_env_init(void);
 #include "load_transition_ring.h"
 #include "gpu_sw_renderer.h"
 #include "gpu_render.h"
+extern "C" void gpu_geometry_correction_set(int enabled);
+extern "C" void gpu_texture_correction_set(int enabled);
 #include "gpu_gl_renderer.h"
 #include "gpu_vk_renderer.h"
 #include "frame_pacing.h"
@@ -610,6 +612,8 @@ static int           g_low_latency_input = 1;
 static int           g_video_vsync        = 1;
 static int           g_frame_interpolation = 0;
 static int           g_frame_interpolation_fps = 0;
+static int           g_geometry_precision = 0;
+static int           g_perspective_textures = 0;
 static int           g_frame_interpolation_blend =
     PSX_MOD_FRAME_INTERPOLATION_LINEAR;
 static int           g_frame_interpolation_blend_default =
@@ -4050,7 +4054,7 @@ static void sdl_vblank_present(void) {
     }
 #endif
 
-    /* Turbo mode: while TAB is held, skip both VRAM->ARGB conversion and
+    /* Turbo mode: while keypad + is held, skip both VRAM->ARGB conversion and
      * SDL_RenderPresent. The recompiled BIOS still advances simulated
      * cycles every vblank, so the BIOS proceeds at whatever rate the host
      * CPU sustains without graphics-driver vsync overhead. Present once
@@ -4059,7 +4063,7 @@ static void sdl_vblank_present(void) {
         const Uint8* keys = SDL_GetKeyboardState(NULL);
         static int turbo_skip = 0;
         const int TURBO_PRESENT_EVERY = 30;
-        if (keys[SDL_SCANCODE_TAB]) {
+        if (keys[SDL_SCANCODE_KP_PLUS]) {
             turbo_skip = (turbo_skip + 1) % TURBO_PRESENT_EVERY;
             if (turbo_skip != 0) {
                 netplay_tail.skip_pace();
@@ -5368,6 +5372,9 @@ int main(int argc, char** argv) {
             g_video_scale      = gc.runtime.video_supersampling;
             g_video_aa         = gc.runtime.video_antialiasing;
             g_video_texfilter  = gc.runtime.video_texture_filter;
+            g_geometry_precision = gc.runtime.video_geometry_precision ? 1 : 0;
+            g_perspective_textures =
+                gc.runtime.video_perspective_textures ? 1 : 0;
             g_video_renderer   = gc.runtime.video_renderer;
             g_video_screen     = gc.runtime.video_screen_kind;
             g_video_aspect_num = gc.runtime.video_aspect_num;
@@ -6792,6 +6799,12 @@ session_reboot:
     gr_set_scale(g_video_scale);
     g_video_scale = gr_scale(); /* reflect any clamp / alloc fallback */
     gr_set_texture_filter(g_video_texfilter);
+    gpu_geometry_correction_set(g_geometry_precision);
+    gpu_texture_correction_set(g_perspective_textures);
+    std::fprintf(stdout,
+                 "psxrecomp: geometry precision %s; perspective textures %s\n",
+                 g_geometry_precision ? "enabled" : "disabled",
+                 g_perspective_textures ? "enabled" : "disabled");
     /* Display aspect. Identity at the default 4:3. The present letterbox uses
      * this aspect; native-wide fills it with a genuinely wider frame (no
      * stretch), squash mode stretches the 4:3 frame into it. */

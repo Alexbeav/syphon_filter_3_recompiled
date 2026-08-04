@@ -1,0 +1,22 @@
+# SF3 Redux bounded PGXP acceptance profile. It retains the accepted 4:3,
+# nearest-filtered 4x presentation and retail simulation cadence.
+[video]
+renderer = "opengl"
+supersampling = 4
+window_width = 1440
+antialiasing = true
+texture_filtering = "nearest"
+fullscreen = 0
+aspect_ratio = "4:3"
+frame_interpolation = false
+
+[launcher]
+skip_launcher = true
+
+[controller]
+mouse_camera = true
+mouse_chase_yaw_sensitivity = 1.0
+mouse_chase_pitch_sensitivity = 1.0
+mouse_aim_yaw_sensitivity = 1.0
+mouse_aim_pitch_sensitivity = 1.0
+mouse_invert_y = false

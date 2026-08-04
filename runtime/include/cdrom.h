@@ -95,6 +95,8 @@ uint32_t cdrom_cycles_to_irq(uint32_t i_mask);
 void cdrom_tick(void);
 
 /* DMA channel 3 interface */
+void cdrom_dma_begin(void);
+void cdrom_dma_end(void);
 uint32_t cdrom_dma_read(void);
 int cdrom_dma_ready(void);
 uint32_t cdrom_dma_sector_word_count(void);

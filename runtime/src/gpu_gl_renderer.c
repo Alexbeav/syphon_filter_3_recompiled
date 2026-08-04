@@ -358,7 +358,11 @@ static GLuint s_geo_prog = 0, s_geo_vao = 0, s_geo_vbo = 0;
 static GLuint s_tex_prog = 0, s_tex_vao = 0, s_tex_vbo = 0;
 /* Textured vertex: pos(2) uv(2) col(4) tpage(2) clut(2) depth(1) raw(1) limits(4)
  * — per-prim texture state in flat attributes so prims batch (see flush_tex_batch). */
-#define TEXV 19
+#define TEXV 20
+static int s_precise_valid = 0;
+static int32_t s_precise_x16[3], s_precise_y16[3];
+static int s_perspective_valid = 0;
+static float s_perspective_q[3] = {1.0f, 1.0f, 1.0f};
 static GLuint s_blit_prog = 0, s_blit_vao = 0, s_blit_vbo = 0;
 static GLuint s_pack_prog = 0, s_stencil_prog = 0, s_empty_vao = 0;
 
@@ -818,12 +822,13 @@ static const char *TEX_VS =
     "layout(location=6) in float a_raw;\n"
     "layout(location=7) in vec4 a_limits;\n"
     "layout(location=8) in float a_semi;\n"
+    "layout(location=9) in float a_q;\n"
     "uniform float u_shift;\n"
     "uniform float u_xoff;   /* native-wide x translation (px); 0 canonical */\n"
     "uniform float u_xhalf;  /* x clip half-extent (px); 512 canonical */\n"
     "uniform float u_xscale; /* native-wide 2D-backdrop x-stretch; 1 canonical */\n"
     "uniform float u_xcenter;/* stretch centre in VRAM px; 0 canonical */\n"
-    "noperspective out vec2 v_uv; noperspective out vec4 v_col;\n"
+    "out vec2 v_uv; noperspective out vec4 v_col;\n"
     "flat out ivec2 v_tpage; flat out ivec2 v_clut; flat out int v_depth;\n"
     "flat out int v_raw; flat out ivec4 v_limits; flat out int v_semi;\n"
     "void main(){ v_uv = a_uv; v_col = a_col;\n"
@@ -839,10 +844,12 @@ static const char *TEX_VS =
     "    float l = u_xcenter - h, r = u_xcenter + h;\n"
     "    if (xb < l) xb = l + (xb-l)*s; else if (xb > r) xb = r + (xb-r)*s;\n"
     "  } else xb = (xb - u_xcenter)*u_xscale + u_xcenter;\n"
-    "  gl_Position = vec4((xb+u_shift+u_xoff)/u_xhalf - 1.0, (a_pos.y+u_shift)/256.0 - 1.0, 0.0, 1.0); }\n";
+    "  vec2 ndc = vec2((xb+u_shift+u_xoff)/u_xhalf - 1.0, (a_pos.y+u_shift)/256.0 - 1.0);\n"
+    "  float iq = 1.0 / max(a_q, 0.000001);\n"
+    "  gl_Position = vec4(ndc * iq, 0.0, iq); }\n";
 static const char *TEX_FS =
     "#version 330\n"
-    "noperspective in vec2 v_uv; noperspective in vec4 v_col;\n"
+    "in vec2 v_uv; noperspective in vec4 v_col;\n"
     "out vec4 frag; out vec4 blend_factor;\n"
     "flat in ivec2 v_tpage;   /* texture page base, VRAM px */\n"
     "flat in ivec2 v_clut;    /* CLUT base, VRAM px */\n"
@@ -1611,6 +1618,13 @@ static int mirror_flat_batch_center_only(int nverts) {
     return mirror_x_center_only(lo, hi);
 }
 
+static void consume_precision_metadata(void) {
+    s_precise_valid = 0;
+    s_perspective_valid = 0;
+    sw_set_precise_triangle(0, 0,0, 0,0, 0,0);
+    sw_set_perspective_triangle(0, 0.0f, 0.0f, 0.0f);
+}
+
 static void flush_flat_batch(void) {
     if (s_fb_n == 0) return;
     int nverts = s_fb_n, semi = s_fb_semi, mask = s_fb_mask;
@@ -1656,8 +1670,10 @@ static void gpu_geometry(GLenum mode, const int *xs, const int *ys,
         float verts[3 * 6];
         float mask_a = s_mask_set ? 1.0f : 0.0f;
         for (int i = 0; i < n; i++) {
-            verts[i*6+0] = (float)xs[i];
-            verts[i*6+1] = (float)ys[i];
+            verts[i*6+0] = s_precise_valid
+                ? (float)s_precise_x16[i] / 65536.0f : (float)xs[i];
+            verts[i*6+1] = s_precise_valid
+                ? (float)s_precise_y16[i] / 65536.0f : (float)ys[i];
             verts[i*6+2] = ((cs[i] & 0x1F) << 3) / 255.0f;
             verts[i*6+3] = (((cs[i] >> 5) & 0x1F) << 3) / 255.0f;
             verts[i*6+4] = (((cs[i] >> 10) & 0x1F) << 3) / 255.0f;
@@ -1686,6 +1702,7 @@ static void gpu_geometry(GLenum mode, const int *xs, const int *ys,
             gl_perf_mirror_end();
         }
         hr_end();
+        consume_precision_metadata();
         return;
     }
 
@@ -1699,14 +1716,17 @@ static void gpu_geometry(GLenum mode, const int *xs, const int *ys,
     float mask_a = s_mask_set ? 1.0f : 0.0f;
     for (int i = 0; i < n; i++) {
         float *v = &s_fb[s_fb_n * 6];
-        v[0] = (float)xs[i];
-        v[1] = (float)ys[i];
+        v[0] = s_precise_valid
+            ? (float)s_precise_x16[i] / 65536.0f : (float)xs[i];
+        v[1] = s_precise_valid
+            ? (float)s_precise_y16[i] / 65536.0f : (float)ys[i];
         v[2] = ((cs[i] & 0x1F) << 3) / 255.0f;
         v[3] = (((cs[i] >> 5) & 0x1F) << 3) / 255.0f;
         v[4] = (((cs[i] >> 10) & 0x1F) << 3) / 255.0f;
         v[5] = mask_a;
         s_fb_n++;
     }
+    consume_precision_metadata();
 }
 
 static void gpu_triangle(int x0,int y0,uint16_t c0, int x1,int y1,uint16_t c1,
@@ -1806,7 +1826,10 @@ static void gpu_textured_triangle(const int *xs, const int *ys,
         }
         float *vp = &s_tb[s_tb_n * TEXV];
         for (int i = 0; i < 3; i++, vp += TEXV) {
-            vp[0] = (float)xs[i];   vp[1] = (float)ys[i];
+            vp[0] = s_precise_valid
+                ? (float)s_precise_x16[i] / 65536.0f : (float)xs[i];
+            vp[1] = s_precise_valid
+                ? (float)s_precise_y16[i] / 65536.0f : (float)ys[i];
             vp[2] = (float)us[i];   vp[3] = (float)vs[i];
             vp[4] = col[i*3+0];     vp[5] = col[i*3+1];     vp[6] = col[i*3+2];   vp[7] = 1.0f;
             vp[8]  = (float)base_x;  vp[9]  = (float)base_y;        /* a_tpage  */
@@ -1815,8 +1838,10 @@ static void gpu_textured_triangle(const int *xs, const int *ys,
             vp[14] = (float)lim[0];  vp[15] = (float)lim[1];        /* a_limits */
             vp[16] = (float)lim[2];  vp[17] = (float)lim[3];
             vp[18] = semi >= 0 ? (float)(semi + 1) : 0.0f;          /* a_semi code */
+            vp[19] = s_perspective_valid ? s_perspective_q[i] : 1.0f; /* a_q */
         }
         s_tb_n += 3;
+        consume_precision_metadata();
         if (isolate) flush_tex_batch();   /* draw this semi prim alone, in submission order */
     }
 }
@@ -2052,6 +2077,24 @@ static void glb_set_texture_window(uint32_t r) {
     sw_set_texture_window(r);
 }
 static void glb_set_color_modulation(int r,int g,int b,int raw) { s_mod_r=r; s_mod_g=g; s_mod_b=b; s_mod_raw=raw; sw_set_color_modulation(r,g,b,raw); }
+static void glb_set_precise_triangle(int enabled,
+                                     int32_t x0, int32_t y0,
+                                     int32_t x1, int32_t y1,
+                                     int32_t x2, int32_t y2) {
+    s_precise_valid = enabled ? 1 : 0;
+    s_precise_x16[0] = x0; s_precise_y16[0] = y0;
+    s_precise_x16[1] = x1; s_precise_y16[1] = y1;
+    s_precise_x16[2] = x2; s_precise_y16[2] = y2;
+    sw_set_precise_triangle(enabled, x0,y0, x1,y1, x2,y2);
+}
+static void glb_set_perspective_triangle(int enabled,
+                                         float q0, float q1, float q2) {
+    s_perspective_valid = enabled && q0 > 0.0f && q1 > 0.0f && q2 > 0.0f;
+    s_perspective_q[0] = q0;
+    s_perspective_q[1] = q1;
+    s_perspective_q[2] = q2;
+    sw_set_perspective_triangle(enabled, q0, q1, q2);
+}
 static void glb_set_draw_area(int x1,int y1,int x2,int y2) { flush_flat_batch(); flush_tex_batch(); s_area_x1=x1; s_area_y1=y1; s_area_x2=x2; s_area_y2=y2; sw_set_draw_area(x1,y1,x2,y2); }
 static void glb_get_draw_area(int *x1,int *y1,int *x2,int *y2) { sw_get_draw_area(x1,y1,x2,y2); }
 static void glb_set_draw_offset(int x,int y) { flush_flat_batch(); flush_tex_batch(); s_off_x=x; s_off_y=y; sw_set_draw_offset(x,y); }
@@ -2411,6 +2454,7 @@ static int init_gpu_raster(void) {
         p_glVertexAttribPointer(6, 1, GL_FLOAT, GL_FALSE, st, (void*)(13*sizeof(float))); p_glEnableVertexAttribArray(6); /* raw    */
         p_glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, st, (void*)(14*sizeof(float))); p_glEnableVertexAttribArray(7); /* limits */
         p_glVertexAttribPointer(8, 1, GL_FLOAT, GL_FALSE, st, (void*)(18*sizeof(float))); p_glEnableVertexAttribArray(8); /* semi   */
+        p_glVertexAttribPointer(9, 1, GL_FLOAT, GL_FALSE, st, (void*)(19*sizeof(float))); p_glEnableVertexAttribArray(9); /* q      */
     }
 
     p_glGenVertexArrays(1, &s_blit_vao);
@@ -3741,6 +3785,8 @@ static const GpuRenderBackend GL_BACKEND = {
     .display_depth_changed = glb_display_depth_changed,
     .set_semi_transparency = glb_set_semi_transparency, .set_mask_bits = glb_set_mask_bits,
     .set_texture_window = glb_set_texture_window, .set_color_modulation = glb_set_color_modulation,
+    .set_precise_triangle = glb_set_precise_triangle,
+    .set_perspective_triangle = glb_set_perspective_triangle,
     .fill_rect = glb_fill_rect, .copy_rect = glb_copy_rect,
     .draw_flat_triangle = glb_draw_flat_triangle, .draw_gouraud_triangle = glb_draw_gouraud_triangle,
     .draw_textured_triangle = glb_draw_textured_triangle,

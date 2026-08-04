@@ -26,11 +26,14 @@ with tempfile.TemporaryDirectory() as temp:
     assert module.configure(
         project, widescreen=True, output_config="game-wide.toml")
     first = (project / "game-wide.toml").read_text(encoding="utf-8")
+    assert 'aspect_ratio = "16:9"' in first
     assert "[widescreen]" in first
     assert "native_wide = true" in first
     assert "gte_game_mode = true" in first
-    assert "nw_full_mirror = true" in first
-    assert "nw_hud_corners = true" in first
+    assert "nw_full_mirror = false" in first
+    assert "nw_hud_corners = false" in first
+    assert "nw_full_mirror = true" not in first
+    assert "nw_hud_corners = true" not in first
     assert "nw_guest_projection = true" in first
     assert "nw_world_min_polygons = 64" in first
     assert "[widescreen.cull]" in first
@@ -47,6 +50,36 @@ with tempfile.TemporaryDirectory() as temp:
     assert second.count("[widescreen.cull]") == 1
     assert "[widescreen]" not in (project / "game.toml").read_text(
         encoding="utf-8")
+
+    assert module.configure(
+        project, pgxp=True, output_config="game-pgxp.toml")
+    pgxp = (project / "game-pgxp.toml").read_text(encoding="utf-8")
+    assert "geometry_precision = true" in pgxp
+    assert "perspective_textures = true" in pgxp
+    assert "native_wide = true" not in pgxp
+    assert not module.configure(
+        project, pgxp=True, output_config="game-pgxp.toml")
+
+    assert module.configure(
+        project, geometry_precision=True,
+        output_config="game-pgxp-geometry.toml")
+    geometry = (project / "game-pgxp-geometry.toml").read_text(
+        encoding="utf-8")
+    assert "geometry_precision = true" in geometry
+    assert "perspective_textures = true" not in geometry
+    assert "native_wide = true" not in geometry
+    assert not module.configure(
+        project, geometry_precision=True,
+        output_config="game-pgxp-geometry.toml")
+
+    assert module.configure(
+        project, perspective_textures=True,
+        output_config="game-pgxp-perspective.toml")
+    perspective = (project / "game-pgxp-perspective.toml").read_text(
+        encoding="utf-8")
+    assert "geometry_precision = true" not in perspective
+    assert "perspective_textures = true" in perspective
+    assert "native_wide = true" not in perspective
     cmake = (project / "CMakeLists.txt").read_text(encoding="utf-8")
     assert 'set(SF3_GAME_CONFIG "game.toml" CACHE STRING' in cmake
     assert 'DEFAULT_GAME_CONFIG_PATH "${SF3_GAME_CONFIG}"' in cmake
@@ -57,5 +90,11 @@ assert 'aspect_ratio = "16:9"' in profile
 assert "supersampling = 4" in profile
 assert "frame_interpolation = false" in profile
 assert "mouse_camera = true" in profile
+
+pgxp_profile = (root / "lab/sf3/redux/settings-pgxp.toml").read_text(
+    encoding="utf-8")
+assert 'aspect_ratio = "4:3"' in pgxp_profile
+assert "supersampling = 4" in pgxp_profile
+assert "frame_interpolation = false" in pgxp_profile
 
 print("SF3 widescreen profile: OK")

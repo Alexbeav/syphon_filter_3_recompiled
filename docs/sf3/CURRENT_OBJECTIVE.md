@@ -11,14 +11,16 @@ previous catastrophic red/checkered failure and deterministic opening-room
 textured-shard defect are fixed. Visible 4x testing confirms a clean Mission 1
 opening room and connected, comfortable play through arrival in Mission 4.
 
-Redux state: `phase1_widescreen_automated_verified`. The isolated branch has a
-clean 4x/4:3 control and a separate 4x/16:9 candidate, keyboard mapping,
+Redux state: `phase1_widescreen_human_accepted`. The isolated branch has a
+clean 4x/4:3 control and a 4x/16:9 default candidate, keyboard mapping,
 a reversible relative-mouse-to-retail-PAD fallback and a direct camera bridge
 with strict focus, word, state, pointer and retail-owner guards. A generated
 ordinary Release product and separate Release-diagnostic product both link.
 Human mouse feel, aim/fire/wheel controls and scripted-camera handoff are
-accepted through the connected Mission 1-to-Mission 4 session. Widescreen's
-complete recorded route passes twice; visible edge/HUD/FMV acceptance remains.
+accepted through the connected Mission 1-to-Mission 4 session. Native-wide
+world presentation is human-accepted in Mission 1 and two clean 3,000-sample
+runs match frame and card hashes. Cutscene mattes still end at the authored 4:3
+edges, and HUD/UI remains at its original 4:3 coordinates.
 
 ## Objective
 
@@ -30,14 +32,17 @@ accepted route, keep an off switch, and record honest native/fallback ownership.
 
 ## Current blockers
 
-- Widescreen has no automated compatibility blocker. SCUS-94640's generic
+- Widescreen has no gameplay compatibility blocker in the accepted Mission 1
+  slice. SCUS-94640's generic
   screen-cull detector emits zero sites, contradicting that route. A passive
   Mission 1 DMA census independently identifies list 3 as the world owner
   (483..925 polygons versus 1..21 for auxiliary lists). Guest-visible 3:4 GTE
   projection plus inverse raster composition only for lists at or above the
   measured 64-polygon threshold records 174,900 vertex restores in the short
   route. Two ordinary 42,480-sample runs complete with accepted card hashes.
-  The open gate is visible 16:9 inspection for margins, HUD, FMV and culling.
+  Visible 16:9 inspection confirms continuous world rendering after disabling
+  the unowned blanket HUD-corner shift and full-mirror compositor. Remaining
+  presentation debt is full-width cutscene mattes and optional HUD relocation.
 
 - No structural or visible direct-camera blocker remains. Live SCUS-94640
   evidence proves
@@ -82,6 +87,8 @@ accepted route, keep an off switch, and record honest native/fallback ownership.
 | Campaign overlays beyond early Mission 2 | overlay coverage | performance risk and incomplete recompilation ownership | safe Mission 2 endpoint: seven regions, 9.81M native dispatches, 270,891 fallbacks | extend only from exact-byte additive history and replay each promotion |
 | Diagnostic display readback can alter host timing | validation observer | a clean observed run may not represent ordinary Release timing | OpenGL ring capture flushes/reads back even without CPU-VRAM synchronization; route observer is source/build validated only | reproduce under a recorded route, localize with bounded capture, then confirm the fix twice in ordinary Release with the observer disabled |
 | Campaign beyond arrival in Mission 4 unverified | retail/content lifecycle | no whole-campaign claim | connected visible play reached Mission 4; Missions 5–19 and later lifecycle seams remain unverified | campaign qualification matrix covering every mission, transition, checkpoint and save/load seam |
+| Cutscene mattes stop at authored 4:3 edges | screen-space primitive provenance | visible side gaps during letterboxed retail cutscenes | human 16:9 Mission 1 capture; broad polygon/quad expansion was rejected after producing world slabs | identify the exact SF3 screen-space owner and extend only its mattes |
+| HUD/UI remains at 4:3 coordinates | HUD provenance | low-priority inset HUD at 16:9 | human 16:9 Mission 1 capture; `nw_hud_corners` cannot distinguish HUD from world polygons in SF3 | relocate only structurally proven HUD primitives |
 
 ## Starting evidence
 
@@ -207,13 +214,12 @@ not change the 4:3 aspect ratio or the interpreter ownership decision above.
 - Project checkpoint `db98b05` contains both generic fixes and 42/42 tests.
 - Private-corpus commit `87e6c7a` records the independently confirmed
   `PSX-CD-001` candidate and corrected SF3 project snapshot.
-- Public `Alexbeav/syphon_filter_3_recompiled` main is a parentless,
-  provenance-clean source snapshot. It excludes retail inputs, generated SF3
+- Public `Alexbeav/syphon_filter_3_recompiled` main is a provenance-clean,
+  source-only history. It excludes retail inputs, generated SF3
   code, overlays, traces, cards, saves, captures and media.
 - The lab retains its fetch-only upstream remote and has no writable project
   remote. `SF3_Redux` enhancement work has not begun.
 
-The older public snapshot predates the stricter publication gate and includes
-an OpenBIOS binary plus local/private workflow references. It must be replaced
-by a newly audited parentless source snapshot before Redux work begins; the
-claims above describe the intended publication contract, not the old remote.
+Each public checkpoint is rebuilt from audited source paths rather than pushing
+the lab history. Publication must continue to exclude OpenBIOS binaries,
+local/private workflow material and every user-owned or retail-derived payload.

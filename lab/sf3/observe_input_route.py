@@ -33,7 +33,7 @@ def route_sample_count(path: Path) -> int:
 def safe_call(port: int, command: str, **fields: Any) -> dict[str, Any]:
     try:
         return tcp_call(port, command, **fields)
-    except (ConnectionError, OSError, ProbeError) as exc:
+    except (ConnectionError, OSError, ProbeError, ValueError) as exc:
         return {"ok": False, "error": str(exc)}
 
 
@@ -45,6 +45,17 @@ def parse_frame_range(value: str) -> tuple[int, int]:
         raise argparse.ArgumentTypeError("frame range must be START:END") from exc
     if lo < 0 or hi < lo:
         raise argparse.ArgumentTypeError("frame range must satisfy 0 <= START <= END")
+    return lo, hi
+
+
+def parse_address_range(value: str) -> tuple[int, int]:
+    try:
+        lo_text, hi_text = value.split(":", 1)
+        lo, hi = int(lo_text, 0), int(hi_text, 0)
+    except (ValueError, TypeError) as exc:
+        raise argparse.ArgumentTypeError("address range must be LO:HI") from exc
+    if not 0 <= lo < hi <= 0x1_0000_0000:
+        raise argparse.ArgumentTypeError("address range must satisfy 0 <= LO < HI <= 2^32")
     return lo, hi
 
 
@@ -72,6 +83,31 @@ def main() -> int:
         help="copy an existing card directory into the isolated replay directory",
     )
     parser.add_argument("--display-ring-aux", action="store_true")
+    parser.add_argument(
+        "--fn-entry-tail-count",
+        type=int,
+        default=0,
+        help="sample this many entries from an env-filtered function-entry ring",
+    )
+    parser.add_argument(
+        "--wtrace-range",
+        type=parse_address_range,
+        action="append",
+        default=[],
+        metavar="LO:HI",
+        help="arm a focused guest-write trace range after the debug server starts",
+    )
+    parser.add_argument(
+        "--cyc-watch-pc",
+        type=lambda value: int(value, 0),
+        help="arm the diagnostic block-entry register/cycle watch at this guest PC",
+    )
+    parser.add_argument(
+        "--cyc-watch-count",
+        type=int,
+        default=1024,
+        help="maximum diagnostic block-entry watch hits (default: 1024)",
+    )
     parser.add_argument(
         "--widescreen-census", action="store_true",
         help="periodically dump the passive GPU census during state-0 gameplay",
@@ -104,6 +140,19 @@ def main() -> int:
     )
     parser.add_argument("--observed-red-limit-bp", type=int, default=1500)
     parser.add_argument("--observed-hot-red-limit-bp", type=int, default=500)
+    parser.add_argument(
+        "--require-state",
+        type=int,
+        action="append",
+        default=[],
+        help="require an observed retail application state (repeatable)",
+    )
+    parser.add_argument(
+        "--require-state0-samples",
+        type=int,
+        default=0,
+        help="require at least this many state-0 display-page samples",
+    )
     args = parser.parse_args()
     for value, label in (
         (args.observed_red_limit_bp, "--observed-red-limit-bp"),
@@ -111,6 +160,12 @@ def main() -> int:
     ):
         if not 0 <= value <= 10000:
             parser.error(f"{label} must be between 0 and 10000")
+    if args.require_state0_samples < 0:
+        parser.error("--require-state0-samples must be non-negative")
+    if not 0 <= args.fn_entry_tail_count <= 256:
+        parser.error("--fn-entry-tail-count must be between 0 and 256")
+    if not 1 <= args.cyc_watch_count <= 1024:
+        parser.error("--cyc-watch-count must be between 1 and 1024")
 
     cue = args.cue.absolute()
     route = args.route.resolve()
@@ -205,6 +260,20 @@ def main() -> int:
         "corruption_matches": [],
         "periodic": [],
         "widescreen_census": [],
+        "fn_entry_samples": [],
+        "cyc_watch_samples": [],
+        "cd_dma_samples": [],
+        "cdrom_command_samples": [],
+        "dma_cdrom_history_samples": [],
+        "wtrace_ranges": [
+            {"lo": f"0x{lo:08X}", "hi": f"0x{hi:08X}"}
+            for lo, hi in args.wtrace_range
+        ],
+        "requirements": {
+            "states": args.require_state,
+            "state0_samples": args.require_state0_samples,
+            "reject_freeze_dump": True,
+        },
     }
     creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
     stdout_path = out / "stdout.log"
@@ -212,7 +281,7 @@ def main() -> int:
     with stdout_path.open("wb") as stdout, stderr_path.open("wb") as stderr:
         process = subprocess.Popen(
             command,
-            cwd=exe.parent,
+            cwd=out,
             env=env,
             stdout=stdout,
             stderr=stderr,
@@ -223,6 +292,9 @@ def main() -> int:
         last_frame = -1
         last_page_sample = -60
         last_periodic = -600
+        last_cyc_watch_sample = -60
+        last_cd_dma_sample = -60
+        last_cdrom_lifecycle_sample = -60
         last_scanned = 0
         last_census_frame = -60
         pending_capture_frames = set(capture_frames)
@@ -235,6 +307,28 @@ def main() -> int:
                 return tcp_call(args.port, "frame")
 
             wait_for("debug server", 20.0, server_ready)
+            if args.wtrace_range:
+                safe_call(args.port, "wtrace_disarm_all")
+                for lo, hi in args.wtrace_range:
+                    response = safe_call(
+                        args.port,
+                        "wtrace_arm",
+                        lo=f"0x{lo:08X}",
+                        hi=f"0x{hi:08X}",
+                    )
+                    if not response.get("ok"):
+                        raise ProbeError(
+                            f"cannot arm write trace 0x{lo:08X}:0x{hi:08X}: {response}"
+                        )
+            if args.cyc_watch_pc is not None:
+                response = safe_call(
+                    args.port,
+                    "cyc_watch",
+                    pc=f"0x{args.cyc_watch_pc:08X}",
+                    n=args.cyc_watch_count,
+                )
+                if not response.get("ok"):
+                    raise ProbeError(f"cannot arm cycle/register watch: {response}")
             while process.poll() is None:
                 if time.monotonic() >= deadline:
                     raise ProbeError(f"route observation exceeded {args.timeout:.0f}s")
@@ -289,6 +383,9 @@ def main() -> int:
                         event["fmv"] = safe_call(args.port, "fmv_state")
                         event["mdec"] = safe_call(args.port, "mdec_state")
                         event["irq"] = safe_call(args.port, "irq_state")
+                        event["imask_trace"] = safe_call(
+                            args.port, "imask_trace", count=16
+                        )
                         event["dispatch"] = safe_call(args.port, "dispatch_stats")
                         event["overlay"] = safe_call(
                             args.port, "overlay_loader_status"
@@ -338,6 +435,18 @@ def main() -> int:
                             )
                         evidence["corruption_matches"].append(match)
 
+                    if args.fn_entry_tail_count:
+                        evidence["fn_entry_samples"].append(
+                            {
+                                "frame": frame,
+                                "trace": safe_call(
+                                    args.port,
+                                    "fn_entry_tail",
+                                    count=args.fn_entry_tail_count,
+                                ),
+                            }
+                        )
+
                 if (args.widescreen_census and pair == (1, 0) and
                         frame - last_census_frame >= 60):
                     census_path = (out / "widescreen-census.csv").resolve()
@@ -357,18 +466,58 @@ def main() -> int:
                             "spu": safe_call(args.port, "spu_status"),
                             "audio": safe_call(args.port, "audio_stats"),
                             "cdrom": safe_call(args.port, "cdrom_state"),
+                            "cd_dma": safe_call(args.port, "cd_read_log", tail=128),
                             "fmv": safe_call(args.port, "fmv_state"),
                             "mdec": safe_call(args.port, "mdec_state"),
                             "irq": safe_call(args.port, "irq_state"),
+                            "imask_trace": safe_call(
+                                args.port, "imask_trace", count=16
+                            ),
                             "pad": safe_call(args.port, "pad_status"),
                             "dispatch": safe_call(args.port, "dispatch_stats"),
                             "overlay": safe_call(
                                 args.port, "overlay_loader_status"
                             ),
                             "dirty_ram": safe_call(args.port, "dirty_ram_stats"),
+                            "wtrace": (
+                                safe_call(args.port, "wtrace_dump", count=2048, newest=1)
+                                if args.wtrace_range else None
+                            ),
                         }
                     )
                     last_periodic = frame
+                if (args.cyc_watch_pc is not None and
+                        frame - last_cyc_watch_sample >= 60):
+                    evidence["cyc_watch_samples"].append(
+                        {"frame": frame, "trace": safe_call(args.port, "cyc_watch_dump")}
+                    )
+                    last_cyc_watch_sample = frame
+                if frame - last_cd_dma_sample >= 60:
+                    evidence["cd_dma_samples"].append(
+                        {"frame": frame, "trace": safe_call(args.port, "cd_read_log", tail=128)}
+                    )
+                    last_cd_dma_sample = frame
+                if frame - last_cdrom_lifecycle_sample >= 60:
+                    evidence["cdrom_command_samples"].append(
+                        {
+                            "frame": frame,
+                            "trace": safe_call(
+                                args.port, "cdrom_command_history", count=256
+                            ),
+                        }
+                    )
+                    evidence["dma_cdrom_history_samples"].append(
+                        {
+                            "frame": frame,
+                            "trace": safe_call(
+                                args.port,
+                                "dma_cdrom_history",
+                                count=512,
+                                newest=1,
+                            ),
+                        }
+                    )
+                    last_cdrom_lifecycle_sample = frame
                 time.sleep(0.02)
 
             exit_code = process.wait(timeout=5.0)
@@ -382,11 +531,65 @@ def main() -> int:
                 "bounded_completion": completion in stdout_text,
                 "missing_capture_frames": sorted(pending_capture_frames),
             }
-            if exit_code != 0 or completion not in stdout_text or pending_capture_frames:
+            observed_states = {
+                int(event["state"])
+                for event in evidence["application_transitions"]
+            }
+            missing_states = sorted(set(args.require_state) - observed_states)
+            freeze_dumps: list[Path] = []
+            ignored_startup_dumps: list[Path] = []
+            for path in sorted(out.glob("psx_freeze_dump_*.json")):
+                try:
+                    dump = json.loads(path.read_text(encoding="utf-8"))
+                    dump_frame = int(dump.get("frame_count", 0))
+                except (OSError, ValueError, TypeError, json.JSONDecodeError):
+                    freeze_dumps.append(path)
+                    continue
+                if dump_frame >= 60:
+                    freeze_dumps.append(path)
+                else:
+                    ignored_startup_dumps.append(path)
+
+            semantic_stall = False
+            if args.require_state and len(evidence["periodic"]) >= 3:
+                tail = evidence["periodic"][-3:]
+                dirty = [
+                    item.get("dirty_ram", {}).get("insns_run") for item in tail
+                ]
+                static = [
+                    item.get("dispatch", {}).get("static_hits") for item in tail
+                ]
+                frame_span = int(tail[-1]["frame"]) - int(tail[0]["frame"])
+                semantic_stall = (
+                    int(tail[-1].get("depth", -1)) == 0 and
+                    frame_span >= 1200 and
+                    None not in dirty and len(set(dirty)) == 1 and
+                    None not in static and len(set(static)) == 1
+                )
+            evidence["result"]["missing_required_states"] = missing_states
+            evidence["result"]["state0_page_sample_count"] = len(
+                evidence["state0_page_samples"]
+            )
+            evidence["result"]["freeze_dumps"] = [
+                path.name for path in freeze_dumps
+            ]
+            evidence["result"]["ignored_startup_freeze_dumps"] = [
+                path.name for path in ignored_startup_dumps
+            ]
+            evidence["result"]["semantic_stall"] = semantic_stall
+            if (exit_code != 0 or completion not in stdout_text or
+                    pending_capture_frames or missing_states or freeze_dumps or
+                    semantic_stall or
+                    len(evidence["state0_page_samples"]) <
+                    args.require_state0_samples):
                 raise ProbeError(
                     "route did not complete cleanly "
                     f"(exit={exit_code}, marker={completion in stdout_text}, "
-                    f"missing_frames={sorted(pending_capture_frames)})"
+                    f"missing_frames={sorted(pending_capture_frames)}, "
+                    f"missing_states={missing_states}, "
+                    f"state0_samples={len(evidence['state0_page_samples'])}, "
+                    f"freeze_dumps={[path.name for path in freeze_dumps]}, "
+                    f"semantic_stall={semantic_stall})"
                 )
             (out / "evidence.json").write_text(
                 json.dumps(evidence, indent=2) + "\n", encoding="utf-8"

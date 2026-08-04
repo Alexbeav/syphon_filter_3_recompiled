@@ -200,11 +200,11 @@ int debug_server_get_input_override(void);
 int debug_server_get_axis_override(unsigned char st[4]);
 
 /* TCP-controlled turbo mode. When enabled the frontend skips presentation and
- * wall-clock pacing at vblank, matching the keyboard TAB turbo path. */
+ * wall-clock pacing at vblank, matching the keypad + turbo path. */
 int debug_server_turbo_enabled(void);
 
 /* TCP-controlled turbo mode. When enabled the frontend skips presentation and
- * wall-clock pacing at vblank, matching the keyboard TAB turbo path. */
+ * wall-clock pacing at vblank, matching the keypad + turbo path. */
 int debug_server_turbo_enabled(void);
 
 /* ---- Send helpers (for extensions) ---- */

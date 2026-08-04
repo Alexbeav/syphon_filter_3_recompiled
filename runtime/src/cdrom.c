@@ -143,8 +143,25 @@ static uint8_t sector_buffer[SECTOR_BUFFER_SIZE];
 static int sector_read_pos;
 static int sector_available;
 static int sector_size;
-static uint8_t last_sector_buffer[SECTOR_BUFFER_SIZE];
+/* The decoder has multiple sector buffers on real hardware. Keep the buffer
+ * selected by an active channel-3 transfer stable even if the drive produces
+ * the next sector before that DMA finishes. A single shared buffer spliced the
+ * tail of the new sector onto the old transfer when their deadlines crossed. */
+static uint8_t dma_sector_buffer[SECTOR_BUFFER_SIZE];
+static int dma_sector_read_pos;
+static int dma_sector_size;
+static int dma_sector_latched;
+static uint32_t sector_generation;
+static uint32_t dma_sector_generation;
 static int last_sector_lba;
+
+static void cdrom_dma_reset_latch(void) {
+    dma_sector_read_pos = 0;
+    dma_sector_size = 0;
+    dma_sector_latched = 0;
+    dma_sector_generation = 0;
+}
+static uint8_t last_sector_buffer[SECTOR_BUFFER_SIZE];
 static int last_sector_size;
 static uint32_t last_sector_frame;
 static uint8_t last_sector_mode;
@@ -1285,6 +1302,7 @@ static int read_sector_at(int min, int sec, int sect) {
 
     sector_read_pos = 0;
     sector_available = delivery.data_delivered ? 1 : 0;
+    if (delivery.data_delivered) sector_generation++;
     if (delivery.data_delivered) {
         memcpy(last_sector_buffer, sector_buffer, (size_t)sector_size);
         burst_note_sector();
@@ -1331,6 +1349,8 @@ static void clear_sector_buffer(void) {
     sector_read_pos = 0;
     sector_size = 0;
     sector_available = 0;
+    cdrom_dma_reset_latch();
+    sector_generation = 0;
     request_reg &= (uint8_t)~CDROM_REQUEST_BFRD;
 }
 
@@ -2249,6 +2269,7 @@ void cdrom_init(const char* cue_path) {
     memset(param_fifo, 0, sizeof(param_fifo));
     memset(response_fifo, 0, sizeof(response_fifo));
     memset(sector_buffer, 0, sizeof(sector_buffer));
+    memset(dma_sector_buffer, 0, sizeof(dma_sector_buffer));
     memset(last_sector_buffer, 0, sizeof(last_sector_buffer));
 
     /* Rematch re-calls cdrom_init; boot must see 1x until game entry again. */
@@ -2425,6 +2446,7 @@ void cdrom_write(uint32_t addr, uint32_t value) {
             request_reg = val;
             if (!(request_reg & CDROM_REQUEST_BFRD)) {
                 sector_read_pos = 0;
+                cdrom_dma_reset_latch();
             }
         } else if (index_reg == 1) {
             /* Controller IRQ acknowledge. irq_flag is a single numeric response
@@ -2499,15 +2521,43 @@ void cdrom_tick(void) {
     cdrom_advance(33868u);
 }
 
+static void cdrom_dma_latch_if_ready(void) {
+    if (dma_sector_latched || !(request_reg & CDROM_REQUEST_BFRD) ||
+        !sector_available || sector_read_pos >= sector_size)
+        return;
+    memcpy(dma_sector_buffer, sector_buffer, sizeof(dma_sector_buffer));
+    dma_sector_read_pos = sector_read_pos;
+    dma_sector_size = sector_size;
+    dma_sector_generation = sector_generation;
+    dma_sector_latched = 1;
+}
+
+void cdrom_dma_begin(void) {
+    /* Header and payload are commonly issued as two separate DMA transfers.
+     * Retain the selected decoder buffer across those kicks; BFRD clear or a
+     * stream reset releases it. */
+    cdrom_dma_latch_if_ready();
+}
+
+void cdrom_dma_end(void) {
+    if (dma_sector_latched && dma_sector_read_pos >= dma_sector_size)
+        cdrom_dma_reset_latch();
+}
+
 uint32_t cdrom_dma_read(void) {
     uint32_t val = 0;
     int got = 0;
-    if ((request_reg & CDROM_REQUEST_BFRD) && sector_available &&
-        sector_read_pos + 4 <= sector_size) {
-        memcpy(&val, sector_buffer + sector_read_pos, 4);
-        sector_read_pos += 4;
-        if (sector_read_pos >= sector_size) {
-            sector_available = 0;
+    cdrom_dma_latch_if_ready();
+    if ((request_reg & CDROM_REQUEST_BFRD) && dma_sector_latched &&
+        dma_sector_read_pos + 4 <= dma_sector_size) {
+        memcpy(&val, dma_sector_buffer + dma_sector_read_pos, 4);
+        dma_sector_read_pos += 4;
+        /* Keep the public FIFO position coherent until a newer sector takes
+         * ownership of it. Never let completion of the older DMA clear the
+         * availability of that newer sector. */
+        if (dma_sector_generation == sector_generation) {
+            sector_read_pos = dma_sector_read_pos;
+            if (sector_read_pos >= sector_size) sector_available = 0;
         }
         got = 1;
     }
@@ -2527,9 +2577,9 @@ uint32_t cdrom_dma_read(void) {
 }
 
 int cdrom_dma_ready(void) {
-    return (request_reg & CDROM_REQUEST_BFRD) &&
-           sector_available &&
-           (sector_read_pos + 4 <= sector_size);
+    cdrom_dma_latch_if_ready();
+    return (request_reg & CDROM_REQUEST_BFRD) && dma_sector_latched &&
+           (dma_sector_read_pos + 4 <= dma_sector_size);
 }
 
 uint32_t cdrom_dma_sector_word_count(void) {
@@ -2690,6 +2740,8 @@ static int cdrom_snap_emit(PstW *w) {
     WB(param_fifo); WI(param_count);
     WB(response_fifo); WI(response_read); WI(response_count);
     WB(sector_buffer); WI(sector_read_pos); WI(sector_available); WI(sector_size);
+    WB(dma_sector_buffer); WI(dma_sector_read_pos); WI(dma_sector_size);
+    WI(dma_sector_latched); WU(sector_generation); WU(dma_sector_generation);
     WB(last_sector_buffer); WI(last_sector_lba); WI(last_sector_size);
     WU(last_sector_frame); W8(last_sector_mode); W8(last_sector_have_raw);
     W8(last_sector_raw_mode); W8(last_sector_xa_file); W8(last_sector_xa_channel);
@@ -2732,6 +2784,8 @@ static int cdrom_snap_parse(PstR *r) {
     RB(param_fifo); RI(param_count);
     RB(response_fifo); RI(response_read); RI(response_count);
     RB(sector_buffer); RI(sector_read_pos); RI(sector_available); RI(sector_size);
+    RB(dma_sector_buffer); RI(dma_sector_read_pos); RI(dma_sector_size);
+    RI(dma_sector_latched); RU(sector_generation); RU(dma_sector_generation);
     RB(last_sector_buffer); RI(last_sector_lba); RI(last_sector_size);
     RU(last_sector_frame); R8(last_sector_mode); R8(last_sector_have_raw);
     R8(last_sector_raw_mode); R8(last_sector_xa_file); R8(last_sector_xa_channel);

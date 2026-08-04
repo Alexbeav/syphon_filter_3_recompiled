@@ -487,6 +487,7 @@ if(BUILD_TESTING)
                 sf3_gp0_primitive_analyzer
                 sf3_input_route_helpers
                 sf3_widescreen_profile
+                pgxp_precision_contract
                 sf3_approved_capture_selector
                 sf3_route_evidence_compare
                 sf3_route_rebind_guards

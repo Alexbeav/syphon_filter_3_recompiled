@@ -17,7 +17,29 @@ def set_setting(text: str, table: str, setting: str) -> tuple[str, bool]:
     return text.replace(marker, marker + setting + "\n", 1), True
 
 
-def configure(project: Path, widescreen: bool = False,
+def set_setting_value(text: str, table: str, key: str,
+                      value: str) -> tuple[str, bool]:
+    setting = f"{key} = {value}"
+    marker = f"[{table}]\n"
+    if marker not in text:
+        return set_setting(text, table, setting)
+    start = text.index(marker) + len(marker)
+    end = text.find("\n[", start)
+    if end < 0:
+        end = len(text)
+    section = text[start:end]
+    for line in section.splitlines():
+        if line.strip().startswith(f"{key} ="):
+            if line.strip() == setting:
+                return text, False
+            updated = section.replace(line, setting, 1)
+            return text[:start] + updated + text[end:], True
+    return set_setting(text, table, setting)
+
+
+def configure(project: Path, widescreen: bool = False, pgxp: bool = False,
+              geometry_precision: bool = False,
+              perspective_textures: bool = False,
               output_config: str | None = None) -> bool:
     game_toml = project / (output_config or "game.toml")
     output_created = False
@@ -41,11 +63,17 @@ def configure(project: Path, widescreen: bool = False,
 
     widescreen_changed = False
     if widescreen:
+        for key, value in (
+            ("nw_hud_corners", "false"),
+            ("nw_full_mirror", "false"),
+        ):
+            text, changed = set_setting_value(
+                text, "widescreen", key, value)
+            widescreen_changed = widescreen_changed or changed
         for table, setting in (
+            ("video", 'aspect_ratio = "16:9"'),
             ("widescreen", "native_wide = true"),
             ("widescreen", "gte_game_mode = true"),
-            ("widescreen", "nw_full_mirror = true"),
-            ("widescreen", "nw_hud_corners = true"),
             ("widescreen", "nw_guest_projection = true"),
             # SCUS-94640 Mission 1 census: world list 483..925 polygons;
             # auxiliary lists 1..21. Sixty-four is a measured separation,
@@ -57,6 +85,17 @@ def configure(project: Path, widescreen: bool = False,
         ):
             text, changed = set_setting(text, table, setting)
             widescreen_changed = widescreen_changed or changed
+    precision_changed = False
+    if pgxp:
+        geometry_precision = True
+        perspective_textures = True
+    for enabled, setting in (
+        (geometry_precision, "geometry_precision = true"),
+        (perspective_textures, "perspective_textures = true"),
+    ):
+        if enabled:
+            text, changed = set_setting(text, "video", setting)
+            precision_changed = precision_changed or changed
     game_toml.write_text(text, encoding="utf-8", newline="\n")
 
     source_bindings = Path(__file__).with_name("keybinds.ini")
@@ -97,7 +136,7 @@ endif()
             shutil.copyfile(source_bindings, build / "keybinds.ini")
 
     return (output_created or compat_changed or scale_changed or mouse_pad_changed or
-            camera_changed or widescreen_changed or bindings_changed or
+            camera_changed or widescreen_changed or precision_changed or bindings_changed or
             config_select_changed or cmake_changed)
 
 
@@ -109,11 +148,22 @@ def main() -> int:
         "--widescreen", action="store_true",
         help="emit the isolated native-wide/culling-capable SF3 candidate")
     parser.add_argument(
+        "--pgxp", action="store_true",
+        help="emit the isolated address-provenance PGXP candidate")
+    parser.add_argument(
+        "--geometry-precision", action="store_true",
+        help="emit only the fractional-geometry PGXP axis")
+    parser.add_argument(
+        "--perspective-textures", action="store_true",
+        help="emit only the perspective-texture PGXP axis")
+    parser.add_argument(
         "--output-config",
         help="write/read a sibling config instead of changing game.toml")
     args = parser.parse_args()
     project = args.project.resolve()
-    changed = configure(project, widescreen=args.widescreen,
+    changed = configure(project, widescreen=args.widescreen, pgxp=args.pgxp,
+                        geometry_precision=args.geometry_precision,
+                        perspective_textures=args.perspective_textures,
                         output_config=args.output_config)
     print(f"SF3 compatibility/presentation defaults "
           f"{'applied' if changed else 'already present'}: {project}")

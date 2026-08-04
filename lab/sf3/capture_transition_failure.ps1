@@ -6,6 +6,8 @@ param(
     [string]$Renderer = 'opengl',
     [string]$ReleaseWtrace = '',
     [string]$Executable = '',
+    [string]$BuildName = 'build',
+    [string]$GameConfig = 'game.toml',
     [switch]$OverlayNativeOff
 )
 
@@ -25,8 +27,14 @@ function ConvertTo-NativeArgument([string]$Value) {
 }
 
 $projectPath = (Resolve-Path -LiteralPath $Project).Path
-$buildPath = Join-Path $projectPath 'build'
-$gamePath = Join-Path $projectPath 'game.toml'
+foreach ($relativeName in @($BuildName, $GameConfig)) {
+    if ([IO.Path]::IsPathRooted($relativeName) -or
+        $relativeName -match '(^|[\\/])\.\.([\\/]|$)') {
+        throw "Build and game-config names must stay within the generated project: $relativeName"
+    }
+}
+$buildPath = Join-Path $projectPath $BuildName
+$gamePath = Join-Path $projectPath $GameConfig
 $executables = if ($Executable) {
     $selected = (Resolve-Path -LiteralPath $Executable).Path
     if ([IO.Path]::GetDirectoryName($selected) -ne $buildPath) {
@@ -40,7 +48,7 @@ if ($executables.Count -ne 1) {
     throw "Expected exactly one ordinary Release executable; found $($executables.Count). Use -Executable to select it explicitly."
 }
 if (-not (Test-Path -LiteralPath $gamePath -PathType Leaf)) {
-    throw "Missing game configuration: $gamePath"
+    throw "Missing selected game configuration: $gamePath"
 }
 
 $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'

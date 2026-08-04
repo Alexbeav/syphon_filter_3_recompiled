@@ -2174,6 +2174,7 @@ typedef struct {
     uint32_t hit_index;       /* 0-based ordinal of this anchor hit */
     uint32_t pc;              /* matched physical block-leader PC */
     uint64_t psx_cycle_count; /* absolute guest cycles at block entry */
+    uint32_t a0, t0, t1, t2, t7, sp, ra;
 } CycWatchEntry;
 static CycWatchEntry s_cyc_watch_ring[CYC_WATCH_RING_CAP];
 static volatile int s_cyc_watch_armed = 0; /* 1 = recording active */
@@ -2247,6 +2248,15 @@ static inline void cyc_watch_observe(uint32_t block_leader_phys)
     e->hit_index       = s_cyc_watch_hits;
     e->pc              = block_leader_phys;
     e->psx_cycle_count = cyc_now;
+    if (debug_cpu_ptr) {
+        e->a0 = debug_cpu_ptr->gpr[4];
+        e->t0 = debug_cpu_ptr->gpr[8];
+        e->t1 = debug_cpu_ptr->gpr[9];
+        e->t2 = debug_cpu_ptr->gpr[10];
+        e->t7 = debug_cpu_ptr->gpr[15];
+        e->sp = debug_cpu_ptr->gpr[29];
+        e->ra = debug_cpu_ptr->gpr[31];
+    }
     s_cyc_watch_hits++;
     if (s_cyc_watch_hits >= s_cyc_watch_max_hits) s_cyc_watch_armed = 0;
 }
@@ -4860,6 +4870,9 @@ static void handle_write_ram(int id, const char *json)
 
 static void handle_gpu_state(int id, const char *json)
 {
+    extern uint32_t gpu_geometry_correction_hits(void);
+    extern uint32_t gpu_texture_correction_hits(void);
+    extern void gpu_precision_triangle_stats(uint32_t *, uint32_t *);
     (void)json;
     GpuDisplayInfo di;
     gpu_get_display_info(&di);
@@ -4873,6 +4886,8 @@ static void handle_gpu_state(int id, const char *json)
     gpu_get_gp0_stats(&nop, &fill, &draw, &env, &copy);
     GpuWsDebug ws;
     gpu_ws_get_debug(&ws);
+    uint32_t precision_candidates = 0, precision_unmatched = 0;
+    gpu_precision_triangle_stats(&precision_candidates, &precision_unmatched);
     send_fmt("{\"id\":%d,\"ok\":true,"
              "\"display_x\":%d,\"display_y\":%d,"
              "\"width\":%d,\"height\":%d,"
@@ -4885,6 +4900,8 @@ static void handle_gpu_state(int id, const char *json)
              "\"gp0_nop\":%llu,\"gp0_fill\":%llu,\"gp0_draw\":%llu,\"gp0_env\":%llu,\"gp0_copy\":%llu,"
              "\"draw_area\":[%u,%u,%u,%u],"
              "\"draw_offset\":[%d,%d],"
+             "\"precision\":{\"candidates\":%u,\"unmatched\":%u,"
+             "\"geometry_hits\":%u,\"perspective_hits\":%u},"
              "\"ws\":{\"configured\":%d,\"active\":%d,\"game_mode\":%d,"
              "\"present_native_43\":%d,\"x_margin\":%d,"
              "\"activation_margin\":%d,\"squash\":[%d,%d],"
@@ -4915,6 +4932,8 @@ static void handle_gpu_state(int id, const char *json)
              (unsigned long long)copy,
              da.left, da.top, da.right, da.bottom,
              da.offset_x, da.offset_y,
+             precision_candidates, precision_unmatched,
+             gpu_geometry_correction_hits(), gpu_texture_correction_hits(),
              ws.configured, ws.active, ws.game_mode,
              ws.present_native_43, ws.x_margin, ws.activation_margin,
              ws.xnum, ws.xden,
@@ -6479,26 +6498,48 @@ static void handle_imask_trace(int id, const char *json)
 
     int start = (idx - count + cap) % cap;
 
-    send_fmt("{\"id\":%d,\"ok\":true,\"bit7_sets\":%d,\"bit7_clears\":%d,"
-             "\"total\":%d,\"count\":%d,\"entries\":[",
-             id, memory_get_imask_bit7_set_count(),
-             memory_get_imask_bit7_clear_count(), total, count);
+    /* A debug response is one newline-delimited JSON object.  send_fmt()
+     * appends a newline on every call, so assembling an array through many
+     * calls produces multiple invalid protocol records.  Build this bounded
+     * ring response in memory and publish it atomically. */
+    size_t out_cap = 256u + (size_t)count * 160u;
+    char *out = (char *)malloc(out_cap);
+    if (!out) { send_err(id, "alloc failed"); return; }
+    size_t off = 0;
+    int n = snprintf(out + off, out_cap - off,
+                     "{\"id\":%d,\"ok\":true,\"bit7_sets\":%d,\"bit7_clears\":%d,"
+                     "\"total\":%d,\"scanned\":%d,\"entries\":[",
+                     id, memory_get_imask_bit7_set_count(),
+                     memory_get_imask_bit7_clear_count(), total, count);
+    if (n < 0 || (size_t)n >= out_cap - off) {
+        free(out); send_err(id, "format failed"); return;
+    }
+    off += (size_t)n;
 
-    int first = 1;
+    int emitted = 0;
     for (int i = 0; i < count; i++) {
         int ii = (start + i) % cap;
         const ImaskTraceEntry *e = &buf[ii];
         if (only_b7c && !e->bit7_clear) continue;
-        if (!first) send_fmt(",");
-        first = 0;
-        send_fmt("{\"old\":\"0x%03X\",\"new\":\"0x%03X\","
-                 "\"func\":\"0x%08X\",\"pc\":\"0x%08X\",\"w\":%d,"
-                 "\"b7s\":%d,\"b7c\":%d,\"exc\":%d}",
-                 e->old_mask, e->new_mask,
-                 (unsigned)e->caller, (unsigned)e->store_pc, e->width,
-                 e->bit7_set, e->bit7_clear, e->in_exc);
+        n = snprintf(out + off, out_cap - off,
+                     "%s{\"old\":\"0x%03X\",\"new\":\"0x%03X\","
+                     "\"func\":\"0x%08X\",\"pc\":\"0x%08X\",\"w\":%d,"
+                     "\"b7s\":%d,\"b7c\":%d,\"exc\":%d}",
+                     emitted ? "," : "", e->old_mask, e->new_mask,
+                     (unsigned)e->caller, (unsigned)e->store_pc, e->width,
+                     e->bit7_set, e->bit7_clear, e->in_exc);
+        if (n < 0 || (size_t)n >= out_cap - off) {
+            free(out); send_err(id, "format overflow"); return;
+        }
+        off += (size_t)n;
+        emitted++;
     }
-    send_fmt("]}\n");
+    n = snprintf(out + off, out_cap - off, "],\"count\":%d}", emitted);
+    if (n < 0 || (size_t)n >= out_cap - off) {
+        free(out); send_err(id, "format overflow"); return;
+    }
+    debug_server_send_line(out);
+    free(out);
 }
 
 static void handle_sio_trace(int id, const char *json)
@@ -9078,8 +9119,10 @@ static void handle_cyc_watch(int id, const char *json)
 static void handle_cyc_watch_dump(int id, const char *json)
 {
     (void)json;
-    char buf[256];
-    snprintf(buf, sizeof(buf),
+    enum { BUF_SZ = 512 * 1024 };
+    char *buf = (char *)malloc(BUF_SZ);
+    if (!buf) { send_err(id, "cyc_watch_dump allocation failed"); return; }
+    int pos = snprintf(buf, BUF_SZ,
              "{\"id\":%d,\"ok\":true,\"anchor\":\"0x%08X\","
              "\"anchor_phys\":\"0x%08X\",\"end\":\"0x%08X\",\"end_phys\":\"0x%08X\","
              "\"region\":%d,\"armed\":%d,\"max_hits\":%u,"
@@ -9089,17 +9132,23 @@ static void handle_cyc_watch_dump(int id, const char *json)
              (s_cyc_watch_end_phys != 0u) ? 1 : 0,
              s_cyc_watch_armed ? 1 : 0, s_cyc_watch_max_hits,
              s_cyc_watch_hits);
-    send_line(buf);
     for (uint32_t i = 0; i < s_cyc_watch_hits; i++) {
         CycWatchEntry *e = &s_cyc_watch_ring[i];
-        snprintf(buf, sizeof(buf),
-                 "%s{\"hit_index\":%u,\"pc\":\"0x%08X\",\"cycles\":%llu}",
+        if (pos >= BUF_SZ - 256) break;
+        pos += snprintf(buf + pos, BUF_SZ - pos,
+                 "%s{\"hit_index\":%u,\"pc\":\"0x%08X\",\"cycles\":%llu,"
+                 "\"a0\":\"0x%08X\",\"t0\":\"0x%08X\","
+                 "\"t1\":\"0x%08X\",\"t2\":\"0x%08X\","
+                 "\"t7\":\"0x%08X\",\"sp\":\"0x%08X\","
+                 "\"ra\":\"0x%08X\"}",
                  (i == 0) ? "" : ",",
                  e->hit_index, e->pc,
-                 (unsigned long long)e->psx_cycle_count);
-        send_line(buf);
+                 (unsigned long long)e->psx_cycle_count,
+                 e->a0, e->t0, e->t1, e->t2, e->t7, e->sp, e->ra);
     }
-    send_line("]}");
+    snprintf(buf + pos, BUF_SZ - pos, "]}");
+    send_line(buf);
+    free(buf);
 }
 
 /* cyc_watch_clear — disarm and zero the ring. */
@@ -10992,18 +11041,27 @@ static void handle_cd_read_log(int id, const char *json)
 
     uint32_t start_idx = total > (uint32_t)tail ? total - (uint32_t)tail : 0;
 
-    send_fmt("{\"id\":%d,\"ok\":true,\"total\":%u,\"count\":%d,\"entries\":[",
-             id, total, tail);
+    size_t buf_size = 256u + (size_t)(tail > 0 ? tail : 1) * 96u;
+    char *buf = (char *)malloc(buf_size);
+    if (!buf) { send_err(id, "cd_read_log allocation failed"); return; }
+    size_t pos = (size_t)snprintf(
+        buf, buf_size,
+        "{\"id\":%d,\"ok\":true,\"total\":%u,\"count\":%d,\"entries\":[",
+        id, total, tail);
     int first = 1;
     for (uint32_t i = start_idx; i < total; i++) {
         int lba; uint32_t dest, size;
         cd_dma_log_get_entry(i, &lba, &dest, &size);
         if (lba < 0) continue;
-        send_fmt("%s{\"lba\":%d,\"dest\":\"0x%08X\",\"size\":%u}",
-                 first ? "" : ",", lba, dest, size);
+        pos += (size_t)snprintf(
+            buf + pos, buf_size - pos,
+            "%s{\"lba\":%d,\"dest\":\"0x%08X\",\"size\":%u}",
+            first ? "" : ",", lba, dest, size);
         first = 0;
     }
-    send_fmt("]}\n");
+    snprintf(buf + pos, buf_size - pos, "]}");
+    send_line(buf);
+    free(buf);
 }
 
 /* cdrom_instant_rate: get/set the 'instant' per-frame sector-IRQ budget
