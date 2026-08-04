@@ -305,6 +305,12 @@ if(BUILD_TESTING)
         ../runtime/include)
     add_test(NAME frame_color_stats_test COMMAND frame_color_stats_test)
 
+    add_executable(gpu_primitive_reject_test
+        ../runtime/tests/test_gpu_primitive_reject.c)
+    target_include_directories(gpu_primitive_reject_test PRIVATE
+        ../runtime/include)
+    add_test(NAME gpu_primitive_reject_test COMMAND gpu_primitive_reject_test)
+
     add_executable(debug_trace_ranges_test
         ../runtime/tests/test_debug_trace_ranges.c
         ../runtime/src/debug_trace_ranges.c
@@ -472,6 +478,7 @@ if(BUILD_TESTING)
                 overlay_native_config_guards
                 overlay_resident_patch_promotion
                 sdl3_main_single_include
+                sf3_gp0_primitive_analyzer
                 sf3_input_route_helpers
                 sf3_approved_capture_selector
                 sf3_route_evidence_compare

@@ -3002,9 +3002,7 @@ static void gp0_exec_mono_quad(void) {
     int32_t vx[4], vy[4];
     for (int i = 0; i < 4; i++)
         parse_vertex(gp0_cmd_buf[1 + i], &vx[i], &vy[i]);
-    int rej_a = psx_gpu_triangle_oversize(vx, vy, 0, 1, 2);
-    int rej_b = psx_gpu_triangle_oversize(vx, vy, 2, 1, 3);
-    if (rej_a && rej_b) return;
+    if (psx_gpu_quad_oversize(vx, vy)) return;
 
     /* Full-screen filters are commonly encoded as an axis-aligned quad. Drawing
      * a semi-transparent quad as two independent triangles blends their shared
@@ -3035,20 +3033,16 @@ static void gp0_exec_mono_quad(void) {
     }
     if (draw_area_out_bbox(vx, vy, 4)) return;
     gr_set_semi_transparency(semi_trans, (int)semi_transparency);
-    if (!rej_a) {
-        int32_t tx[3] = { vx[0], vx[1], vx[2] };
-        int32_t ty[3] = { vy[0], vy[1], vy[2] };
-        prepare_precise_triangle(gp0_cmd_buf[1], gp0_cmd_buf[2],
-                                 gp0_cmd_buf[3], tx, ty);
-        gr_draw_flat_triangle(vx[0], vy[0], vx[1], vy[1], vx[2], vy[2], color);
-    }
-    if (!rej_b) {
-        int32_t tx[3] = { vx[2], vx[1], vx[3] };
-        int32_t ty[3] = { vy[2], vy[1], vy[3] };
-        prepare_precise_triangle(gp0_cmd_buf[3], gp0_cmd_buf[2],
-                                 gp0_cmd_buf[4], tx, ty);
-        gr_draw_flat_triangle(vx[2], vy[2], vx[1], vy[1], vx[3], vy[3], color);
-    }
+    int32_t tx_a[3] = { vx[0], vx[1], vx[2] };
+    int32_t ty_a[3] = { vy[0], vy[1], vy[2] };
+    prepare_precise_triangle(gp0_cmd_buf[1], gp0_cmd_buf[2],
+                             gp0_cmd_buf[3], tx_a, ty_a);
+    gr_draw_flat_triangle(vx[0], vy[0], vx[1], vy[1], vx[2], vy[2], color);
+    int32_t tx_b[3] = { vx[2], vx[1], vx[3] };
+    int32_t ty_b[3] = { vy[2], vy[1], vy[3] };
+    prepare_precise_triangle(gp0_cmd_buf[3], gp0_cmd_buf[2],
+                             gp0_cmd_buf[4], tx_b, ty_b);
+    gr_draw_flat_triangle(vx[2], vy[2], vx[1], vy[1], vx[3], vy[3], color);
 }
 
 /* Execute shaded triangle (GP0 0x30-0x33) — Gouraud shaded */
@@ -3093,9 +3087,7 @@ static void gp0_exec_shaded_quad(void) {
         c[i] = rgb888_to_rgb555(gp0_cmd_buf[i * 2] & 0xFFFFFFu);
         parse_vertex(gp0_cmd_buf[1 + i * 2], &vx[i], &vy[i]);
     }
-    int rej_a = psx_gpu_triangle_oversize(vx, vy, 0, 1, 2);
-    int rej_b = psx_gpu_triangle_oversize(vx, vy, 2, 1, 3);
-    if (rej_a && rej_b) return;
+    if (psx_gpu_quad_oversize(vx, vy)) return;
     ws_nw_backdrop_stretch_quad(vx, vy);   /* full-frame 2D backdrop stretch (sky gradient; no-op else) */
     ws_nw_hud_shift_vertices(vx, 4);
     for (int i = 0; i < 4; i++) {
@@ -3112,24 +3104,20 @@ static void gp0_exec_shaded_quad(void) {
         }
     }
     gr_set_semi_transparency(semi_trans, (int)semi_transparency);
-    if (!rej_a) {
-        int32_t tx[3] = { vx[0], vx[1], vx[2] };
-        int32_t ty[3] = { vy[0], vy[1], vy[2] };
-        prepare_precise_triangle(gp0_cmd_buf[1], gp0_cmd_buf[3],
-                                 gp0_cmd_buf[5], tx, ty);
-        gr_draw_gouraud_triangle(vx[0], vy[0], c[0],
-                                 vx[1], vy[1], c[1],
-                                 vx[2], vy[2], c[2]);
-    }
-    if (!rej_b) {
-        int32_t tx[3] = { vx[2], vx[1], vx[3] };
-        int32_t ty[3] = { vy[2], vy[1], vy[3] };
-        prepare_precise_triangle(gp0_cmd_buf[5], gp0_cmd_buf[3],
-                                 gp0_cmd_buf[7], tx, ty);
-        gr_draw_gouraud_triangle(vx[2], vy[2], c[2],
-                                 vx[1], vy[1], c[1],
-                                 vx[3], vy[3], c[3]);
-    }
+    int32_t tx_a[3] = { vx[0], vx[1], vx[2] };
+    int32_t ty_a[3] = { vy[0], vy[1], vy[2] };
+    prepare_precise_triangle(gp0_cmd_buf[1], gp0_cmd_buf[3],
+                             gp0_cmd_buf[5], tx_a, ty_a);
+    gr_draw_gouraud_triangle(vx[0], vy[0], c[0],
+                             vx[1], vy[1], c[1],
+                             vx[2], vy[2], c[2]);
+    int32_t tx_b[3] = { vx[2], vx[1], vx[3] };
+    int32_t ty_b[3] = { vy[2], vy[1], vy[3] };
+    prepare_precise_triangle(gp0_cmd_buf[5], gp0_cmd_buf[3],
+                             gp0_cmd_buf[7], tx_b, ty_b);
+    gr_draw_gouraud_triangle(vx[2], vy[2], c[2],
+                             vx[1], vy[1], c[1],
+                             vx[3], vy[3], c[3]);
 }
 
 /* Helper: build texpage word from GPU state for SW renderer.
@@ -3227,9 +3215,7 @@ static void gp0_exec_textured_quad(void) {
     uint16_t tpage_word = (uint16_t)(gp0_cmd_buf[4] >> 16);
     uint16_t tpage = tpage_word & 0x1FF;
     set_tpage_from_poly(tpage_word);   /* latches even for size-rejected polys */
-    int rej_a = psx_gpu_triangle_oversize(vx, vy, 0, 1, 2);
-    int rej_b = psx_gpu_triangle_oversize(vx, vy, 2, 1, 3);
-    if (rej_a && rej_b) return;
+    if (psx_gpu_quad_oversize(vx, vy)) return;
 
     /* Widescreen: tagged billboard quads carry CPU-computed pixel offsets the
      * GTE squash never saw — re-squash every X around the prim's anchor. */
@@ -3275,28 +3261,24 @@ static void gp0_exec_textured_quad(void) {
         }
     }
 
-    if (!rej_a) {
-        int32_t tx[3] = { vx[0], vx[1], vx[2] };
-        int32_t ty[3] = { vy[0], vy[1], vy[2] };
-        prepare_precise_triangle(gp0_cmd_buf[1], gp0_cmd_buf[3],
-                                 gp0_cmd_buf[5], tx, ty);
-        prepare_texture_triangle(1, 3, 5);
-        gr_draw_textured_triangle(vx[0], vy[0], u[0], v[0],
-                                  vx[1], vy[1], u[1], v[1],
-                                  vx[2], vy[2], u[2], v[2],
-                                  clut_x, clut_y, tpage);
-    }
-    if (!rej_b) {
-        int32_t tx[3] = { vx[2], vx[1], vx[3] };
-        int32_t ty[3] = { vy[2], vy[1], vy[3] };
-        prepare_precise_triangle(gp0_cmd_buf[5], gp0_cmd_buf[3],
-                                 gp0_cmd_buf[7], tx, ty);
-        prepare_texture_triangle(5, 3, 7);
-        gr_draw_textured_triangle(vx[2], vy[2], u[2], v[2],
-                                  vx[1], vy[1], u[1], v[1],
-                                  vx[3], vy[3], u[3], v[3],
-                                  clut_x, clut_y, tpage);
-    }
+    int32_t tx_a[3] = { vx[0], vx[1], vx[2] };
+    int32_t ty_a[3] = { vy[0], vy[1], vy[2] };
+    prepare_precise_triangle(gp0_cmd_buf[1], gp0_cmd_buf[3],
+                             gp0_cmd_buf[5], tx_a, ty_a);
+    prepare_texture_triangle(1, 3, 5);
+    gr_draw_textured_triangle(vx[0], vy[0], u[0], v[0],
+                              vx[1], vy[1], u[1], v[1],
+                              vx[2], vy[2], u[2], v[2],
+                              clut_x, clut_y, tpage);
+    int32_t tx_b[3] = { vx[2], vx[1], vx[3] };
+    int32_t ty_b[3] = { vy[2], vy[1], vy[3] };
+    prepare_precise_triangle(gp0_cmd_buf[5], gp0_cmd_buf[3],
+                             gp0_cmd_buf[7], tx_b, ty_b);
+    prepare_texture_triangle(5, 3, 7);
+    gr_draw_textured_triangle(vx[2], vy[2], u[2], v[2],
+                              vx[1], vy[1], u[1], v[1],
+                              vx[3], vy[3], u[3], v[3],
+                              clut_x, clut_y, tpage);
 }
 
 /* Execute shaded textured triangle (GP0 0x34-0x37) */
@@ -3367,9 +3349,7 @@ static void gp0_exec_shaded_textured_quad(void) {
     uint16_t tpage_word = (uint16_t)(gp0_cmd_buf[5] >> 16);
     uint16_t tpage = tpage_word & 0x1FF;
     set_tpage_from_poly(tpage_word);   /* latches even for size-rejected polys */
-    int rej_a = psx_gpu_triangle_oversize(vx, vy, 0, 1, 2);
-    int rej_b = psx_gpu_triangle_oversize(vx, vy, 2, 1, 3);
-    if (rej_a && rej_b) return;
+    if (psx_gpu_quad_oversize(vx, vy)) return;
 
     ws_auto_ui_transform_quad(vx, vy);
     ws_nw_hud_shift_vertices(vx, 4);
@@ -3380,28 +3360,24 @@ static void gp0_exec_shaded_textured_quad(void) {
     if (draw_area_out_bbox(vx, vy, 4)) return;
 
     gr_set_semi_transparency(semi_trans, (int)semi_transparency);
-    if (!rej_a) {
-        int32_t tx[3] = { vx[0], vx[1], vx[2] };
-        int32_t ty[3] = { vy[0], vy[1], vy[2] };
-        prepare_precise_triangle(gp0_cmd_buf[1], gp0_cmd_buf[4],
-                                 gp0_cmd_buf[7], tx, ty);
-        prepare_texture_triangle(1, 4, 7);
-        gr_draw_shaded_textured_triangle(vx[0], vy[0], u[0], v[0], c[0],
-                                         vx[1], vy[1], u[1], v[1], c[1],
-                                         vx[2], vy[2], u[2], v[2], c[2],
-                                         clut_x, clut_y, tpage, raw_texture);
-    }
-    if (!rej_b) {
-        int32_t tx[3] = { vx[2], vx[1], vx[3] };
-        int32_t ty[3] = { vy[2], vy[1], vy[3] };
-        prepare_precise_triangle(gp0_cmd_buf[7], gp0_cmd_buf[4],
-                                 gp0_cmd_buf[10], tx, ty);
-        prepare_texture_triangle(7, 4, 10);
-        gr_draw_shaded_textured_triangle(vx[2], vy[2], u[2], v[2], c[2],
-                                         vx[1], vy[1], u[1], v[1], c[1],
-                                         vx[3], vy[3], u[3], v[3], c[3],
-                                         clut_x, clut_y, tpage, raw_texture);
-    }
+    int32_t tx_a[3] = { vx[0], vx[1], vx[2] };
+    int32_t ty_a[3] = { vy[0], vy[1], vy[2] };
+    prepare_precise_triangle(gp0_cmd_buf[1], gp0_cmd_buf[4],
+                             gp0_cmd_buf[7], tx_a, ty_a);
+    prepare_texture_triangle(1, 4, 7);
+    gr_draw_shaded_textured_triangle(vx[0], vy[0], u[0], v[0], c[0],
+                                     vx[1], vy[1], u[1], v[1], c[1],
+                                     vx[2], vy[2], u[2], v[2], c[2],
+                                     clut_x, clut_y, tpage, raw_texture);
+    int32_t tx_b[3] = { vx[2], vx[1], vx[3] };
+    int32_t ty_b[3] = { vy[2], vy[1], vy[3] };
+    prepare_precise_triangle(gp0_cmd_buf[7], gp0_cmd_buf[4],
+                             gp0_cmd_buf[10], tx_b, ty_b);
+    prepare_texture_triangle(7, 4, 10);
+    gr_draw_shaded_textured_triangle(vx[2], vy[2], u[2], v[2], c[2],
+                                     vx[1], vy[1], u[1], v[1], c[1],
+                                     vx[3], vy[3], u[3], v[3], c[3],
+                                     clut_x, clut_y, tpage, raw_texture);
 }
 
 /* Execute mono line (GP0 0x40-0x47) — Bresenham */

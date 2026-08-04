@@ -53,6 +53,11 @@ def main() -> int:
     parser.add_argument("cue", type=Path, help="user-owned USA SCUS-94640 cue")
     parser.add_argument("route", type=Path, help="captured PSXPAD2 input route")
     parser.add_argument("--project", type=Path, required=True)
+    parser.add_argument(
+        "--executable",
+        type=Path,
+        help="explicit diagnostic Release executable (required when build names are ambiguous)",
+    )
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--port", type=int, default=4388)
     parser.add_argument("--timeout", type=float, default=7200.0)
@@ -104,7 +109,20 @@ def main() -> int:
     project = args.project.resolve()
     out = args.out.resolve()
     memcard_source = args.memcard_source.resolve() if args.memcard_source else None
-    exe = project / "build-r1" / "Syphon_Filter_3_Recompiled.exe"
+    if args.executable:
+        exe = args.executable.resolve()
+    else:
+        candidates = [
+            path
+            for build_name in ("build-diagnostic", "build-r1")
+            for path in (project / build_name).glob("*_Recompiled.exe")
+        ]
+        if len(candidates) != 1:
+            raise ProbeError(
+                "expected exactly one diagnostic Release executable; "
+                "use --executable to select it explicitly"
+            )
+        exe = candidates[0]
     game_toml = project / "game.toml"
     for path, label in (
         (cue, "cue"),
@@ -230,6 +248,12 @@ def main() -> int:
                                 "display_ring_get",
                                 frame=target,
                                 path=(out / f"display-frame-{target}.png").as_posix(),
+                            )
+                            capture["gp0"] = safe_call(
+                                args.port,
+                                "gpu_frame_dump",
+                                frame=target,
+                                count=8192,
                             )
                             if args.display_ring_aux:
                                 capture["vram"] = safe_call(
