@@ -901,3 +901,13 @@ desktop shortcut points to the rebuilt ordinary candidate; the next visible
 gate is no shards in the opening room followed by mouse chase/aim/fire/wheel
 and the connected Mission 1-to-Mission 2 route. SF2 Recomp is the independent
 validator for the generic quad-perimeter contract.
+
+The unchanged accepted-route payload was then rebound to the current
+source-derived input contract only after whole-file verification; its 42,480
+samples retain payload SHA-256
+`6d26b87efb8b9cf935d73a156581edb899d2891896bd761d7d0ab7ec1499840f`.
+Two additional ordinary hidden OpenGL/dummy-audio processes consumed the full
+route and exited at the exact bound. Their isolated card images match
+byte-for-byte (`A717D08D...CC3F`, `7706C7D4...8E8`). This extends the quad fix
+through the recorded death/checkpoint, Mission 1 completion, result/FMVs, card
+flow and Mission 2 handoff without claiming visible pixel acceptance.

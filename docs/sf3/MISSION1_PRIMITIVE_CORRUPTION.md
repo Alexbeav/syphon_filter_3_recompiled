@@ -71,8 +71,10 @@ both directions using synthetic coordinates, and the analyzer now labels
 
 The framework suite passes 63/63. Two clean ordinary hidden OpenGL/dummy-audio
 runs consume 3,000 samples and produce matching card hashes, also matching the
-pre-fix smoke route. This proves lifecycle stability only. Visible Mission 1
-acceptance remains required to confirm that the shards are gone.
+pre-fix smoke route. Two further clean ordinary processes consume the complete
+42,480-sample accepted Mission 1-to-Mission 2 route and produce byte-identical
+card images. This proves lifecycle stability only. Visible Mission 1 acceptance
+remains required to confirm that the shards are gone.
 
 No room-specific filter, guest patch or title-state containment was added. The
 independent validating project is SF2 Recomp; it should replay a geometry-heavy
