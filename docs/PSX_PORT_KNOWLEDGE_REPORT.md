@@ -323,6 +323,17 @@ returned to the private corpus in `87e6c7a`; input-witness status and the
 independent-validator assignment were returned in `76393af`. The parentless
 public source snapshot is published as `Alexbeav/syphon_filter_3_recompiled`.
 
+The project now also has a provenance-closed public bootstrap model. The
+Windows package contains the exact source-owned CLI/runtime and MIT OpenBIOS,
+then verifies the user's extracted `SCUS_946.40` SHA-256 before locally
+generating and compiling the private executable. A complete package manifest
+hashes every shipped file and explicitly declares that neither retail payload
+nor generated game code is present. Clean-room testing exposed and fixed a
+generic Windows split-TU build defect: forwarding hundreds of generated source
+paths in one `cmake -D` argument exceeded `cmd.exe` limits. The runtime now
+passes a bounded manifest filename, covered by a 300-shard source regression.
+Tenchu is the independent validator for the declared public-generation closure.
+
 ## Native-wide provenance result — 2026-08-04
 
 SF3 independently narrows the shared GPU/presentation rule: a widescreen HUD

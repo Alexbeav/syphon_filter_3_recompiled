@@ -212,6 +212,11 @@ not change the 4:3 aspect ratio or the interpreter ownership decision above.
 
 ## Standalone publication
 
+- Public bootstrap `v0.1.0-alpha` generates and compiles a private local SF3
+  Release from the user's hash-verified SCUS-94640 disc. Its audited Windows ZIP
+  carries the exact redistributable CLI/runtime and OpenBIOS notice, but no
+  retail payload or generated game code. A fresh package-root invocation passed
+  generation, long-path Release compilation and a bounded headless/silent smoke.
 - Project checkpoint `db98b05` contains both generic fixes and 42/42 tests.
 - Private-corpus commit `87e6c7a` records the independently confirmed
   `PSX-CD-001` candidate and corrected SF3 project snapshot.
@@ -221,6 +226,7 @@ not change the 4:3 aspect ratio or the interpreter ownership decision above.
 - The lab retains its fetch-only upstream remote and has no writable project
   remote. `SF3_Redux` enhancement work has not begun.
 
-Each public checkpoint is rebuilt from audited source paths rather than pushing
-the lab history. Publication must continue to exclude OpenBIOS binaries,
-local/private workflow material and every user-owned or retail-derived payload.
+Each public source checkpoint is rebuilt from audited paths rather than pushing
+the lab history. Redistributable release assets may carry the MIT OpenBIOS image
+and its notice; they must continue to exclude local/private workflow material
+and every user-owned or retail-derived payload.

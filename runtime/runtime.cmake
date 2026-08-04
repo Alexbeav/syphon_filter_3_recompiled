@@ -678,9 +678,19 @@ function(psxrecomp_add_runtime_target target)
                 "  (build that tool first if needed; see psxrecomp/docs/BUILDING.md). "
                 "This is expected on a fresh checkout before the first generation.")
         endif()
+        # Do not forward the complete split-TU list through `cmake -D` on
+        # Windows. A large game can have hundreds of shards and exceed cmd.exe's
+        # command-line limit before this guard itself runs. Persist the list in
+        # the build tree and pass one bounded path to the checker instead.
+        set(_psxrt_generated_sources_file
+            "${CMAKE_CURRENT_BINARY_DIR}/${target}_generated_sources.txt")
+        string(REPLACE ";" "\n" _psxrt_generated_sources_text
+            "${_game_generated_check}")
+        file(WRITE "${_psxrt_generated_sources_file}"
+            "${_psxrt_generated_sources_text}\n")
         add_custom_target(${target}_require_generated
             COMMAND ${CMAKE_COMMAND}
-                    "-DSOURCES=${_game_generated_check}"
+                    "-DSOURCES_FILE=${_psxrt_generated_sources_file}"
                     "-DTARGET=${target}"
                     "-DGAME_CONFIG=${PSXRT_DEFAULT_GAME_CONFIG_PATH}"
                     "-DRECOMPILER=${_psxrt_recompiler_hint}"

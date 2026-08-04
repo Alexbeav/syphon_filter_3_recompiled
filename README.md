@@ -1,24 +1,23 @@
 # Syphon Filter 3 Recompiled
 
-This repository is the isolated, source-only feasibility project for the USA
-release of *Syphon Filter 3* (`SCUS-94640`) on PSXRecomp. It boots the authentic
+This repository is the noncommercial local-build project for the USA release
+of *Syphon Filter 3* (`SCUS-94640`) on PSXRecomp. It boots the authentic
 retail executable through OpenBIOS, runs retail-installed overlays, presents
 the original title and menus, and reaches Mission 1 player control without
 forced application states, patched generated code, native substitute gameplay,
 or redistributed game data.
 
-Current validated compatibility scope:
+Current validated scope:
 
 - deterministic game-project generation and reproducible Release products;
 - authentic executable entry, `Game_Main`, cemetery intro, TITLE, New Game,
-  Tokyo intro, briefing, state-8 load, full Mission 1 and live Mission 2 entry;
+  Tokyo intro, briefing, state-8 load and state-0 gameplay;
 - OpenGL FMV coherency across the 15/24-bit VRAM ownership transition;
 - retail GPU, SPU/XA, CD-ROM and PAD activity with measured native-overlay and
   interpreter ownership;
-- deterministic death/restart, checkpoint reload, mission completion, FMV,
-  memory-card save and following retail state transitions;
-- two matching complete 42,480-sample Release replays plus a passive diagnostic
-  run, with matching card images and measured Mission 2 overlay ownership.
+- human-accepted 4x rendering, native 16:9 world presentation, full-width
+  cinematic mattes, and mouse/keyboard control through arrival in Mission 4;
+- deterministic Release regression routes and the complete framework suite.
 
 Visible/manual validation revoked the earlier native-overlay compatibility
 claim. SF3 currently keeps runtime-installed overlays on the interpreter while
@@ -27,18 +26,25 @@ recompiled. With that ownership the briefing-to-Mission-1 transition succeeds.
 This is not yet a campaign-complete claim, and native overlay promotion remains
 disabled until entry-level native/interpreter equivalence is proved.
 
+The public download is a clean bootstrap package, not a pre-generated game
+binary. It verifies the user's supported disc, generates retail-derived code
+locally, applies the accepted SF3 profile, and compiles a private Release build.
+Download it from [GitHub Releases](https://github.com/Alexbeav/syphon_filter_3_recompiled/releases)
+and see [`docs/sf3/PUBLIC_BUILD.md`](docs/sf3/PUBLIC_BUILD.md).
+
 You must supply your own legally obtained USA BIN/CUE image. Retail executable,
 disc sectors, generated retail C, overlay captures, memory cards, screenshots
-and save states are intentionally excluded. Reproduction and validation steps
-are in [`lab/sf3/README.md`](lab/sf3/README.md), with the bounded acceptance
-state in [`docs/sf3/CURRENT_OBJECTIVE.md`](docs/sf3/CURRENT_OBJECTIVE.md).
+and save states are intentionally excluded from the repository and bootstrap.
+Generated projects and binaries contain retail-derived code and must remain
+private. Reproduction and validation steps are in
+[`lab/sf3/README.md`](lab/sf3/README.md), with the bounded acceptance state in
+[`docs/sf3/CURRENT_OBJECTIVE.md`](docs/sf3/CURRENT_OBJECTIVE.md).
 
 This feasibility source inherits PSXRecomp's PolyForm Noncommercial 1.0.0
-license. OpenBIOS is not redistributed in this source snapshot; its build pin,
-license notice and all other bundled third-party notices are retained in
-[`THIRD_PARTY_ATTRIBUTION.md`](THIRD_PARTY_ATTRIBUTION.md).
-No widescreen, freelook or other `SF3_Redux` presentation work is included in
-this compatibility checkpoint.
+license. The release bootstrap includes the MIT OpenBIOS image and its notice;
+all other bundled third-party notices are retained in
+[`THIRD_PARTY_ATTRIBUTION.md`](THIRD_PARTY_ATTRIBUTION.md). The remaining known
+presentation debt is the low-priority 4:3-inset HUD.
 
 ---
 
