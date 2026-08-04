@@ -40,6 +40,10 @@ replay_required = (
     "Start-Process",
     "-Wait -PassThru",
     "$process.ExitCode",
+    "[string]$BuildName",
+    "[string]$ExecutableName",
+    "[string]$GameConfig",
+    "must stay within the generated project",
 )
 for path, source, tokens in (
     (record, record_text, record_required),
@@ -88,6 +92,9 @@ observer_required = (
     '"state0_page_samples"',
     "newest - 1",
     '"missing_capture_frames": sorted(pending_capture_frames)',
+    '"--game-config"',
+    '"--widescreen-census"',
+    'safe_call(args.port, "ws_census"',
 )
 missing = [token for token in observer_required if token not in observer_text]
 if missing:

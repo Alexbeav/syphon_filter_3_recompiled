@@ -928,3 +928,40 @@ FMV/briefing/state transitions, checkpoint variants and save/load seams remain
 campaign qualification work. The next compatibility priority is a per-mission
 matrix that records the exact first divergence, while widescreen and PGXP stay
 isolated behind independent enhancement gates.
+
+### R18 — SF3-owned native-wide projection and culling composition
+
+The SF2 recomp notes and private corpus were consulted before changing SF3.
+Rejected SF2 leads stayed rejected: no packed-SXY provenance cache, textured-
+edge expansion or broad ordering-table compensation was adopted. The generic
+automatic 320x240 screen-cull detector emitted zero calls for SCUS-94640, so it
+does not own this title's culling.
+
+The reusable correction from SF2 checkpoint `a2b951c` was ported as an opt-in
+runtime contract: a title may expose aspect-scaled GTE X to retail visibility,
+then inverse that projection exactly once for a structurally classified dense
+polygon linked-list DMA submission. The classifier defaults off, is identity
+at 4:3, preserves PS1 primitive rejection on raw packet coordinates, and has a
+focused composition/parser regression.
+
+SCUS-94640 was measured independently. A passive 3,000-sample diagnostic route
+recorded 227,206 primitive rows across 688 frames. Mission 1 list 3 contained
+483..925 polygon commands per sampled frame; list 4 contained 5..21 and list 5
+contained 1. The profile threshold is therefore 64: above every observed
+auxiliary submission and below the smallest observed world submission. No SF2
+address, threshold claim, packet payload or application state was copied.
+
+The corrected 16:9 diagnostic run reported guest scale 3:4, zero inverse work
+through boot/menu/movie states and 174,900 restored vertices after Mission 1
+gameplay engaged. It exited at all 3,000 samples with baseline-identical blank
+cards. Two ordinary hidden OpenGL/dummy-audio short runs and two complete
+42,480-sample runs also exited at their exact bounds. Both complete runs match
+the accepted card hashes `A717D08D...CC3F` and `7706C7D4...8E8`.
+
+The required Ninja/MinGW suite passes 65/65. The exact 4x/4:3 build remains the
+control; the 4x/16:9 build is an isolated visible candidate. The remaining gate
+is human inspection of camera pans at the former 4:3 edges, HUD corners, FMV
+pillarboxing, fades/scopes and mission transitions. SF2 Recomp independently
+validates the generic DMA-submission ownership model; Tenchu independently
+validates the one-projection-owner constraint through a different title-owned
+mechanism.

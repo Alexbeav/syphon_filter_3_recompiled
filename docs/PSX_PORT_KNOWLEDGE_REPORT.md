@@ -322,3 +322,23 @@ media payload is tracked. Oracle projects are read-only. Reusable findings were
 returned to the private corpus in `87e6c7a`; input-witness status and the
 independent-validator assignment were returned in `76393af`. The parentless
 public source snapshot is published as `Alexbeav/syphon_filter_3_recompiled`.
+
+## 2026-08-04 — SF3 native-wide ownership validation
+
+- Symptom/owner: native-wide presentation needs retail edge participation
+  without distorting actors or screen-space submissions; likely owner is the
+  world submission boundary, not the host surface.
+- Confirmed: the generic DMA linked-list ownership mechanism from SF2 applies
+  to SF3. SCUS-94640 Mission 1 has one 483..925-polygon world list and only
+  1..21-polygon auxiliary lists in the bounded census.
+- Contradicted: the generic 320x240 screen-cull detector emits zero SF3 sites;
+  presentation stretching alone does not establish retail culling ownership.
+- Irrelevant/rejected: SF2 addresses, reused packed-SXY identity, textured-edge
+  expansion and broad ordering-table compensation were not adopted.
+- Regression: guest projection/inverse composition, 4:3 identity, disabled
+  threshold, parser bounds, profile generation and replay-helper isolation.
+- Validation: 65/65 required tests; one passive 3,000-sample diagnostic run
+  records 3:4 scale and 174,900 world-list restores; two short and two complete
+  ordinary hidden OpenGL runs finish with accepted card hashes.
+- Independent validators: SF2 Recomp for DMA-submission ownership; Tenchu for
+  the one-projection-owner invariant via its revision-scoped title patch.

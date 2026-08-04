@@ -890,6 +890,13 @@ struct GameConfig {
     // transformed in the mirror.
     bool ws_nw_full_mirror = false;
 
+    // Expose the wide cone to guest-visible GTE projection, then restore
+    // retail proportions only for a title-profile-classified world DMA list.
+    bool ws_nw_guest_projection = false;
+    // Zero disables classification; nonzero is title-profile data established
+    // by a bounded linked-list polygon census.
+    uint32_t ws_nw_world_min_polygons = 0;
+
     // [[widescreen.signed_x_bound]] guarded LUI sites whose signed Q16
     // constants scale with the active native-wide field and remain identity in
     // 4:3/menus/FMV. Shared by static codegen, overlay JIT, and interpreter.

@@ -54,6 +54,10 @@ def main() -> int:
     parser.add_argument("route", type=Path, help="captured PSXPAD2 input route")
     parser.add_argument("--project", type=Path, required=True)
     parser.add_argument(
+        "--game-config", default="game.toml",
+        help="project-relative game configuration (default: game.toml)",
+    )
+    parser.add_argument(
         "--executable",
         type=Path,
         help="explicit diagnostic Release executable (required when build names are ambiguous)",
@@ -68,6 +72,10 @@ def main() -> int:
         help="copy an existing card directory into the isolated replay directory",
     )
     parser.add_argument("--display-ring-aux", action="store_true")
+    parser.add_argument(
+        "--widescreen-census", action="store_true",
+        help="periodically dump the passive GPU census during state-0 gameplay",
+    )
     parser.add_argument(
         "--stop-after",
         type=int,
@@ -123,7 +131,10 @@ def main() -> int:
                 "use --executable to select it explicitly"
             )
         exe = candidates[0]
-    game_toml = project / "game.toml"
+    game_relative = Path(args.game_config)
+    if game_relative.is_absolute() or ".." in game_relative.parts:
+        parser.error("--game-config must stay within the generated project")
+    game_toml = project / game_relative
     for path, label in (
         (cue, "cue"),
         (route, "input route"),
@@ -193,6 +204,7 @@ def main() -> int:
         "state0_page_samples": [],
         "corruption_matches": [],
         "periodic": [],
+        "widescreen_census": [],
     }
     creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
     stdout_path = out / "stdout.log"
@@ -212,6 +224,7 @@ def main() -> int:
         last_page_sample = -60
         last_periodic = -600
         last_scanned = 0
+        last_census_frame = -60
         pending_capture_frames = set(capture_frames)
         deadline = time.monotonic() + args.timeout
         try:
@@ -324,6 +337,15 @@ def main() -> int:
                                 path=(out / f"corrupt-frame-{match_frame}-vram.bin").as_posix(),
                             )
                         evidence["corruption_matches"].append(match)
+
+                if (args.widescreen_census and pair == (1, 0) and
+                        frame - last_census_frame >= 60):
+                    census_path = (out / "widescreen-census.csv").resolve()
+                    evidence["widescreen_census"].append(
+                        safe_call(args.port, "ws_census", start=0, end=frame,
+                                  out=str(census_path))
+                    )
+                    last_census_frame = frame
 
                 if frame - last_periodic >= 600:
                     evidence["periodic"].append(

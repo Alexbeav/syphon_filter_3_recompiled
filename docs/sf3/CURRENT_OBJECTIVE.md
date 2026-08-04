@@ -11,13 +11,14 @@ previous catastrophic red/checkered failure and deterministic opening-room
 textured-shard defect are fixed. Visible 4x testing confirms a clean Mission 1
 opening room and connected, comfortable play through arrival in Mission 4.
 
-Redux state: `phase1_direct_camera_structurally_verified`. The isolated branch
-builds with 53 Release tests. It has a clean 4x/4:3 profile, keyboard mapping,
+Redux state: `phase1_widescreen_automated_verified`. The isolated branch has a
+clean 4x/4:3 control and a separate 4x/16:9 candidate, keyboard mapping,
 a reversible relative-mouse-to-retail-PAD fallback and a direct camera bridge
 with strict focus, word, state, pointer and retail-owner guards. A generated
 ordinary Release product and separate Release-diagnostic product both link.
 Human mouse feel, aim/fire/wheel controls and scripted-camera handoff are
-accepted through the connected Mission 1-to-Mission 4 session.
+accepted through the connected Mission 1-to-Mission 4 session. Widescreen's
+complete recorded route passes twice; visible edge/HUD/FMV acceptance remains.
 
 ## Objective
 
@@ -28,6 +29,15 @@ state and gameplay. Validate every enhancement independently against the
 accepted route, keep an off switch, and record honest native/fallback ownership.
 
 ## Current blockers
+
+- Widescreen has no automated compatibility blocker. SCUS-94640's generic
+  screen-cull detector emits zero sites, contradicting that route. A passive
+  Mission 1 DMA census independently identifies list 3 as the world owner
+  (483..925 polygons versus 1..21 for auxiliary lists). Guest-visible 3:4 GTE
+  projection plus inverse raster composition only for lists at or above the
+  measured 64-polygon threshold records 174,900 vertex restores in the short
+  route. Two ordinary 42,480-sample runs complete with accepted card hashes.
+  The open gate is visible 16:9 inspection for margins, HUD, FMV and culling.
 
 - No structural or visible direct-camera blocker remains. Live SCUS-94640
   evidence proves
