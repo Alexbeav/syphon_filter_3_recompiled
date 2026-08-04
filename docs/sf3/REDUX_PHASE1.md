@@ -80,9 +80,9 @@ not human camera feel.
 6. Treat PGXP, interpolation, texture replacement/filtering and other Redux
    features as later independent gates. PsyCross PGXP is not a drop-in patch.
 
-First unresolved invariant: visible chase/aim feel and seamless ownership
-handoff across scripted cameras. This requires a human windowed run; hidden
-evidence cannot close it.
+The visible chase/aim and ownership-handoff invariant is closed. A human 4x
+windowed session accepted freelook, aim, fire and wheel weapon selection through
+connected play reaching Mission 4. Hidden evidence did not close this gate.
 
 ## Runtime profile boundary
 

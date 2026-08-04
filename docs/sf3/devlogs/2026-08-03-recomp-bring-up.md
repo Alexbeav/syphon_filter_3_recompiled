@@ -911,3 +911,20 @@ route and exited at the exact bound. Their isolated card images match
 byte-for-byte (`A717D08D...CC3F`, `7706C7D4...8E8`). This extends the quad fix
 through the recorded death/checkpoint, Mission 1 completion, result/FMVs, card
 flow and Mission 2 handoff without claiming visible pixel acceptance.
+
+### R17 — visible quad and modern-input acceptance reaches Mission 4
+
+The rebuilt ordinary 4x candidate passed its remaining human gates. The tester
+reported no graphical corruption in the Mission 1 opening room and comfortably
+continued through connected retail play to Mission 4. Mouse freelook, aim,
+fire, wheel weapon selection, scripted-camera ownership handoff and the SF2-
+style keyboard profile all remained usable across that session. Overall visual
+and control feel was reported as excellent.
+
+This closes visible causality for the original-quad perimeter correction and
+human acceptance of the current 4x mouse/keyboard profile. It does not claim
+Mission 4 completion or whole-campaign compatibility. Missions 5–19, later
+FMV/briefing/state transitions, checkpoint variants and save/load seams remain
+campaign qualification work. The next compatibility priority is a per-mission
+matrix that records the exact first divergence, while widescreen and PGXP stay
+isolated behind independent enhancement gates.

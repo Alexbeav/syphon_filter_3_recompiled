@@ -1,23 +1,23 @@
 # Current objective — SF3 Redux Phase 1
 
-Updated: 2026-08-03
+Updated: 2026-08-04
 
 Baseline state: `compatibility_baseline_verified`. A connected human route now
 covers cold boot, Story/Mission 1, death, checkpoint reload, full mission
 completion, FMV, new-card save and the retail Mission 2 handoff through live
 gameplay. Two ordinary hidden OpenGL replays and a passive diagnostic replay
 consume the same complete route after safe Mission 2 overlay promotion. The
-previous catastrophic red/checkered failure is fixed, but visible testing now
-confirms a deterministic opening-room defect: oversized textured world
-primitives form long shards while the player and HUD remain coherent. This is
-not accepted as the earlier small software/OpenGL raster-precision delta.
+previous catastrophic red/checkered failure and deterministic opening-room
+textured-shard defect are fixed. Visible 4x testing confirms a clean Mission 1
+opening room and connected, comfortable play through arrival in Mission 4.
 
 Redux state: `phase1_direct_camera_structurally_verified`. The isolated branch
 builds with 53 Release tests. It has a clean 4x/4:3 profile, keyboard mapping,
 a reversible relative-mouse-to-retail-PAD fallback and a direct camera bridge
 with strict focus, word, state, pointer and retail-owner guards. A generated
 ordinary Release product and separate Release-diagnostic product both link.
-Human mouse feel and scripted-camera handoff remain open acceptance gates.
+Human mouse feel, aim/fire/wheel controls and scripted-camera handoff are
+accepted through the connected Mission 1-to-Mission 4 session.
 
 ## Objective
 
@@ -29,16 +29,17 @@ accepted route, keep an off switch, and record honest native/fallback ownership.
 
 ## Current blockers
 
-- No structural direct-camera blocker remains. Live SCUS-94640 evidence proves
+- No structural or visible direct-camera blocker remains. Live SCUS-94640
+  evidence proves
   the player/state/controller/wrapper/base chain, owner `+0xDC`, pitch
-  `+0x8E8/+0x918`, and exact site execution. The active gate is a visible human
-  check of chase/aim feel and scripted-camera handoff; this has not been claimed
-  from hidden replay evidence.
+  `+0x8E8/+0x918`, and exact site execution. A visible human check of chase/aim
+  feel and scripted-camera handoff passed through connected play reaching
+  Mission 4.
 
 - No representative-slice P0 remains. The cache-complete visible countercheck
   and three complete replays supersede the earlier cache-empty fatal.
-- The visible opening-room primitive defect has a proven generic GPU owner and
-  a rebuilt candidate, but remains a compatibility P0 until visible acceptance.
+- The visible opening-room primitive defect is closed with a proven generic GPU
+  owner and visible acceptance of the rebuilt candidate.
   The runtime incorrectly rejected decomposed quad triangles independently;
   five captured `GP0 3Ch` commands would render one oversized half even though
   PS1 hardware drops the complete original quad by perimeter-edge limits.
@@ -66,11 +67,11 @@ accepted route, keep an off switch, and record honest native/fallback ownership.
 
 | Debt | Owner | User impact | Evidence | Removal gate |
 | --- | --- | --- | --- | --- |
-| Oversized textured shards in Mission 1 opening room | confirmed generic complete-quad rejection mismatch; visible closure pending | substantial room occlusion; later rooms appear correct | five captured `GP0 3Ch` partial-quad risks, hardware-backed perimeter contract, 63/63 tests, two clean 3,000-sample runs and two complete 42,480-sample runs with matching cards | visible 4x Mission 1 opening-room pass with no shards, then continue through Mission 2 handoff |
+| Oversized textured shards in Mission 1 opening room | **closed 2026-08-04**: generic complete-quad rejection mismatch | no remaining observed impact through arrival in Mission 4 | five captured `GP0 3Ch` partial-quad risks, hardware-backed perimeter contract, 63/63 tests, two clean 3,000-sample runs, two complete 42,480-sample runs with matching cards and a clean visible 4x pass | passed: opening room has no shards and connected visible play reached Mission 4 |
 | Small OpenGL/software raster delta at Mission 1 start | GPU raster precision | subtle shading/facet differences at native resolution | 115 dense common startup frames plus 71 later sampled frames; worst sampled mean RGB delta 3.723/255 | independently validate PSX 5-bit versus host 8-bit Gouraud/edge precision before changing presentation |
 | Campaign overlays beyond early Mission 2 | overlay coverage | performance risk and incomplete recompilation ownership | safe Mission 2 endpoint: seven regions, 9.81M native dispatches, 270,891 fallbacks | extend only from exact-byte additive history and replay each promotion |
 | Diagnostic display readback can alter host timing | validation observer | a clean observed run may not represent ordinary Release timing | OpenGL ring capture flushes/reads back even without CPU-VRAM synchronization; route observer is source/build validated only | reproduce under a recorded route, localize with bounded capture, then confirm the fix twice in ordinary Release with the observer disabled |
-| Campaign beyond Mission 1 unverified | retail/content lifecycle | no campaign claim | no connected mission matrix | later campaign-complete gate; not part of this representative slice |
+| Campaign beyond arrival in Mission 4 unverified | retail/content lifecycle | no whole-campaign claim | connected visible play reached Mission 4; Missions 5–19 and later lifecycle seams remain unverified | campaign qualification matrix covering every mission, transition, checkpoint and save/load seam |
 
 ## Starting evidence
 
