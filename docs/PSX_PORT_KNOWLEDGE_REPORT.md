@@ -334,12 +334,16 @@ from the authoritative center submission. The result is human-accepted in
 Mission 1 and deterministic across two clean 3,000-sample runs.
 
 The SF2-inspired broad full-width polygon rule was contradicted in SF3: it
-created a large vertical world slab. Only the structurally unambiguous PS1
-monochrome TILE rectangle helper remains. It does not yet own every retail
-cutscene matte, so the black bars still stop at the authored 4:3 edges. HUD/UI
-also remains intentionally inset until SF3 exposes a bounded owner. SF2 Recomp
-is the independent validator for the requirement that HUD and matte expansion
-be provenance-scoped rather than inferred from broad polygon geometry.
+created a large vertical world slab. The missing matte owner was subsequently
+measured rather than guessed. Cinematic bands are axis-aligned mono quads
+(`GP0 28h`) in auxiliary linked-list 4, authored at `-192..192`; dense world
+geometry is list 3. Routing only list-qualified authored-width mono quads
+through the existing flat-rectangle backend lets that backend cover the native-
+wide margins without transforming world polygons. Human testing accepts HQ,
+widescreen, full-width mattes and mouse/keyboard together. HUD/UI remains
+intentionally inset until SF3 exposes a bounded owner. SF2 Recomp independently
+validates the flat-rectangle matte behavior; SF3 independently validates that
+submission provenance is required in addition to full-width topology.
 
 ## 2026-08-04 — SF3 native-wide ownership validation
 

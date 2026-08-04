@@ -3080,23 +3080,19 @@ static void gp0_exec_mono_quad(void) {
         parse_vertex(gp0_cmd_buf[1 + i], &vx[i], &vy[i]);
     if (psx_gpu_quad_oversize(vx, vy)) return;
 
-    /* Full-screen filters are commonly encoded as an axis-aligned quad. Drawing
+    /* Full-width filters and cinematic mattes are encoded as axis-aligned mono
+     * quads. Drawing
      * a semi-transparent quad as two independent triangles blends their shared
      * diagonal twice; render the equivalent rectangle once to avoid that seam.
-     * The full-screen helper also grows the native display across the sidecar
-     * surface. Ordinary world quads are unchanged. */
-    if (vx[0] == vx[2] && vx[1] == vx[3] &&
-        vy[0] == vy[1] && vy[2] == vy[3] &&
-        vx[1] > vx[0] && vy[2] > vy[0] &&
-        vx[0] <= 0 && vx[1] >= ws_disp_w() &&
-        vy[0] <= 0 && vy[2] >= ws_disp_h()) {
-        int32_t x = vx[0];
-        int32_t y = vy[0];
-        int w = (int)(vx[1] - vx[0]);
-        int h = (int)(vy[2] - vy[0]);
-        int off = ws_native_wide_active() ? ws_nw_offset() : 0;
-        x -= off;
-        w += 2 * off;
+     * The renderer's flat-rect backend owns native-wide margin coverage.
+     * SF3 list 4 is the measured auxiliary/effect list; dense world list 3 is
+     * explicitly excluded because its width-spanning quads caused slabs. */
+    int32_t x, y;
+    int w, h;
+    if (ws_fullwidth_effect_quad_rect(
+            ws_native_wide_active(), !gp0_ll_world, (int)ws_disp_w(),
+            (int32_t)draw_area_left - draw_offset_x, vx, vy,
+            &x, &y, &w, &h)) {
         x += draw_offset_x;
         y += draw_offset_y;
         gr_set_semi_transparency(semi_trans, (int)semi_transparency);
