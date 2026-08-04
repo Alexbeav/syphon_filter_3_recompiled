@@ -1,38 +1,41 @@
 # Syphon Filter 3 Recompiled
 
-This repository is the isolated, source-only feasibility project for the USA
-release of *Syphon Filter 3* (`SCUS-94640`) on PSXRecomp. It boots the authentic
+This repository is the noncommercial local-build project for the USA release
+of *Syphon Filter 3* (`SCUS-94640`) on PSXRecomp. It boots the authentic
 retail executable through OpenBIOS, runs retail-installed overlays, presents
 the original title and menus, and reaches Mission 1 player control without
 forced application states, patched generated code, native substitute gameplay,
 or redistributed game data.
 
-Current validated bootstrap scope:
+Current validated scope:
 
 - deterministic game-project generation and reproducible Release products;
 - authentic executable entry, `Game_Main`, cemetery intro, TITLE, New Game,
-  Tokyo intro, briefing, state-8 load and initial state-0 Mission 1 execution;
+  Tokyo intro, briefing, state-8 load and state-0 gameplay;
 - OpenGL FMV coherency across the 15/24-bit VRAM ownership transition;
 - retail GPU, SPU/XA, CD-ROM and PAD activity with measured native-overlay and
   interpreter ownership;
-- two matching clean hidden-renderer bootstrap runs with zero static dispatch
-  misses.
+- human-accepted 4x rendering, native 16:9 world presentation, full-width
+  cinematic mattes, and mouse/keyboard control through arrival in Mission 4;
+- deterministic Release regression routes and the complete framework suite.
 
-This project is currently `bootstrap_verified`, not a representative playable
-slice. Human testing has reproduced both a briefing-to-gameplay transition
-failure and severe Mission 1 texture corruption. Correct sustained gameplay,
-death/restart, checkpoint restore and Mission 1 completion remain P0 gates.
+The public download is a clean bootstrap package, not a pre-generated game
+binary. It verifies the user's supported disc, generates retail-derived code
+locally, applies the accepted SF3 profile, and compiles a private Release build.
+Download it from [GitHub Releases](https://github.com/Alexbeav/syphon_filter_3_recompiled/releases)
+and see [`docs/sf3/PUBLIC_BUILD.md`](docs/sf3/PUBLIC_BUILD.md).
 
 You must supply your own legally obtained USA BIN/CUE image. Retail executable,
 disc sectors, generated retail C, overlay captures, memory cards, screenshots
-and save states are intentionally excluded. Reproduction and validation steps
-are in [`lab/sf3/README.md`](lab/sf3/README.md); the chronological evidence is
-in [`docs/sf3/devlogs/2026-08-03-recomp-bring-up.md`](docs/sf3/devlogs/2026-08-03-recomp-bring-up.md).
+and save states are intentionally excluded from the repository and bootstrap.
+Generated projects and binaries contain retail-derived code and must remain
+private. Reproduction and validation steps are in
+[`lab/sf3/README.md`](lab/sf3/README.md).
 
 This feasibility source inherits PSXRecomp's PolyForm Noncommercial 1.0.0
 license. OpenBIOS and all other bundled third-party components retain their own
 licenses and notices; see [`THIRD_PARTY_ATTRIBUTION.md`](THIRD_PARTY_ATTRIBUTION.md).
-No enhanced `SF3_Redux` presentation work is included in this checkpoint.
+The remaining known presentation debt is the low-priority 4:3-inset HUD.
 
 ---
 

@@ -1090,3 +1090,24 @@ Post-acceptance qualification passes the UTF-8 Release framework suite 66/66.
 The ordinary `build-wide` Release target rebuilds cleanly from the accepted
 sources; the generated executable remains a local, retail-derived artifact and
 is not eligible for source-repository publication.
+
+### R23 — public owned-input bootstrap package
+
+The redistributable deliverable is now an owned-input generator rather than a
+pre-generated SF3 executable. The Windows bootstrap carries the exact
+PSXRecomp CLI/runtime, PCSX-Redux OpenBIOS and notice, plus source-owned SF3
+configuration. Before owned-input generation it verifies a complete package
+path/size/SHA-256 manifest. It rejects retail media, SCUS payloads, generated
+game code, captures, cards and reports. After generation it admits only the
+supported `SCUS_946.40` executable SHA-256, applies the accepted 4x/16:9/input
+profile, regenerates locally and compiles an ordinary private Release.
+
+The first clean-room compile exposed a generic Windows boundary: 249 split game
+C paths were forwarded in one `cmake -D` argument to the generated-source
+guard, exceeding `cmd.exe`'s command-line limit before the guard could execute.
+The runtime now writes the source list to a build-tree manifest and passes one
+bounded filename. A source-owned regression covers 300 existing shards and the
+actionable missing-shard failure. The same long-path clean project then linked
+`Syphon_Filter_3_Recompiled.exe` and completed a 60-sample headless/silent
+smoke. The framework suite remains 66/66; the new focused Python regression is
+3/3. Generated output and the smoke timeline remain private.

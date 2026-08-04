@@ -11,11 +11,19 @@
 # build-time dependency of the runtime target (see psxrecomp_add_runtime_target)
 # so the failure surfaces first, names the missing files, and states the fix.
 #
-# Invoked via: cmake -DSOURCES=<;-list> -DTARGET=.. -DGAME_CONFIG=.. \
-#                    -DRECOMPILER=.. -DDOC=.. -P check_generated_sources.cmake
+# Invoked via: cmake -DSOURCES_FILE=<newline-list> -DTARGET=.. \
+#                    -DGAME_CONFIG=.. -DRECOMPILER=.. -DDOC=.. \
+#                    -P check_generated_sources.cmake
 
-if(NOT DEFINED SOURCES)
-    message(FATAL_ERROR "check_generated_sources.cmake requires SOURCES")
+if(DEFINED SOURCES_FILE)
+    if(NOT EXISTS "${SOURCES_FILE}")
+        message(FATAL_ERROR
+            "check_generated_sources.cmake source manifest is missing: ${SOURCES_FILE}")
+    endif()
+    file(STRINGS "${SOURCES_FILE}" SOURCES ENCODING UTF-8)
+elseif(NOT DEFINED SOURCES)
+    message(FATAL_ERROR
+        "check_generated_sources.cmake requires SOURCES_FILE or SOURCES")
 endif()
 
 set(_missing "")
