@@ -246,10 +246,10 @@ int main(int argc, char** argv) {
         }
 
         /* Wall-clock pacing to PSX-native 59.94 Hz for apples-to-apples
-         * comparison with psx-runtime. Press TAB on the Beetle window to
+         * comparison with psx-runtime. Press keypad + on the Beetle window to
          * sustain unlocked rate (turbo). */
         const Uint8* keys = SDL_GetKeyboardState(NULL);
-        if (keys && keys[SDL_SCANCODE_TAB]) continue;
+        if (keys && keys[SDL_SCANCODE_KP_PLUS]) continue;
         constexpr double FRAME_MS = 1000.0 / 59.94;
         static FramePacer pacer = { 0 };
         frame_pacer_wait(&pacer, FRAME_MS);

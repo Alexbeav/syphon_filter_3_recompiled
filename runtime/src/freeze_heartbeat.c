@@ -26,6 +26,26 @@ extern uint32_t g_debug_last_store_pc;         /* debug_server.c */
 extern uint32_t i_stat;                        /* memory.c */
 extern uint32_t i_mask;                        /* memory.c */
 
+/* The I_MASK write ring is intentionally always-on and records the guest
+ * writer identity at the MMIO boundary.  Include it in an automatic freeze
+ * dump so a masked-IRQ wedge remains attributable even if the TCP observer
+ * cannot query the stopped transition in time.  This diagnostic mirror must
+ * match ImaskTraceEntry in memory.c. */
+typedef struct {
+    uint32_t old_mask;
+    uint32_t new_mask;
+    uint32_t caller;
+    uint32_t store_pc;
+    uint8_t  width;
+    uint8_t  bit7_set;
+    uint8_t  bit7_clear;
+    uint8_t  in_exc;
+} FreezeImaskTraceEntry;
+extern int memory_get_imask_bit7_set_count(void);
+extern int memory_get_imask_bit7_clear_count(void);
+extern const FreezeImaskTraceEntry *memory_get_imask_trace(int *idx_out,
+                                                            int *count_out);
+
 extern uint64_t psx_get_cycle_count(void);
 extern void     psx_get_freeze_diag(uint64_t *total_checks,
                                     uint32_t *dispatch_count,
@@ -138,6 +158,7 @@ static int    s_sym_initialized = 0;
 #define DUMP_CAP_SIO_PC        65536u
 #define DUMP_CAP_THREAD_TRACE  65536u
 #define DUMP_CAP_RESTORE_TRACE 65536u
+#define DUMP_CAP_IMASK_TRACE     4096u
 #define DUMP_CAP_FN_ENTRY      65536u
 #define DUMP_CAP_DIRTY_BLOCK  262144u
 
@@ -495,6 +516,34 @@ static void freeze_dump_write(long long wall, uint64_t frame, uint64_t cyc,
             (i + 1 < avail) ? "," : "");
     }
     fputs("  ],\n", f);
+
+    {
+        int idx = 0;
+        int total = 0;
+        const FreezeImaskTraceEntry *trace = memory_get_imask_trace(&idx, &total);
+        const int ring_cap = 4096;
+        int avail_i = total < ring_cap ? total : ring_cap;
+        if (avail_i > (int)DUMP_CAP_IMASK_TRACE)
+            avail_i = (int)DUMP_CAP_IMASK_TRACE;
+        int start_i = (idx - avail_i + ring_cap) % ring_cap;
+        fprintf(f,
+                "  \"imask_trace\":{\"total\":%d,\"bit7_sets\":%d,"
+                "\"bit7_clears\":%d,\"count\":%d,\"entries\":[\n",
+                total, memory_get_imask_bit7_set_count(),
+                memory_get_imask_bit7_clear_count(), avail_i);
+        for (int i = 0; i < avail_i; i++) {
+            const FreezeImaskTraceEntry *e = &trace[(start_i + i) % ring_cap];
+            fprintf(f,
+                    "    {\"old\":\"0x%03X\",\"new\":\"0x%03X\","
+                    "\"func\":\"0x%08X\",\"pc\":\"0x%08X\",\"w\":%u,"
+                    "\"b7s\":%u,\"b7c\":%u,\"exc\":%u}%s\n",
+                    e->old_mask, e->new_mask, e->caller, e->store_pc,
+                    (unsigned)e->width, (unsigned)e->bit7_set,
+                    (unsigned)e->bit7_clear, (unsigned)e->in_exc,
+                    (i + 1 < avail_i) ? "," : "");
+        }
+        fputs("  ]},\n", f);
+    }
 
     fputs("  \"wtrace_all\":", f);
     debug_server_freeze_dump_wtrace_all_json(f, DUMP_CAP_WTRACE_ALL);

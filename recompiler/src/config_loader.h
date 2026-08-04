@@ -322,6 +322,12 @@ struct RuntimeConfig {
     // (smooths textures and 2D backgrounds). Stored as 0/1.
     int                   video_texture_filter = 0;
 
+    // Derived PGXP-style metadata. Both are opt-in and preserve retail-visible
+    // GTE registers, packet words and RAM; unmatched primitives retain native
+    // integer XY and affine UV interpolation.
+    bool                  video_geometry_precision = false;
+    bool                  video_perspective_textures = false;
+
     // renderer: "software" | "opengl" (default) | "vulkan". Selects the
     // rasterizer/present backend. The software rasterizer remains the explicit
     // fallback. Stored as VIDEO_RENDERER_*.
@@ -889,6 +895,13 @@ struct GameConfig {
     // canonical VRAM. Required when edge-crossing polygon interpolation is
     // transformed in the mirror.
     bool ws_nw_full_mirror = false;
+
+    // Expose the wide cone to guest-visible GTE projection, then restore
+    // retail proportions only for a title-profile-classified world DMA list.
+    bool ws_nw_guest_projection = false;
+    // Zero disables classification; nonzero is title-profile data established
+    // by a bounded linked-list polygon census.
+    uint32_t ws_nw_world_min_polygons = 0;
 
     // [[widescreen.signed_x_bound]] guarded LUI sites whose signed Q16
     // constants scale with the active native-wide field and remain identity in

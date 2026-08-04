@@ -8,14 +8,26 @@ param(
     [string]$Out,
     [ValidateSet('opengl', 'software')]
     [string]$Renderer = 'opengl',
-    [switch]$Diagnostic
+    [switch]$Diagnostic,
+    [string]$BuildName,
+    [string]$ExecutableName = 'Syphon_Filter_3_Recompiled.exe',
+    [string]$GameConfig = 'game.toml'
 )
 
 $ErrorActionPreference = 'Stop'
 $projectPath = (Resolve-Path -LiteralPath $Project).Path
-$buildName = if ($Diagnostic) { 'build-r1' } else { 'build' }
-$exe = Join-Path $projectPath "$buildName\Syphon_Filter_3_Recompiled.exe"
-$game = Join-Path $projectPath 'game.toml'
+if ([string]::IsNullOrWhiteSpace($BuildName)) {
+    $BuildName = if ($Diagnostic) { 'build-r1' } else { 'build' }
+} elseif ($Diagnostic) {
+    throw '-Diagnostic cannot be combined with an explicit -BuildName'
+}
+foreach ($relativeName in @($BuildName, $ExecutableName, $GameConfig)) {
+    if ([IO.Path]::IsPathRooted($relativeName) -or $relativeName -match '(^|[\\/])\.\.([\\/]|$)') {
+        throw "Build, executable, and game-config names must stay within the generated project: $relativeName"
+    }
+}
+$exe = Join-Path $projectPath "$BuildName\$ExecutableName"
+$game = Join-Path $projectPath $GameConfig
 $routePath = (Resolve-Path -LiteralPath $Route).Path
 foreach ($item in @(
     @{ Path = $exe; Label = 'Release executable' },

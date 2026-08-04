@@ -27,6 +27,17 @@ int main(void) {
           "triangle wider than 1023 is rejected");
     check(psx_gpu_triangle_oversize(x_ok, y_tall, 0, 1, 2),
           "triangle taller than 511 is rejected");
+    /* Host-only inverse projection is deliberately later than this predicate:
+     * a legal guest packet must not disappear because presentation widens it. */
+    int32_t x_raw_wide[3] = { -384, 383, 0 };
+    int32_t x_host_expanded[3] = { -512, 511, 0 };
+    check(!psx_gpu_triangle_oversize(x_raw_wide, y_ok, 0, 1, 2),
+          "raw guest packet is accepted before host widescreen transform");
+    check(!psx_gpu_triangle_oversize(x_host_expanded, y_ok, 0, 1, 2),
+          "expanded 1023-pixel boundary remains accepted");
+    x_host_expanded[1] = 512;
+    check(psx_gpu_triangle_oversize(x_host_expanded, y_ok, 0, 1, 2),
+          "host expansion can cross the limit and must not drive rejection");
     check(psx_gpu_quad_oversize(quad_partial_x, quad_partial_y),
           "one oversized quad perimeter edge rejects the complete primitive");
     check(!psx_gpu_triangle_oversize(quad_partial_x, quad_partial_y, 2, 1, 3),

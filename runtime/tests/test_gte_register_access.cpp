@@ -643,6 +643,40 @@ int test_precision_speculative_transaction() {
     return 0;
 }
 
+int test_precision_address_identity() {
+    constexpr uint32_t packed = 0x00300020u;
+    constexpr uint32_t addr_a = 0x00110040u;
+    constexpr uint32_t addr_b = 0x00118080u;
+    constexpr int32_t ax = 0x00201234, ay = 0x00305678;
+    constexpr int32_t bx = 0x0020ABCD, by = 0x00308765;
+
+    gte_precision_tracking_set(1);
+    gte_test_seed_precise_projection(2, packed, ax, ay, 0x1200u);
+    gte_precision_store_word(addr_a, 14);
+    gte_test_seed_precise_projection(2, packed, bx, by, 0x3400u);
+    gte_precision_store_word(addr_b, 14);
+
+    int32_t x = 0, y = 0;
+    uint16_t z = 0;
+    if (!gte_precision_load_word(addr_a, packed, &x, &y, &z) ||
+        x != ax || y != ay || z != 0x1200u)
+        return fail_value("address-owned projection A", 0, 0, packed,
+                          static_cast<uint32_t>(ax), static_cast<uint32_t>(x));
+    if (!gte_precision_load_word(addr_b, packed, &x, &y, &z) ||
+        x != bx || y != by || z != 0x3400u)
+        return fail_value("address-owned projection B", 0, 0, packed,
+                          static_cast<uint32_t>(bx), static_cast<uint32_t>(x));
+    if (gte_precision_load_word(addr_a + 4u, packed, &x, &y, &z) != 0)
+        return fail_value("same packed value at wrong address", 0, 0,
+                          packed, 0, 1);
+
+    gte_precision_timeline_invalidate();
+    if (gte_precision_load_word(addr_a, packed, &x, &y, &z) != 0 ||
+        gte_precision_load_word(addr_b, packed, &x, &y, &z) != 0)
+        return fail_value("stale generation rejected", 0, 0, packed, 0, 1);
+    return 0;
+}
+
 } // namespace
 
 int main() {
@@ -654,6 +688,7 @@ int main() {
     if (int rc = test_command_timing_hook()) return rc;
     if (int rc = test_precise_sxy_invalidation()) return rc;
     if (int rc = test_precision_speculative_transaction()) return rc;
+    if (int rc = test_precision_address_identity()) return rc;
     std::puts("PASS: canonical GTE register helpers match GTEState transfer oracle");
     return 0;
 }

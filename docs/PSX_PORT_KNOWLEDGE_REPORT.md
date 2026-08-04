@@ -322,3 +322,41 @@ media payload is tracked. Oracle projects are read-only. Reusable findings were
 returned to the private corpus in `87e6c7a`; input-witness status and the
 independent-validator assignment were returned in `76393af`. The parentless
 public source snapshot is published as `Alexbeav/syphon_filter_3_recompiled`.
+
+## Native-wide provenance result — 2026-08-04
+
+SF3 independently narrows the shared GPU/presentation rule: a widescreen HUD
+translation must have real screen-space provenance. Enabling the generic
+`nw_hud_corners` polygon heuristic moved ordinary Mission 1 world polygons and
+produced disconnected slabs at the right edge. Disabling that heuristic and
+the dependent full-mirror compositor yields one continuous native-wide world
+from the authoritative center submission. The result is human-accepted in
+Mission 1 and deterministic across two clean 3,000-sample runs.
+
+The SF2-inspired broad full-width polygon rule was contradicted in SF3: it
+created a large vertical world slab. Only the structurally unambiguous PS1
+monochrome TILE rectangle helper remains. It does not yet own every retail
+cutscene matte, so the black bars still stop at the authored 4:3 edges. HUD/UI
+also remains intentionally inset until SF3 exposes a bounded owner. SF2 Recomp
+is the independent validator for the requirement that HUD and matte expansion
+be provenance-scoped rather than inferred from broad polygon geometry.
+
+## 2026-08-04 — SF3 native-wide ownership validation
+
+- Symptom/owner: native-wide presentation needs retail edge participation
+  without distorting actors or screen-space submissions; likely owner is the
+  world submission boundary, not the host surface.
+- Confirmed: the generic DMA linked-list ownership mechanism from SF2 applies
+  to SF3. SCUS-94640 Mission 1 has one 483..925-polygon world list and only
+  1..21-polygon auxiliary lists in the bounded census.
+- Contradicted: the generic 320x240 screen-cull detector emits zero SF3 sites;
+  presentation stretching alone does not establish retail culling ownership.
+- Irrelevant/rejected: SF2 addresses, reused packed-SXY identity, textured-edge
+  expansion and broad ordering-table compensation were not adopted.
+- Regression: guest projection/inverse composition, 4:3 identity, disabled
+  threshold, parser bounds, profile generation and replay-helper isolation.
+- Validation: 65/65 required tests; one passive 3,000-sample diagnostic run
+  records 3:4 scale and 174,900 world-list restores; two short and two complete
+  ordinary hidden OpenGL runs finish with accepted card hashes.
+- Independent validators: SF2 Recomp for DMA-submission ownership; Tenchu for
+  the one-projection-owner invariant via its revision-scoped title patch.

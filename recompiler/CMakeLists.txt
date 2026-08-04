@@ -311,6 +311,12 @@ if(BUILD_TESTING)
         ../runtime/include)
     add_test(NAME gpu_primitive_reject_test COMMAND gpu_primitive_reject_test)
 
+    add_executable(ws_projection_compose_test
+        ../runtime/tests/test_ws_projection_compose.c)
+    target_include_directories(ws_projection_compose_test PRIVATE
+        ../runtime/include)
+    add_test(NAME ws_projection_compose_test COMMAND ws_projection_compose_test)
+
     add_executable(debug_trace_ranges_test
         ../runtime/tests/test_debug_trace_ranges.c
         ../runtime/src/debug_trace_ranges.c
@@ -480,6 +486,8 @@ if(BUILD_TESTING)
                 sdl3_main_single_include
                 sf3_gp0_primitive_analyzer
                 sf3_input_route_helpers
+                sf3_widescreen_profile
+                pgxp_precision_contract
                 sf3_approved_capture_selector
                 sf3_route_evidence_compare
                 sf3_route_rebind_guards

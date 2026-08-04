@@ -33,6 +33,8 @@ extern "C" void psx_event_step_conservative_env_init(void);
 #include "load_transition_ring.h"
 #include "gpu_sw_renderer.h"
 #include "gpu_render.h"
+extern "C" void gpu_geometry_correction_set(int enabled);
+extern "C" void gpu_texture_correction_set(int enabled);
 #include "gpu_gl_renderer.h"
 #include "gpu_vk_renderer.h"
 #include "frame_pacing.h"
@@ -610,6 +612,8 @@ static int           g_low_latency_input = 1;
 static int           g_video_vsync        = 1;
 static int           g_frame_interpolation = 0;
 static int           g_frame_interpolation_fps = 0;
+static int           g_geometry_precision = 0;
+static int           g_perspective_textures = 0;
 static int           g_frame_interpolation_blend =
     PSX_MOD_FRAME_INTERPOLATION_LINEAR;
 static int           g_frame_interpolation_blend_default =
@@ -827,6 +831,8 @@ static bool          g_ws_hud_sprt = false;
  * units include that ABI header and do not need this frontend-only setter. */
 extern "C" void gpu_ws_set_clear_reveal(int on);
 extern "C" void gpu_ws_set_nw_textured_edges(int on, int scale_pct);
+extern "C" void gpu_ws_set_nw_guest_projection(int on,
+                                                  uint32_t world_min_polygons);
 extern "C" void gpu_ws_set_signed_x_bound_sites(const uint32_t*, const uint32_t*, int);
 /* Widescreen engages at game entry (fntrace_is_game_started): the BIOS boot
  * — Sony logo, PS logo, shell — presents authentic 4:3 with no GTE squash.
@@ -836,6 +842,7 @@ static bool          g_ws_engaged = true;
  * present 1:1 — the GTE is NOT squashed) vs. the legacy squash hack. Default
  * native-wide; toggle live via the ws_nw TCP command for A/B comparison. */
 static int           g_ws_native_wide = 1;
+static int           g_ws_nw_guest_projection = 0;
 /* Logical present width for the SDL_Renderer (software) path; 640*scale at
  * 4:3, wider for wide aspects. Height is always 480*scale. Set at window
  * creation alongside SDL_RenderSetLogicalSize. */
@@ -896,8 +903,10 @@ static void update_adaptive_widescreen() {
     if (g_ws_engaged) {
         const bool wide = num * 3 != den * 4;
         const int mode = wide ? (g_ws_native_wide ? 2 : 1) : 0;
-        gte_set_display_aspect(mode == 1 ? num : 4,
-                               mode == 1 ? den : 3);
+        const bool guest_projection = mode == 1 ||
+            (mode == 2 && g_ws_nw_guest_projection);
+        gte_set_display_aspect(guest_projection ? num : 4,
+                               guest_projection ? den : 3);
         gpu_ws_configure(num, den, g_ws_anchor_addr,
                          g_ws_hud_sprt ? 1 : 0, mode);
     }
@@ -920,8 +929,10 @@ extern "C" void psx_ws_set_native_wide(int on) {
     g_ws_native_wide = on ? 1 : 0;
     if (g_ws_engaged && g_video_aspect_num * 3 != g_video_aspect_den * 4) {
         int mode = g_ws_native_wide ? 2 : 1;
-        gte_set_display_aspect(mode == 1 ? g_video_aspect_num : 4,
-                               mode == 1 ? g_video_aspect_den : 3);
+        const bool guest_projection = mode == 1 ||
+            (mode == 2 && g_ws_nw_guest_projection);
+        gte_set_display_aspect(guest_projection ? g_video_aspect_num : 4,
+                               guest_projection ? g_video_aspect_den : 3);
         gpu_ws_configure(g_video_aspect_num, g_video_aspect_den,
                          g_ws_anchor_addr, g_ws_hud_sprt ? 1 : 0, mode);
     }
@@ -4043,7 +4054,7 @@ static void sdl_vblank_present(void) {
     }
 #endif
 
-    /* Turbo mode: while TAB is held, skip both VRAM->ARGB conversion and
+    /* Turbo mode: while keypad + is held, skip both VRAM->ARGB conversion and
      * SDL_RenderPresent. The recompiled BIOS still advances simulated
      * cycles every vblank, so the BIOS proceeds at whatever rate the host
      * CPU sustains without graphics-driver vsync overhead. Present once
@@ -4052,7 +4063,7 @@ static void sdl_vblank_present(void) {
         const Uint8* keys = SDL_GetKeyboardState(NULL);
         static int turbo_skip = 0;
         const int TURBO_PRESENT_EVERY = 30;
-        if (keys[SDL_SCANCODE_TAB]) {
+        if (keys[SDL_SCANCODE_KP_PLUS]) {
             turbo_skip = (turbo_skip + 1) % TURBO_PRESENT_EVERY;
             if (turbo_skip != 0) {
                 netplay_tail.skip_pace();
@@ -4152,8 +4163,10 @@ static void sdl_vblank_present(void) {
             int mode = wide ? (g_ws_native_wide ? 2 : 1) : 0;
             /* Native-wide: GTE drawn un-squashed — feed it the 4:3 ratio
              * (identity squash). Squash mode: feed the real wide aspect. */
-            gte_set_display_aspect(mode == 1 ? g_video_aspect_num : 4,
-                                   mode == 1 ? g_video_aspect_den : 3);
+            const bool guest_projection = mode == 1 ||
+                (mode == 2 && g_ws_nw_guest_projection);
+            gte_set_display_aspect(guest_projection ? g_video_aspect_num : 4,
+                                   guest_projection ? g_video_aspect_den : 3);
             gpu_ws_configure(g_video_aspect_num, g_video_aspect_den,
                              g_ws_anchor_addr, g_ws_hud_sprt ? 1 : 0, mode);
         }
@@ -5359,6 +5372,9 @@ int main(int argc, char** argv) {
             g_video_scale      = gc.runtime.video_supersampling;
             g_video_aa         = gc.runtime.video_antialiasing;
             g_video_texfilter  = gc.runtime.video_texture_filter;
+            g_geometry_precision = gc.runtime.video_geometry_precision ? 1 : 0;
+            g_perspective_textures =
+                gc.runtime.video_perspective_textures ? 1 : 0;
             g_video_renderer   = gc.runtime.video_renderer;
             g_video_screen     = gc.runtime.video_screen_kind;
             g_video_aspect_num = gc.runtime.video_aspect_num;
@@ -5420,6 +5436,9 @@ int main(int argc, char** argv) {
             /* Keep titles with known native-wide regressions on the original
              * projection-squash + stretched-present widescreen path. */
             g_ws_native_wide = gc.ws_native_wide ? 1 : 0;
+            g_ws_nw_guest_projection = gc.ws_nw_guest_projection ? 1 : 0;
+            gpu_ws_set_nw_guest_projection(
+                g_ws_nw_guest_projection, gc.ws_nw_world_min_polygons);
             /* [widescreen] nw_hud_corners — push HUD to the true wide corners. */
             gpu_ws_set_nw_hud_corners(gc.ws_nw_hud_corners ? 1 : 0);
             /* Targeted left-HUD packet range — avoids shifting 2D scenery. */
@@ -6780,6 +6799,12 @@ session_reboot:
     gr_set_scale(g_video_scale);
     g_video_scale = gr_scale(); /* reflect any clamp / alloc fallback */
     gr_set_texture_filter(g_video_texfilter);
+    gpu_geometry_correction_set(g_geometry_precision);
+    gpu_texture_correction_set(g_perspective_textures);
+    std::fprintf(stdout,
+                 "psxrecomp: geometry precision %s; perspective textures %s\n",
+                 g_geometry_precision ? "enabled" : "disabled",
+                 g_perspective_textures ? "enabled" : "disabled");
     /* Display aspect. Identity at the default 4:3. The present letterbox uses
      * this aspect; native-wide fills it with a genuinely wider frame (no
      * stretch), squash mode stretches the 4:3 frame into it. */

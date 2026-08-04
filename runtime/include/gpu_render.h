@@ -42,6 +42,16 @@ void gr_set_semi_transparency(int enabled, int mode);
 void gr_set_mask_bits(int set_bit, int check_bit);
 void gr_set_texture_window(uint32_t raw);
 void gr_set_color_modulation(int r, int g, int b, int raw_texture);
+/* Optional derived precision metadata for the next complete triangle.  The
+ * PS1-visible packet remains unchanged.  Coordinates are signed 16.16 screen
+ * positions after the command processor's draw-offset/presentation transform;
+ * q is normalized reciprocal depth.  A backend without this enhancement
+ * ignores the metadata and retains native integer/affine rasterization. */
+void gr_set_precise_triangle(int enabled,
+                             int32_t x0, int32_t y0,
+                             int32_t x1, int32_t y1,
+                             int32_t x2, int32_t y2);
+void gr_set_perspective_triangle(int enabled, float q0, float q1, float q2);
 
 /* Primitives */
 void gr_fill_rect(int x, int y, int w, int h, uint16_t color);
@@ -124,6 +134,11 @@ typedef struct GpuRenderBackend {
     void (*set_mask_bits)(int set_bit, int check_bit);
     void (*set_texture_window)(uint32_t raw);
     void (*set_color_modulation)(int r, int g, int b, int raw_texture);
+    void (*set_precise_triangle)(int enabled,
+                                 int32_t x0, int32_t y0,
+                                 int32_t x1, int32_t y1,
+                                 int32_t x2, int32_t y2);
+    void (*set_perspective_triangle)(int enabled, float q0, float q1, float q2);
     void (*fill_rect)(int x, int y, int w, int h, uint16_t color);
     void (*copy_rect)(int src_x, int src_y, int dst_x, int dst_y, int w, int h);
     void (*draw_flat_triangle)(int x0, int y0, int x1, int y1, int x2, int y2,
