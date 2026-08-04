@@ -18,6 +18,9 @@ static int s_pending_x;
 static int s_pending_y;
 static int s_consume_x;
 static int s_consume_y;
+static int s_wheel_pending;
+static int s_wheel_release;
+static int s_wheel_pressed;
 
 static int clamp_int(int value, int lo, int hi) {
     return value < lo ? lo : value > hi ? hi : value;
@@ -45,14 +48,30 @@ void mouse_pad_add_motion(int dx, int dy) {
     s_pending_y = clamp_int(s_pending_y + dy, -cap, cap);
 }
 
-uint16_t mouse_pad_merge(uint16_t buttons, uint32_t host_buttons) {
-    s_consume_x = s_consume_y = 0;
-    if (!s_enabled || !s_focused) return buttons;
+void mouse_pad_add_wheel(int steps) {
+    if (!s_enabled || !s_focused || steps == 0) return;
+    if (steps < 0) steps = -steps;
+    s_wheel_pending = clamp_int(s_wheel_pending + steps, 0, 32);
+}
+
+uint16_t mouse_pad_merge_buttons(uint16_t buttons, uint32_t host_buttons) {
+    if (!s_focused) return buttons;
     if (host_buttons & PSX_MOUSE_LEFT)   buttons &= (uint16_t)~PAD_SQUARE;
     if (host_buttons & PSX_MOUSE_RIGHT)  buttons &= (uint16_t)~PAD_L1;
     if (host_buttons & PSX_MOUSE_MIDDLE) buttons &= (uint16_t)~PAD_SELECT;
     if (host_buttons & PSX_MOUSE_X1)     buttons &= (uint16_t)~PAD_CIRCLE;
     if (host_buttons & PSX_MOUSE_X2)     buttons &= (uint16_t)~PAD_TRIANGLE;
+    if (s_wheel_pending > 0 && !s_wheel_release) {
+        buttons &= (uint16_t)~PAD_SELECT;
+        s_wheel_pressed = 1;
+    }
+    return buttons;
+}
+
+uint16_t mouse_pad_merge(uint16_t buttons, uint32_t host_buttons) {
+    s_consume_x = s_consume_y = 0;
+    if (!s_enabled || !s_focused) return buttons;
+    buttons = mouse_pad_merge_buttons(buttons, host_buttons);
 
     const int aiming = (host_buttons & PSX_MOUSE_RIGHT) != 0;
     const int threshold = aiming ? s_aim_threshold : s_threshold;
@@ -79,9 +98,17 @@ void mouse_pad_commit_frame(void) {
     s_pending_x -= s_consume_x;
     s_pending_y -= s_consume_y;
     s_consume_x = s_consume_y = 0;
+    if (s_wheel_pressed) {
+        if (s_wheel_pending > 0) --s_wheel_pending;
+        s_wheel_release = 1;
+        s_wheel_pressed = 0;
+    } else if (s_wheel_release) {
+        s_wheel_release = 0;
+    }
 }
 
 void mouse_pad_reset(void) {
     s_pending_x = s_pending_y = 0;
     s_consume_x = s_consume_y = 0;
+    s_wheel_pending = s_wheel_release = s_wheel_pressed = 0;
 }

@@ -3001,7 +3001,9 @@ static int capture_pad_slot(int s, PsxNetPad* out) {
         if (mouse & SDL_BUTTON(SDL_BUTTON_X1))     host |= PSX_MOUSE_X1;
         if (mouse & SDL_BUTTON(SDL_BUTTON_X2))     host |= PSX_MOUSE_X2;
         psx_mouse_camera_set_aim((host & PSX_MOUSE_RIGHT) != 0);
-        btn = mouse_pad_merge(btn, host);
+        btn = g_mouse_camera_enabled
+            ? mouse_pad_merge_buttons(btn, host)
+            : mouse_pad_merge(btn, host);
     }
 
     /* Analog axes. Pinned-ANALOG folds the physical D-pad onto the left axes
@@ -3829,6 +3831,8 @@ static void sdl_vblank_present(void) {
                 else
                     mouse_pad_add_motion((int)ev.motion.xrel,
                                          (int)ev.motion.yrel);
+            } else if (ev.type == SDL_MOUSEWHEEL) {
+                mouse_pad_add_wheel((int)ev.wheel.y);
             } else if (ev.type == SDL_KEYDOWN) {
 #if defined(PSX_SDL3)
                 const SDL_Keymod mod = ev.key.mod;

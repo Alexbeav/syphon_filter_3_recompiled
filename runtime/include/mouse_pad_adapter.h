@@ -23,6 +23,8 @@ void     mouse_pad_configure(int enabled, int counts_per_frame,
 int      mouse_pad_enabled(void);
 void     mouse_pad_set_focus(int focused);
 void     mouse_pad_add_motion(int dx, int dy);
+void     mouse_pad_add_wheel(int steps);
+uint16_t mouse_pad_merge_buttons(uint16_t buttons, uint32_t host_buttons);
 uint16_t mouse_pad_merge(uint16_t buttons, uint32_t host_buttons);
 void     mouse_pad_commit_frame(void);
 void     mouse_pad_reset(void);
