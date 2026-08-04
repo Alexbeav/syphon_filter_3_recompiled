@@ -15,6 +15,9 @@ assert "if (!gc.runtime.overlay_native)" in main
 assert "overlay_loader_set_native_exec(0);" in main
 assert '"overlay_native = false"' in configurator
 assert '"supersampling = 4"' in configurator
+assert '"mouse_pad = false"' in configurator
+assert '"[controller.mouse_camera]"' in configurator
+assert '"game-controller.toml"' in configurator
 assert "TARGET_FILE_DIR:psx-runtime>/keybinds.ini" in configurator
 
 print("overlay native config guards: OK")

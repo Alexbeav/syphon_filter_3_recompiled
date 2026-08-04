@@ -19,6 +19,9 @@ ctest --test-dir recompiler\build-cli --output-on-failure
 & .\dist\psxrecomp-cli-windows-x86_64\psxrecomp.exe build --disc $Sf3Cue --bios .\bios\openbios.bin --output .\lab\sf3\generated\run-b --name 'Syphon Filter 3'
 python .\lab\sf3\configure_compatibility.py .\lab\sf3\generated\run-a
 python .\lab\sf3\configure_compatibility.py .\lab\sf3\generated\run-b
+$GameRecompiler = (Resolve-Path .\dist\psxrecomp-cli-windows-x86_64\psxrecomp-game.exe).Path
+Push-Location .\lab\sf3\generated\run-a; & $GameRecompiler --config game.toml; Pop-Location
+Push-Location .\lab\sf3\generated\run-b; & $GameRecompiler --config game.toml; Pop-Location
 python tools\compare_generated_projects.py .\lab\sf3\generated\run-a .\lab\sf3\generated\run-b
 & .\lab\sf3\generated\run-a\build.ps1
 & .\lab\sf3\generated\run-b\build.ps1
@@ -37,8 +40,10 @@ promotion after native/interpreter equivalence is proved.
 The same deterministic post-generation step selects 4x internal
 supersampling and installs `lab/sf3/keybinds.ini` beside every Release product.
 That tracked keyboard profile matches the SF2 recompilation project. These are
-presentation/input defaults only; they do not enable widescreen, mouse camera,
-freelook, or native runtime-overlay execution.
+presentation/input defaults only and do not enable widescreen or native
+runtime-overlay execution. The explicit second `psxrecomp-game` pass emits the
+exact-word-guarded SCUS-94640 direct-camera hook from the configured title
+profile; generated retail C remains ignored and is never hand-edited.
 
 ## Hidden-renderer Story/Mission 1 probe
 
@@ -139,6 +144,11 @@ Focused presentation work can stop at an exact retail-PAD sample with
 `--capture-frame-step N` to bound dense ranges. OpenGL captures are read from
 the authoritative FBO; software captures use its CPU-owned VRAM. Missing
 requested frames are reported in `evidence.json` rather than silently ignored.
+Each requested frame also retains a bounded GP0 command ring. Run
+`analyze_gp0_primitives.py` on the resulting evidence to flag polygon packet
+length mismatches, extreme decoded vertex spans, PS1 edge-limit rejection and
+the partial-quad risk where triangle-local rejection would draw half of a
+hardware-rejected command.
 
 ```powershell
 python .\lab\sf3\observe_input_route.py `
@@ -148,7 +158,12 @@ python .\lab\sf3\observe_input_route.py `
   --out .\lab\sf3\traces\human-mission1-observed-a `
   --renderer opengl `
   --stop-after 3000 `
-  --capture-frame-range 2169:2300
+  --capture-frame-range 2169:2300 `
+  --capture-frame-step 10
+
+python .\lab\sf3\analyze_gp0_primitives.py `
+  .\lab\sf3\traces\human-mission1-observed-a\evidence.json `
+  --output .\lab\sf3\traces\human-mission1-observed-a\gp0-analysis.json
 ```
 
 This diagnostic route is intentionally timing-perturbing. Acceptance still

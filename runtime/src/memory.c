@@ -1785,7 +1785,11 @@ static inline void psx_cyc_load_timing(CPUState* cpu, uint32_t addr, uint32_t si
         (void)addr; (void)size; (void)rt; (void)reg_mask;
         return;
     }
-    psx_cyc_base(cpu);
+    {
+        uint8_t w = cpu->read_absorb_which;
+        if (cpu->read_absorb[w]) cpu->read_absorb[w]--;
+        else                     psx_load_charge_cycles(1u);
+    }
     psx_cyc_deps(cpu, reg_mask);
     if (cpu->ld_which_t == rt) cpu->ld_which_t = 0u;   /* cancel pending load to same dest */
     psx_cyc_lds(cpu);

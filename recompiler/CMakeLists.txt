@@ -264,6 +264,32 @@ target_include_directories(l2_structural_test PRIVATE
 target_link_libraries(l2_structural_test PRIVATE fmt rabbitizer)
 
 if(BUILD_TESTING)
+    add_executable(mouse_pad_adapter_test
+        ../runtime/tests/test_mouse_pad_adapter.c
+        ../runtime/src/mouse_pad_adapter.c)
+    target_include_directories(mouse_pad_adapter_test PRIVATE
+        ../runtime/include)
+    add_test(NAME mouse_pad_adapter_test COMMAND mouse_pad_adapter_test)
+
+    add_executable(mouse_camera_test
+        ../runtime/tests/test_mouse_camera.c
+        ../runtime/src/mouse_camera.c)
+    target_include_directories(mouse_camera_test PRIVATE ../runtime/include)
+    if(NOT MSVC)
+        target_link_libraries(mouse_camera_test PRIVATE m)
+    endif()
+    add_test(NAME mouse_camera_test COMMAND mouse_camera_test)
+
+    add_executable(user_settings_mouse_camera_test
+        tests/user_settings_mouse_camera_test.cpp
+        src/config_loader.cpp
+        src/ps1_exe_parser.cpp)
+    target_include_directories(user_settings_mouse_camera_test PRIVATE
+        include src lib/fmt/include lib/toml11)
+    target_link_libraries(user_settings_mouse_camera_test PRIVATE fmt)
+    add_test(NAME user_settings_mouse_camera_test
+             COMMAND user_settings_mouse_camera_test)
+
     add_executable(input_timeline_contract_test
         ../runtime/tests/test_input_timeline.cpp
         ../runtime/src/input_timeline.cpp)
@@ -278,6 +304,12 @@ if(BUILD_TESTING)
     target_include_directories(frame_color_stats_test PRIVATE
         ../runtime/include)
     add_test(NAME frame_color_stats_test COMMAND frame_color_stats_test)
+
+    add_executable(gpu_primitive_reject_test
+        ../runtime/tests/test_gpu_primitive_reject.c)
+    target_include_directories(gpu_primitive_reject_test PRIVATE
+        ../runtime/include)
+    add_test(NAME gpu_primitive_reject_test COMMAND gpu_primitive_reject_test)
 
     add_executable(debug_trace_ranges_test
         ../runtime/tests/test_debug_trace_ranges.c
@@ -371,6 +403,14 @@ if(BUILD_TESTING)
             NAME dirty_text_continuation_guards
             COMMAND ${Python3_EXECUTABLE}
                     ${CMAKE_CURRENT_SOURCE_DIR}/../runtime/tests/test_dirty_text_continuation_guards.py)
+        add_test(
+            NAME input_focus_guards
+            COMMAND ${Python3_EXECUTABLE}
+                    ${CMAKE_CURRENT_SOURCE_DIR}/../runtime/tests/test_input_focus_guards.py)
+        add_test(
+            NAME mouse_camera_codegen_guards
+            COMMAND ${Python3_EXECUTABLE}
+                    ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_mouse_camera_codegen_guards.py)
 
         # ---- codegen tests that were written but never registered -----------
         # These existed in recompiler/tests/ with no add_test() entry, so they
@@ -438,6 +478,7 @@ if(BUILD_TESTING)
                 overlay_native_config_guards
                 overlay_resident_patch_promotion
                 sdl3_main_single_include
+                sf3_gp0_primitive_analyzer
                 sf3_input_route_helpers
                 sf3_approved_capture_selector
                 sf3_route_evidence_compare

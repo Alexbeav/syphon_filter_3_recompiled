@@ -1,0 +1,26 @@
+# Merge this title-owned block into the isolated generated game.toml before
+# regeneration. Every address/register/layout value is SCUS-94640 evidence.
+[controller]
+mouse_pad = false
+
+[controller.mouse_camera]
+enabled = true
+facing_site = "0x800549C4"
+facing_expected = "0x8EA30034"
+application_state_addr = "0x80121B88"
+player_state_offset = "0x20"
+wrapper_offset = "0xF8"
+base_offset = "0xA4"
+owner_offset = "0xDC"
+desired_pitch_offset = "0x8E8"
+rendered_pitch_offset = "0x918"
+vector_x_offset = "0xCC"
+vector_y_offset = "0xD0"
+vector_z_offset = "0xD4"
+player_reg = 19
+controller_reg = 18
+chase_yaw_sensitivity = 0.75
+chase_pitch_sensitivity = 1.0
+aim_yaw_sensitivity = 1.0
+aim_pitch_sensitivity = 1.0
+invert_y = false

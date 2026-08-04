@@ -24,6 +24,15 @@ def configure(project: Path) -> bool:
         text, "runtime", "overlay_native = false")
     text, scale_changed = set_setting(
         text, "video", "supersampling = 4")
+    text, mouse_pad_changed = set_setting(
+        text, "controller", "mouse_pad = false")
+    camera_changed = "[controller.mouse_camera]" not in text
+    if camera_changed:
+        camera_profile = (Path(__file__).with_name("redux") /
+                          "game-controller.toml").read_text(encoding="utf-8")
+        camera_table = camera_profile.split("[controller.mouse_camera]", 1)[1]
+        text = (text.rstrip() +
+                "\n\n[controller.mouse_camera]" + camera_table)
     game_toml.write_text(text, encoding="utf-8", newline="\n")
 
     source_bindings = Path(__file__).with_name("keybinds.ini")
@@ -52,7 +61,8 @@ endif()
         if build.is_dir():
             shutil.copyfile(source_bindings, build / "keybinds.ini")
 
-    return compat_changed or scale_changed or bindings_changed or cmake_changed
+    return (compat_changed or scale_changed or mouse_pad_changed or
+            camera_changed or bindings_changed or cmake_changed)
 
 
 def main() -> int:

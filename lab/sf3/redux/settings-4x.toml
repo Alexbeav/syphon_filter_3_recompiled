@@ -1,0 +1,23 @@
+# SF3 Redux Phase 1 presentation/input defaults. Copy beside the generated
+# executable as settings.toml. Every option is reversible and retail state is
+# still advanced by the original SCUS-94640 code.
+[video]
+renderer = "opengl"
+supersampling = 4
+window_width = 1280
+antialiasing = true
+texture_filtering = "nearest"
+fullscreen = 1
+aspect_ratio = "4:3"
+frame_interpolation = false
+
+[launcher]
+skip_launcher = true
+
+[controller]
+mouse_camera = true
+mouse_chase_yaw_sensitivity = 1.0
+mouse_chase_pitch_sensitivity = 1.0
+mouse_aim_yaw_sensitivity = 1.0
+mouse_aim_pitch_sensitivity = 1.0
+mouse_invert_y = false
