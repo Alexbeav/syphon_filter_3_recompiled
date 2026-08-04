@@ -218,6 +218,9 @@ void psx_devices_mmio_sync(void) {
     } else {
         psx_devices_recompute_deadline();
     }
+    /* MMIO may have re-armed a nearer device event.  The interpreter's
+     * one-cycle shortcut must republish its ceiling from that new deadline. */
+    g_psx_cycle_fast_limit = 0;
 }
 
 /* Exact per-charge path (legacy semantics). Used by PSX_COSIM builds and the
@@ -252,6 +255,7 @@ static void psx_advance_cycles_exact(uint32_t cycles) {
     }
     s_devices_synced_cycle = psx_cycle_count;
     psx_next_service_cycle = 0;
+    g_psx_cycle_fast_limit = 0;
 }
 
 void psx_cycles_watchdog_fire(void) {
@@ -525,6 +529,7 @@ void psx_cycles_resync_after_restore(void) {
     s_devices_synced_cycle = psx_cycle_count;
     psx_next_service_cycle = 0;   /* recompute on next charge */
     psx_in_device_service  = 0;
+    g_psx_cycle_fast_limit = 0;
 }
 
 void psx_cycles_reset_for_boot(void) {
