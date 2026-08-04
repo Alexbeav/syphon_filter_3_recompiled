@@ -306,8 +306,10 @@ tested and the entire command is silently dropped if any edge exceeds 1023 by
 511. The correction contains no title address or packet identity, preserves the
 textured command's TPAGE latch, and also avoids treating the internal split as
 a hardware edge. Synthetic regression plus the full 63/63 suite pass. Two
-ordinary hidden 3,000-sample runs match card hashes; visible confirmation is
-still required and hidden output is not promoted to the presentation oracle.
+ordinary hidden 3,000-sample runs match card hashes. Two more ordinary clean
+processes consume all 42,480 samples of the accepted Mission 1-to-Mission 2
+route and produce byte-identical card images. Visible confirmation is still
+required and hidden output is not promoted to the presentation oracle.
 
 ## Provenance
 
