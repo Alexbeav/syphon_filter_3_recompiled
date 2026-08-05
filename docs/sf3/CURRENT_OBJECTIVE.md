@@ -22,6 +22,17 @@ world presentation, full-width cinematic mattes, mouse and keyboard are
 human-accepted in Mission 1, and two clean 3,000-sample runs match frame and
 card hashes. HUD/UI remains at its original 4:3 coordinates.
 
+PGXP state: `automated_route_qualified_visible_pending`. The current 4x/4:3
+candidate has independent off, geometry-only and geometry-plus-perspective
+profiles. Two clean diagnostic processes per profile consume the 3,000-sample
+Mission 1 handoff route with live state-0 pages and no freeze/stall. The final
+samples distinguish the switches: off records zero correction hits,
+geometry-only records about 2.1k geometry and zero perspective hits, and full
+PGXP records about 2.1k of each. Two ordinary uninstrumented Release processes
+also consume all 42,480 samples with byte-identical cards and normalized logs.
+The next gate is a visible 4:3 off/full A/B; visual improvement and artifact
+freedom are not yet claimed.
+
 Campaign state: `qualification_matrix_initialized`. The source-owned
 [`CAMPAIGN_QUALIFICATION.md`](CAMPAIGN_QUALIFICATION.md) ledger separates the
 fully deterministic/human Mission 1 slice, human-only Mission 2 and Mission 3
@@ -39,6 +50,16 @@ state and gameplay. Validate every enhancement independently against the
 accepted route, keep an off switch, and record honest native/fallback ownership.
 
 ## Current blockers
+
+- PGXP has no automated Mission 1 route blocker after the generic CD DMA
+  sector-ownership correction. The earlier black-screen rejection remains
+  valid historical evidence that PGXP was not its owner. Current off,
+  geometry-only and full-PGXP diagnostics all cross that boundary twice, and
+  the ordinary full route completes twice. Exact diagnostic polling sequences
+  include transient depth/state differences because the observer can catch or
+  miss one-frame intermediates; the required TITLE/state-8/state-0 order,
+  following retail transition, display origins, subsystem liveness and cards
+  agree. Visible A/B acceptance remains open.
 
 - Widescreen has no gameplay compatibility blocker in the accepted Mission 1
   slice. SCUS-94640's generic
@@ -96,6 +117,7 @@ accepted route, keep an off switch, and record honest native/fallback ownership.
 | Campaign overlays beyond early Mission 2 | overlay coverage | performance risk and incomplete recompilation ownership | safe Mission 2 endpoint: seven regions, 9.81M native dispatches, 270,891 fallbacks | extend only from exact-byte additive history and replay each promotion |
 | Diagnostic display readback can alter host timing | validation observer | a clean observed run may not represent ordinary Release timing | OpenGL ring capture flushes/reads back even without CPU-VRAM synchronization; route observer is source/build validated only | reproduce under a recorded route, localize with bounded capture, then confirm the fix twice in ordinary Release with the observer disabled |
 | Campaign beyond arrival in Mission 4 unverified | retail/content lifecycle | no whole-campaign claim | the guarded 19-row campaign matrix records deterministic Mission 1, human-only Mission 2/3 completion, Mission 4 entry and open later seams | qualify Mission 4 completion and the retail `4 -> 5` seam twice, then advance one adjacent mission at a time |
+| PGXP visual quality at 4x/4:3 | GPU precision presentation | optional geometry/texture stabilization may introduce visual artifacts even when the route remains live | two clean short diagnostics per off/geometry/full profile; active correction counters; two clean 42,480-sample ordinary full-PGXP runs with matching cards | human off/full A/B through TITLE, briefing and Mission 1 gameplay with no cracks, warping, seams or HUD regression |
 | Cutscene mattes stop at authored 4:3 edges | **closed 2026-08-04**: auxiliary-list mono-quad ownership | no remaining observed impact in Mission 1 cinematics | list 4 carries `GP0 28h` black bands at authored `-192..192`; list 3 is the dense world owner; focused regression plus visible acceptance | passed: bars cover both 16:9 margins without restoring world slabs |
 | HUD/UI remains at 4:3 coordinates | HUD provenance | low-priority inset HUD at 16:9 | human 16:9 Mission 1 capture; `nw_hud_corners` cannot distinguish HUD from world polygons in SF3 | relocate only structurally proven HUD primitives |
 

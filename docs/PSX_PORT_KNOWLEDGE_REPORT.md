@@ -391,3 +391,21 @@ route is an input witness, not a deterministic Mission 4 replay, because the
 a separate host input path. The next gate uses isolated copies of the preserved
 Mission 4 card and requires two ordinary 4:3 processes to agree through the
 retail Mission 5 handoff before visible widescreen validation.
+
+## PGXP requalification after CD DMA correction — 2026-08-05
+
+The prior PGXP black-screen experiment was a valid negative ownership result:
+PGXP-off and pre-PGXP controls failed at the same Mission 1 handoff. After the
+generic completed-sector/DMA-consumer ownership fix, the same boundary now
+passes twice under each 4x/4:3 profile: off, geometry-only and full PGXP.
+Bounded GPU counters independently prove that geometry correction is active
+only in the latter two profiles and perspective correction only in full PGXP.
+
+Two observer-free ordinary full-PGXP processes consume the complete 42,480
+retail-PAD samples, emit no freeze artifact and produce byte-identical card
+images and normalized logs. The diagnostic observer can catch or miss
+one-frame depth/state intermediates, so strict polled-transition-list equality
+is not claimed; stable retail milestones, page origins and subsystem liveness
+do agree. This establishes automated compatibility, not visual correctness.
+Human off/full A/B remains the promotion gate. SF2 Recomp is the independent
+validator for generic PGXP precision behavior.

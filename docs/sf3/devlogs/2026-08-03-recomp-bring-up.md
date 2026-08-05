@@ -1142,3 +1142,39 @@ Only after matching semantic/device/dispatch evidence passes should the same
 seam be checked visibly at 16:9. SF2 Recomp is the independent validator for
 the adjacent-transition evidence contract. The reconfigured UTF-8 Release
 framework suite passes 67/67, including the new matrix guard.
+
+### R25 — PGXP returns to the visible gate after CD DMA correction
+
+The user selected PGXP as the next enhancement after accepting HQ widescreen
+and cinematic mattes. The retained `compat-candidate-2` routes and generated
+profiles were audited before reuse. Both PGXP build trees share compatibility
+identity `psxrecomp-a4877d515eb730e4`, exactly matching the 3,000- and
+42,480-sample routes; copied core runtime sources match the current tree. The
+ordinary and diagnostic Release products were rebuilt without editing generated
+game code.
+
+The historical Gate-B failure was retested as a true config A/B. PGXP off,
+geometry-only and geometry-plus-perspective each passed twice in isolated
+diagnostic processes through TITLE, briefing state 8 and live Mission 1 state
+0. Every run retained 45 state-0 display-page samples, live subsystem evidence,
+zero known-corruption matches, zero non-startup freeze dumps and no semantic
+stall. Final periodic samples recorded zero correction hits for off; about
+2.1k geometry hits and zero perspective hits for geometry-only; and about 2.1k
+geometry plus 2.1k perspective hits for full PGXP.
+
+The exact polled transition lists are not byte-identical: short-lived depth and
+application-state intermediates are sometimes observed in one diagnostic run
+and missed in another. The comparator therefore rejects strict list equality,
+even though both runs preserve the required ordered retail milestones,
+following Mission 1 transition, three framebuffer origins and complete live
+state-0 snapshots. That observer-timing limitation is retained rather than
+weakened or hidden.
+
+Promotion then used the observer-free ordinary Release product. Two fresh
+processes consumed all 42,480 recorded samples with the exact bounded marker,
+no freeze artifacts, byte-identical normalized logs and matching card hashes:
+`A717D08D...CC3F` and `7706C7D4...8E8`. The automated PGXP route gate is
+therefore restored after the generic CD DMA fix. Visual quality is still open;
+the next evidence is a human 4x/4:3 off/full comparison through the Mission 1
+handoff and gameplay. SF2 Recomp remains the independent PGXP contract
+validator; no SF2 address or title containment was adopted.

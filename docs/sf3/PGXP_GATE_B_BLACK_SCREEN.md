@@ -1,5 +1,30 @@
 # PGXP Gate-B black-screen rejection
 
+## Current disposition — 2026-08-05
+
+The historical rejection below correctly cleared PGXP as the owner. R20 later
+fixed the generic CD DMA sector-ownership defect at the same handoff. A rebuilt
+candidate now passes the formerly failing boundary twice with PGXP off, twice
+with geometry precision only and twice with geometry plus perspective-correct
+textures. All six diagnostic runs consume the bounded 3,000-sample route,
+observe retail state 8 and live state 0, retain 45 state-0 page samples, and
+produce no non-startup freeze dump or semantic stall.
+
+The counters prove feature engagement rather than config-only success: off has
+zero geometry/perspective hits; geometry-only has roughly 2.1k geometry hits
+and zero perspective hits; full PGXP has roughly 2.1k of each at the final
+periodic sample. Two ordinary uninstrumented Release processes also consume the
+complete 42,480-sample route. Their normalized stdout and both 128 KiB card
+images are byte-identical, and neither run emits a freeze dump.
+
+This qualifies the automated route only. The existing polling comparator
+reports transient depth/state-sequence differences because separate diagnostic
+processes can observe or miss one-frame intermediates; the required
+TITLE -> state 8 -> state 0 milestones, following retail transition, framebuffer
+origins and subsystem liveness agree. No exact diagnostic-frame determinism is
+claimed. Visible 4x/4:3 off/full A/B acceptance remains required before PGXP is
+enabled in the accepted presentation.
+
 Date: 2026-08-04
 
 ## User-visible symptom
