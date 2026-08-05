@@ -1111,3 +1111,34 @@ actionable missing-shard failure. The same long-path clean project then linked
 `Syphon_Filter_3_Recompiled.exe` and completed a 60-sample headless/silent
 smoke. The framework suite remains 66/66; the new focused Python regression is
 3/3. Generated output and the smoke timeline remain private.
+
+### R24 — campaign qualification ledger bounds the Mission 4 claim
+
+The next compatibility boundary is now represented by a source-owned 19-row
+campaign ledger rather than prose that could blur arrival, gameplay and
+completion. `docs/sf3/CAMPAIGN_QUALIFICATION.md` records each retail resource,
+entry, gameplay, death/checkpoint, completion, outbound transition, save/load
+and automation gate. A focused regression checks the exact SCUS-94640 campaign
+order and current evidence ceiling.
+
+The matrix preserves the strongest supported claims: Mission 1 has two-run and
+human representative-slice evidence through the Mission 2 handoff; connected
+human play completed Missions 2 and 3; Mission 4 has entry-only human evidence;
+Missions 5–19 remain open. Direct mission boot and a rendered first frame are
+explicitly excluded from campaign qualification.
+
+The private validation contract and SF2/SF3 project records were consulted.
+They reinforce adjacent retail transitions, isolated card state, exact profile
+identity and two clean processes. The retained Mission 4 human route remains an
+input witness rather than a deterministic campaign route: `PSXPAD2` records
+retail PAD samples, while the accepted direct-camera bridge separately consumes
+host relative-mouse motion. No route was retagged and no gameplay claim was
+promoted.
+
+The next automated gate is therefore Mission 4 completion through retail
+Mission 5 entry, starting from copies of the preserved Mission 4 card in two
+isolated writable directories under the ordinary 4:3 compatibility profile.
+Only after matching semantic/device/dispatch evidence passes should the same
+seam be checked visibly at 16:9. SF2 Recomp is the independent validator for
+the adjacent-transition evidence contract. The reconfigured UTF-8 Release
+framework suite passes 67/67, including the new matrix guard.

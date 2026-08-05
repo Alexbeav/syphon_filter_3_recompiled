@@ -1,6 +1,6 @@
 # Current objective — SF3 Redux Phase 1
 
-Updated: 2026-08-04
+Updated: 2026-08-05
 
 Baseline state: `compatibility_baseline_verified`. A connected human route now
 covers cold boot, Story/Mission 1, death, checkpoint reload, full mission
@@ -21,6 +21,14 @@ accepted through the connected Mission 1-to-Mission 4 session. Native-wide
 world presentation, full-width cinematic mattes, mouse and keyboard are
 human-accepted in Mission 1, and two clean 3,000-sample runs match frame and
 card hashes. HUD/UI remains at its original 4:3 coordinates.
+
+Campaign state: `qualification_matrix_initialized`. The source-owned
+[`CAMPAIGN_QUALIFICATION.md`](CAMPAIGN_QUALIFICATION.md) ledger separates the
+fully deterministic/human Mission 1 slice, human-only Mission 2 and Mission 3
+completion, Mission 4 entry-only evidence and open Missions 5–19. The next
+bounded compatibility gate is connected Mission 4 completion through the
+retail Mission 5 handoff in two isolated ordinary Release processes before a
+visible 16:9 check.
 
 ## Objective
 
@@ -87,7 +95,7 @@ accepted route, keep an off switch, and record honest native/fallback ownership.
 | Small OpenGL/software raster delta at Mission 1 start | GPU raster precision | subtle shading/facet differences at native resolution | 115 dense common startup frames plus 71 later sampled frames; worst sampled mean RGB delta 3.723/255 | independently validate PSX 5-bit versus host 8-bit Gouraud/edge precision before changing presentation |
 | Campaign overlays beyond early Mission 2 | overlay coverage | performance risk and incomplete recompilation ownership | safe Mission 2 endpoint: seven regions, 9.81M native dispatches, 270,891 fallbacks | extend only from exact-byte additive history and replay each promotion |
 | Diagnostic display readback can alter host timing | validation observer | a clean observed run may not represent ordinary Release timing | OpenGL ring capture flushes/reads back even without CPU-VRAM synchronization; route observer is source/build validated only | reproduce under a recorded route, localize with bounded capture, then confirm the fix twice in ordinary Release with the observer disabled |
-| Campaign beyond arrival in Mission 4 unverified | retail/content lifecycle | no whole-campaign claim | connected visible play reached Mission 4; Missions 5–19 and later lifecycle seams remain unverified | campaign qualification matrix covering every mission, transition, checkpoint and save/load seam |
+| Campaign beyond arrival in Mission 4 unverified | retail/content lifecycle | no whole-campaign claim | the guarded 19-row campaign matrix records deterministic Mission 1, human-only Mission 2/3 completion, Mission 4 entry and open later seams | qualify Mission 4 completion and the retail `4 -> 5` seam twice, then advance one adjacent mission at a time |
 | Cutscene mattes stop at authored 4:3 edges | **closed 2026-08-04**: auxiliary-list mono-quad ownership | no remaining observed impact in Mission 1 cinematics | list 4 carries `GP0 28h` black bands at authored `-192..192`; list 3 is the dense world owner; focused regression plus visible acceptance | passed: bars cover both 16:9 margins without restoring world slabs |
 | HUD/UI remains at 4:3 coordinates | HUD provenance | low-priority inset HUD at 16:9 | human 16:9 Mission 1 capture; `nw_hud_corners` cannot distinguish HUD from world polygons in SF3 | relocate only structurally proven HUD primitives |
 

@@ -489,6 +489,7 @@ if(BUILD_TESTING)
                 sf3_widescreen_profile
                 pgxp_precision_contract
                 sf3_approved_capture_selector
+                sf3_campaign_matrix
                 sf3_route_evidence_compare
                 sf3_route_rebind_guards
                 vk_build_default

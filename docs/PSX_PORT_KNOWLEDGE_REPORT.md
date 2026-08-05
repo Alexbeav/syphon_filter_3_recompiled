@@ -375,3 +375,19 @@ submission provenance is required in addition to full-width topology.
   ordinary hidden OpenGL runs finish with accepted card hashes.
 - Independent validators: SF2 Recomp for DMA-submission ownership; Tenchu for
   the one-projection-owner invariant via its revision-scoped title patch.
+
+## Campaign qualification boundary — 2026-08-05
+
+The tracked 19-mission matrix now distinguishes deterministic, human-only,
+entry-only and open evidence for every mission, outbound transition,
+checkpoint/restart and save/load seam. Mission 1 retains complete two-run plus
+human evidence through Mission 2 entry. Connected human play completed Missions
+2 and 3 and reached Mission 4, but Mission 4 completion and Missions 5–19 remain
+unqualified.
+
+This closes a reporting gap without expanding runtime claims. The long human
+route is an input witness, not a deterministic Mission 4 replay, because the
+`PSXPAD2` artifact owns retail PAD samples while direct mouse-camera motion has
+a separate host input path. The next gate uses isolated copies of the preserved
+Mission 4 card and requires two ordinary 4:3 processes to agree through the
+retail Mission 5 handoff before visible widescreen validation.
