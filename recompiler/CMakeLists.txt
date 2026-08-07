@@ -400,6 +400,7 @@ if(BUILD_TESTING)
         #       built; not a source-only guard
         foreach(_t IN ITEMS
                 capture_history
+                crash_overlay_ring_guards
                 cdrom_seek_retarget
                 default_renderer_guards
                 fmv_quiet_guards
@@ -414,6 +415,7 @@ if(BUILD_TESTING)
                 overlay_additive_capture_loader
                 overlay_capture_legacy_history
                 overlay_init_guard
+                overlay_dump_bounds
                 sdl3_main_single_include
                 vk_build_default
                 vk_color_self_barrier
