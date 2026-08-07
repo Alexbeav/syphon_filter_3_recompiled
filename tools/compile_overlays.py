@@ -54,6 +54,88 @@ import platform
 import re
 
 
+_CAPTURE_EVIDENCE_FIELDS = (
+    'executed_pcs', 'observed_pcs', 'dispatch_entry_pcs',
+    'static_dispatch_entry_pcs', 'function_entry_pcs',
+    'static_discovery_entry_pcs', 'seeds',
+)
+
+
+def load_additive_captures(path):
+    """Load the latest capture plus every immutable ``<path>.d`` snapshot.
+
+    Runtime capture files are replace-on-latest by design; the sibling history
+    directory is the additive authority. Compile by byte identity, unioning
+    evidence for the same variant while preserving different images installed
+    at a reused RAM address. A torn or malformed contribution cannot discard
+    valid siblings.
+    """
+    sources = []
+    candidates = []
+    history = path + '.d'
+    if os.path.isdir(history):
+        candidates.extend(
+            os.path.join(history, name)
+            for name in sorted(os.listdir(history))
+            if name.lower().endswith('.json')
+        )
+    if os.path.isfile(path):
+        candidates.append(path)
+
+    variants = {}
+    for source in candidates:
+        try:
+            with open(source, encoding='utf-8') as stream:
+                records = json.load(stream)
+            if not isinstance(records, list):
+                raise ValueError('root is not a list')
+        except Exception as exc:
+            print(f'  warn: could not read {source} ({exc}); skipping contribution')
+            continue
+        sources.append(source)
+        for record in records:
+            try:
+                if not isinstance(record, dict):
+                    raise ValueError('record is not an object')
+                load = int(record['load_addr'], 0)
+                size = int(record['size'])
+                if size < 0:
+                    raise ValueError('negative size')
+                encoded = record['bytes_b64']
+                if not isinstance(encoded, str):
+                    raise ValueError('bytes_b64 is not text')
+                payload = base64.b64decode(encoded, validate=True)
+                if len(payload) != size:
+                    raise ValueError('payload size mismatch')
+                normalized = {}
+                for field in _CAPTURE_EVIDENCE_FIELDS:
+                    values = record.get(field, [])
+                    if not isinstance(values, list):
+                        raise ValueError(f'{field} is not a list')
+                    normalized[field] = {
+                        int(value, 0) if isinstance(value, str) else int(value)
+                        for value in values
+                    }
+            except (KeyError, TypeError, ValueError, binascii.Error) as exc:
+                print(f'  warn: invalid capture record in {source} ({exc}); skipping record')
+                continue
+
+            key = (load & 0x1FFFFFFF, payload)
+            existing = variants.get(key)
+            if existing is None:
+                existing = dict(record)
+                existing['load_addr'] = f'0x{load:08X}'
+                existing['size'] = size
+                existing['bytes_b64'] = base64.b64encode(payload).decode('ascii')
+                for field, values in normalized.items():
+                    existing[field] = sorted(values)
+                variants[key] = existing
+            else:
+                for field, values in normalized.items():
+                    existing[field] = sorted(set(existing.get(field, [])) | values)
+    return list(variants.values()), sources
+
+
 def codegen_ver(runtime_include: str) -> int:
     """Parse PSX_OVERLAY_CODEGEN_VER from overlay_api.h so the cache path version
     is the SAME value the runtime (overlay_loader.c) uses — the two can't drift.
@@ -5262,8 +5344,11 @@ def main():
         print(f'Cache dir: {cache_dir}  '
               f'(codegen ver {cg}, emitter {ch:08x}, config {gh:08x})')
 
-    with open(args.captures) as f:
-        captures = json.load(f)
+    captures, capture_sources = load_additive_captures(args.captures)
+    if not capture_sources:
+        ap.error(f'no valid capture source: {args.captures}')
+    print(f'Capture sources: {len(capture_sources)} '
+          f'(latest plus immutable history)')
 
     if args.only_region:
         only_regions = {int(value, 0) & 0x1FFFFFFF
