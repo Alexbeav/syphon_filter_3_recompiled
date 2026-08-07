@@ -11,6 +11,13 @@ previous catastrophic red/checkered failure and deterministic opening-room
 textured-shard defect are fixed. Visible 4x testing confirms a clean Mission 1
 opening room and connected, comfortable play through arrival in Mission 4.
 
+Framework convergence state: `batch1_compatibility_qualified`. The first
+canonical branch starts from public framework `0cfa9fe` and contains only
+generic depth-24 telemetry, OpenGL 15/24-bit ownership and CD seek-retarget
+commits. Its 40/40 suite passes. SF3 records that branch as ancestry without
+changing its newer source tree; 67/67 SF3 tests and two fresh ordinary 3,000-
+sample compatibility processes pass with matching normalized logs/cards.
+
 Redux state: `phase1_widescreen_human_accepted`. The isolated branch has a
 clean 4x/4:3 control and a 4x/16:9 default candidate, keyboard mapping,
 a reversible relative-mouse-to-retail-PAD fallback and a direct camera bridge

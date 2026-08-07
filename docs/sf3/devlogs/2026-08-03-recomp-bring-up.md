@@ -1209,3 +1209,30 @@ construction path that separates GTE stores from GP0 packet submission. PGXP
 remains fail-closed. Another human test is deferred until that work materially
 changes coverage and passes two automated runs. The broader corpus comparison
 is recorded in `docs/sf3/CORPUS_DIVERGENCE_2026-08-08.md`.
+
+### R27 — canonical framework convergence Batch 1
+
+The framework convergence plan and ledger route all 39 SF2-only and 41
+SF3-only post-split commits without merging either lab wholesale. Exact patch
+IDs do not match because the labs committed generic changes beside different
+title evidence. Source comparison nevertheless confirms two independent
+semantic pairs: OpenGL 15/24-bit VRAM ownership (`09be64b`/`31be333`) and active
+read cancellation on SeekL/SeekP (`485b79b`/`db98b05`).
+
+Local branch `framework/convergence-batch1` starts from public framework
+`0cfa9fe` and adds clean generic commits `13aee712`, `e289210c` and `49e428c6`.
+It contains no title files or addresses. The framework CLI builds and 40/40
+tests pass under the required UTF-8 environment. GCC 16.1.0 ICEs on unchanged
+`function_analysis.cpp` at `-O3`; the same Release/`NDEBUG` suite builds and
+passes at `-O2`, so this remains a recorded toolchain qualification issue.
+
+Because SF3 already contains the same fixes plus later work, a normal merge
+would conflict only on equivalent implementations/tests. The integration
+branch records the canonical batch as ancestry with an `ours` merge and proves
+the runtime/recompiler/tools tree unchanged. The SF3 67-test suite passes.
+
+A fresh ordinary diagnostics-off 4:3 executable then consumed the unchanged
+3,000-sample route in two clean OpenGL processes. Both reached the bounded
+marker; normalized logs and both cards match. Card hashes remain
+`A717D08D...CC3F` and `7706C7D4...8E8`. No human test is required for this
+framework-only, source-identical checkpoint.

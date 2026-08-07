@@ -217,3 +217,34 @@ Validation:
 The branch is local only. It is not tagged, pushed or consumed by SF3 yet. The
 next gate is exact diff/payload audit followed by an SF3 generation/build using
 this framework branch and two ordinary compatibility runs.
+
+## Batch 1 SF3 adoption and consumer gate
+
+Commit `a1dac337` completed the 80/80 subject/path routing. The exact framework
+batch diff then passed path/content scans: only runtime, recompiler registration
+and the two title-neutral tests were present; no game address, title name,
+private path, route marker or payload extension was found.
+
+A merge simulation correctly reported conflicts only where SF3 already has the
+same behavior in newer files/tests. Integration commit `fefa576d` therefore
+records `framework/convergence-batch1` as a second parent with the `ours`
+strategy. This is not a claim that untested framework content was preferred:
+`git diff HEAD^1 HEAD -- runtime recompiler tools` is empty, so the accepted SF3
+tree is byte-identical while canonical ancestry is explicit.
+
+Post-adoption evidence:
+
+- SF3 Release suite: 67/67 pass with `PYTHONUTF8=1`.
+- Fresh ordinary diagnostics-off 4:3 executable SHA-256:
+  `777D950589549516581770ECEAF40996E600EE6900676BDF80DFEB75E16CF5DD`.
+- Two isolated OpenGL processes consumed all 3,000 unchanged input samples.
+- Normalized logs match. Normalization replaces only the isolated output
+  directory suffix and removes the optional asynchronous `[Keybinds] Loaded`
+  notice; all semantic/runtime lines remain compared.
+- Card 1 matches in both runs:
+  `A717D08D25E78DB0ED71DCEB6CFC0A5A6249B71727820C0C69B5E89AE570CC3F`.
+- Card 2 matches in both runs:
+  `7706C7D43EDAF8CB7618E574F03457105153E3BDC196DB803A600AD96A8F58E8`.
+
+Batch 1 is locally adopted and compatibility-qualified. It remains unpushed;
+canonical framework publication needs its own final audit and user review.
