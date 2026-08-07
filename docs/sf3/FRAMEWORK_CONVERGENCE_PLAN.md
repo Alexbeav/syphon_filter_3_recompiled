@@ -118,9 +118,10 @@ the switch and honest metrics; it must not encode why SCUS-94640 selects it.
 
 Progress: the additive compiler/history contract, recoverable legacy `.d`
 migration and deterministic input core are canonically adopted. Framework
-tests and two ordinary SF3 compatibility processes pass. Diagnostic-lane
-qualification, crash serializer separation and safe unpromoted-shard policy
-remain open before this batch reaches its full exit gate.
+tests, two ordinary SF3 compatibility processes and two separately configured
+diagnostic processes pass with matching per-lane logs and common card hashes.
+Crash serializer separation and safe unpromoted-shard policy remain open before
+this batch reaches its full implementation scope.
 
 Exit gate:
 

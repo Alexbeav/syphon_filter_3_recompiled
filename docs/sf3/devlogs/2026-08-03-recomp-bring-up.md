@@ -1276,3 +1276,11 @@ change; payload SHA-256 stayed
 Normalized stdout/stderr and both cards match, including the prior card hashes
 `A717D08D...CC3F` and `7706C7D4...8E8`. This qualifies the ordinary lane only;
 the separate diagnostic lane is still required before Batch 2 is closed.
+
+The debug-tools/PGXP diagnostic product was next explicitly reconfigured so
+its configure-time source hash could not retain the prior runtime identity.
+Two isolated diagnostic processes also consumed all 3,000 samples. Their
+normalized logs match within the lane and both cards reproduce the ordinary
+hashes. Ordinary and diagnostic execution are now independently qualified;
+crash serializer bounds and the unpromoted-shard lifecycle remain intentionally
+separate from this checkpoint.

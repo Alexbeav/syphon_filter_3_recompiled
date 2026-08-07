@@ -11,15 +11,16 @@ previous catastrophic red/checkered failure and deterministic opening-room
 textured-shard defect are fixed. Visible 4x testing confirms a clean Mission 1
 opening room and connected, comfortable play through arrival in Mission 4.
 
-Framework convergence state: `batch2_ordinary_qualified`. The canonical branch
+Framework convergence state: `batch2_lanes_qualified`. The canonical branch
 now also closes the additive capture writer/compiler contract, migrates a
 legacy `.d` capture file without loss and supplies a title-neutral deterministic
 input-timeline core. Its 42/42 recompiler suite and dedicated Release input
 target pass. SF3 records the batch as ancestry, carries the one new runtime
-migration invariant and passes 68/68 under MinGW/Ninja. Two fresh ordinary
-3,000-sample OpenGL processes match normalized logs and cards. The Batch 2
-diagnostic-lane comparison remains pending, so the full batch exit gate is not
-yet claimed.
+migration invariant and passes 68/68 under MinGW/Ninja. Two fresh ordinary and
+two fresh diagnostic 3,000-sample OpenGL processes match within their lanes and
+reproduce the same card hashes. Crash-serializer separation and the generic
+unpromoted-shard contract remain pending, so the full Batch 2 implementation
+scope is not yet claimed.
 
 Redux state: `phase1_widescreen_human_accepted`. The isolated branch has a
 clean 4x/4:3 control and a 4x/16:9 default candidate, keyboard mapping,

@@ -293,5 +293,18 @@ Two early consumer attempts failed at the retail entry because the prior CMake
 clean had removed ignored generated game C; CMake then relinked a BIOS-only
 runtime. Regenerating from the owned local executable restored 269 retail
 translation/dispatch units. Those failed outputs are retained and are not
-counted as Batch 2 behavior. The diagnostic-lane comparison remains the next
-Batch 2 gate.
+counted as Batch 2 behavior.
+
+The separate debug-tools/PGXP diagnostic executable was then reconfigured so
+its configure-time compatibility hash included the adopted runtime source.
+Executable SHA-256 is
+`78239E2D85A34AF9B4189738FBC94BA9DB7C468F66701D4313DAD73EEA3CB8E5`;
+its route ID is `psxrecomp-0a29eb4681c71b42`, again with the unchanged payload
+hash above. Two isolated diagnostic OpenGL processes reached all 3,000 samples.
+Their normalized stdout matches at
+`09666334d3bd27c08a3a3f5af40829f2677a1e7f7e6df306ca6a8cf4fa30e33d`,
+stderr matches the ordinary lane at
+`89bb21f6adf81a7cff80e718cee89dc0756ac70f8e868058a3a9e58330398499`,
+and both cards reproduce the ordinary/Baseline hashes. The ordinary and
+diagnostic execution lanes are therefore qualified independently. Crash dump
+serializer bounds and unpromoted-shard lifecycle remain separate Batch 2 work.
