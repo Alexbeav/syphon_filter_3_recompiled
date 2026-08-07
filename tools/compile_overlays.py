@@ -457,6 +457,7 @@ HOSTED_OWNER_REASONS = EXACT_FRAGMENT_REASONS - {'DISPATCH_ROOT'}
 FATAL_SEED_REASONS = {'BRANCH_TARGET_ONLY', 'OBSERVED_PC_ONLY', 'UNKNOWN'}
 BIOS_RESIDENT_PRODUCER = 'bios_resident_manifest'
 BIOS_RESIDENT_MARKER = 'psxrecomp bios resident shard v1'
+UNPROMOTED_MARKER = 'psxrecomp unpromoted shard v1'
 
 # Hosted aliases are supplemental optimizations, never correctness authority.
 # Keep every phase deterministically bounded so adversarial/malformed capture
@@ -4334,6 +4335,22 @@ def _write_json_atomic(path: str, value: dict) -> None:
         os.replace(staged, path)
     finally:
         _best_effort_unlink(staged)
+
+
+def update_unpromoted_marker(dll_path: str, reason: str | None) -> None:
+    """Atomically publish or remove a generic native-promotion sidecar.
+
+    The caller owns the evidence policy that selects ``reason``. The framework
+    owns only durable publication and fail-closed loader consumption.
+    """
+    marker = os.path.splitext(dll_path)[0] + '.unpromoted'
+    if reason is None:
+        _best_effort_unlink(marker)
+        return
+    _write_json_atomic(marker, {
+        'schema': UNPROMOTED_MARKER,
+        'reason': reason,
+    })
 
 
 @contextmanager

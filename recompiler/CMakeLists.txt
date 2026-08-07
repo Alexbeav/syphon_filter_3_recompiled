@@ -416,6 +416,7 @@ if(BUILD_TESTING)
                 overlay_capture_legacy_history
                 overlay_init_guard
                 overlay_dump_bounds
+                overlay_unpromoted_lifecycle
                 sdl3_main_single_include
                 vk_build_default
                 vk_color_self_barrier
