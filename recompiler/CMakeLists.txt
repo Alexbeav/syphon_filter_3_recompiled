@@ -412,6 +412,7 @@ if(BUILD_TESTING)
                 overlay_candidate_capacity
                 overlay_decodable_fallback
                 overlay_additive_capture_loader
+                overlay_capture_legacy_history
                 overlay_init_guard
                 sdl3_main_single_include
                 vk_build_default
