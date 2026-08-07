@@ -57,9 +57,104 @@ source hunk.
 
 | History | Total | Classified | Remaining | Notes |
 |---|---:|---:|---:|---|
-| SF2 | 39 | 9 | 30 | VRAM, CD, input, PGXP, overlay, Mods and publication leads routed |
-| SF3 | 41 | 16 | 25 | corresponding runtime leads plus title-policy commits routed |
-| Combined | 80 | 25 | 55 | no runtime import yet |
+| SF2 | 39 | 39 | 0 | every commit routed; mixed commits still require hunk extraction |
+| SF3 | 41 | 41 | 0 | every commit routed; mixed commits still require hunk extraction |
+| Combined | 80 | 80 | 0 | subject/path routing complete; no broad history merge permitted |
+
+Class abbreviations below are `GQ` generic-qualified, `G2` generic candidate
+needing reconciliation or a second consumer, `T` title layer, `D` diagnostic,
+`R` rejected/negative evidence, and `P` publication/corpus documentation.
+`mixed` means only audited source/test hunks may cross into the framework.
+
+### SF3 post-split commit routing
+
+| Commit | Class | Routing |
+|---|---|---|
+| `bba60ce` scaffold isolated lab | T | repository/title scaffold only |
+| `a06f16a` deterministic TITLE/native overlays | G2 mixed | reusable execution evidence mixed with SF3 bring-up |
+| `dd3049e` Mission 1 player control | G2 mixed | generic devices/diagnostics mixed with title route |
+| `31be333` FMV presentation/input | GQ mixed | VRAM hunk independently matched; probes/docs stay SF3 |
+| `024267e` standalone publication prep | P | superseded SF3 kit documentation |
+| `db98b05` CD seek retarget | GQ mixed | CD hunk independently matched; docs stay SF3 |
+| `abdc4b8` publication record | P | historical publication receipt |
+| `29ee4c3` classification correction | P | status documentation |
+| `cbae3a9` retail input timelines | G2 mixed | input contract candidate plus SF3 witness |
+| `7d455ba` input witness handoff | T | SF3 evidence documentation |
+| `fb912db` display corruption observer | D | bounded diagnostic candidate |
+| `e332f5e` hidden route replay | D/G2 mixed | reusable stop contract requires reconciliation |
+| `bf39137` route shortcut | T | local operator documentation |
+| `2b1a7fb` complete route observer | D | passive SF3 diagnostic consumer |
+| `6a3c9e5` route comparator | D/G2 mixed | reusable comparison rules plus SF3 schema |
+| `48962bf` test shortcut | T | local operator documentation |
+| `e42ce82` movie-stall classification | T | symptom evidence only |
+| `4f9aab6` stalled present recovery | G2 | source regression; independent consumer pending |
+| `70c167a` additive overlay closure | G2 mixed | generic history rules plus SF3 evidence |
+| `acbd713` Mission 1 acceptance | T | connected-route evidence |
+| `6aa349e` compatibility closure | D/T | source validation plus title closure |
+| `3dd2f7b` unsafe overlays interpreted | T | evidence-backed SF3 policy |
+| `4250697` overlay ownership control | G2 | generic switch/metrics; second title audit required |
+| `6e654d5` 4x/SF2 bindings | T | SF3 test profile |
+| `d4af170` Redux input profile | T | title product configuration |
+| `509904c` direct mouse camera | G2 mixed | generic bridge plus SF3 guards/addresses |
+| `8da2a4e` SCUS-94640 Redux profile | T | title configuration |
+| `821246b` selectable mouse camera | G2 mixed | lifecycle candidate plus SF3 configuration |
+| `52ef738` interpreter deadlines | G2 | generic regression; second consumer pending |
+| `38f4de8` mouse combat/wheel | G2 mixed | generic input surface plus title mapping |
+| `642949e` complete-quad rejection | G2 | hardware-backed regression; second game pending |
+| `9ebae24` primitive localization | T | SF3 evidence report |
+| `5e8f24b` route after quad fix | T | SF3 validation record |
+| `40754c7` human Mission 4 breadth | T | campaign evidence |
+| `04540b1` native-wide candidate | G2 mixed | generic composition plus SF3 ownership |
+| `24cb538` handoff/widescreen qualification | G2 mixed | CD/GPU fixes plus title acceptance |
+| `f187fc3` cinematic mattes | G2 mixed | generic effect API plus SF3 classifier |
+| `7ef45a9` owned-input bootstrap | P | legal SF3 kit; predates current public contract |
+| `ef099d4` campaign matrix | T | SF3 content ledger |
+| `76dbda7` PGXP route qualification | T | SF3 evidence documentation |
+| `0998336` PGXP reason diagnostics | D/G2 mixed | generic counters/tests plus SF3 result/report |
+
+### SF2 post-split commit routing
+
+| Commit | Class | Routing |
+|---|---|---|
+| `09be64b` OpenGL 24-bit ownership | GQ | clean generic commit; imported in Batch 1 |
+| `485b79b` active reads on seek | GQ | clean generic commit; imported in Batch 1 |
+| `89804a7` deterministic route validation | G2 mixed | generic timeline plus SF2 route tooling |
+| `7613d6f` Mission 1 closure | T | SF2 evidence documentation |
+| `2009297` final SIO timelines | D/G2 mixed | reusable boundary plus private route evidence |
+| `6fb6a41` modernization profile | T | SF2 product configuration |
+| `53208be` pass-one validation | T | SF2 evidence documentation |
+| `5b64d86` aim tuning/remove turbo | T | title input choice |
+| `2686df2` modernization pass two | T | SF2 phase scaffold |
+| `65e3c49` native-wide/direct camera | G2 mixed | generic APIs plus SF2 ownership/addresses |
+| `43325ff` Disc 1 capture | D | bounded SF2 validation tooling |
+| `fd3126e` backdrop ownership | G2 mixed | renderer policy plus SF2 classifier |
+| `f8d5270` Disc 1 hardening | D/T | SF2 route/validation only |
+| `0752501` effect/backdrop classification | G2 mixed | generic effect helper plus title rules |
+| `2a8a239` pass-2 identity | T | SF2 artifact/config gate |
+| `a2b951c` projection at DMA submissions | G2 mixed | generic submission API plus SF2 owner |
+| `cf8d65a` modernization checkpoint | T | SF2 acceptance record |
+| `e9a0f69` corpus return | P | normalized knowledge receipt |
+| `a0766d3` lab graduation | P | project status documentation |
+| `9d1455f` tier candidate testing | P | validation-process documentation |
+| `d064822` confidence workflow | P | validation-process documentation |
+| `2eebc41` renderer-neutral PGXP | G2 | generic base; SF3 is second eligibility consumer |
+| `17e9bba` overlay/capture/crash hardening | G2 mixed | reusable bundle requiring hunk separation |
+| `11e949f` high-refresh R1-R3 rejection | R | negative evidence only |
+| `b3b63a7` state/outbound backlog | P | documentation and contribution queue |
+| `10a328f` R3 rejection/root cause | R | negative evidence only |
+| `34dcc23` close high-refresh experiment | R mixed | retain rollback fixes only after separate audit |
+| `b33eb14` public alpha preparation | P | release documentation |
+| `0a9038d` alpha closure | P | project milestone documentation |
+| `e37dbeb` alpha publication | P | publication receipt |
+| `452cc0c` launcher enhancement Mods | GQ reference | accepted generic lifecycle; SF3 second consumer pending |
+| `4d79e17` accepted launcher release | P | validation record |
+| `9b0271d` v0.1.1 publication | P | publication receipt |
+| `12c06bb` two-disc support | T | SF2 campaign evidence |
+| `e7d83c2` final knowledge return | P | normalized corpus receipt |
+| `91c94e6` setup bootstrap | P/G2 mixed | reusable installer plus SF2 recipe |
+| `ded57a2` installer qualification | P | clean-room validation receipt |
+| `c526a94` shared template rollout | P | template/corpus handoff |
+| `1e6b27a` v0.1.2 qualification | P | publication receipt |
 
 ## First-batch import manifest (provisional)
 
