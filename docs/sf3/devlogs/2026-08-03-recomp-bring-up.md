@@ -1284,3 +1284,19 @@ normalized logs match within the lane and both cards reproduce the ordinary
 hashes. Ordinary and diagnostic execution are now independently qualified;
 crash serializer bounds and the unpromoted-shard lifecycle remain intentionally
 separate from this checkpoint.
+
+### R29 — Batch 2 crash/quarantine implementation qualification
+
+The SF2 crash/quarantine commit was split at the ownership boundary. Canonical
+framework commits `588a5000` and `a922eebe` contain only transactional bounded
+overlay serializers and the policy-neutral `.unpromoted` publication/loader
+lifecycle. SF2's resident-patch classifier did not cross; SF3 retains its own
+evidence policy. Canonical tests pass 45/45 and SF3 passes 70/70.
+
+After exact source synchronization into the private consumer snapshot, both
+ordinary and diagnostic products were reconfigured and rebuilt. Two isolated
+3,000-sample processes per product completed with identical per-lane semantic
+logs, the unchanged route-body hash and the established card hashes. The
+volatility-stripped receipts also equal the corresponding pre-change runs.
+This qualifies Batch 2 implementation without claiming the longer complete
+Mission 1 replay exit gate.

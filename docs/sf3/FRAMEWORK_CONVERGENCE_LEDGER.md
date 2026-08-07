@@ -251,7 +251,7 @@ canonical framework publication needs its own final audit and user review.
 
 ## Batch 2 overlay/input checkpoint
 
-Local branch `framework/convergence-batch2` extends Batch 1 with three
+Local branch `framework/convergence-batch2` extends Batch 1 with five
 title-neutral commits:
 
 | Framework commit | Source lineage | Content |
@@ -259,11 +259,14 @@ title-neutral commits:
 | `f8bd4ff8` | SF3 `70c167a` | compile latest plus immutable `.d` capture history by byte identity |
 | `d62fe45c` | SF2 `17e9bba` | recoverably migrate a legacy `.d` file before publishing new evidence |
 | `a1d2d77d` | SF3 `cbae3a9` | bounded deterministic input serialization/replay core and Release-active test |
+| `588a5000` | SF2 `17e9bba` (serializer-only extraction) | transactional bounded overlay crash JSON and ordinary native-owner evidence |
+| `a922eebe` | SF2 `17e9bba` (lifecycle-only extraction) | atomic generic quarantine marker and scan/final-load rejection |
 
 SF3 title policy (`overlay_native = false`), route helpers, addresses and the
-SF2 SIO-coupled timeline implementation did not cross into the framework.
-Crash serializers and unpromoted-shard policy remain separately routed work;
-they were not smuggled in with the mixed SF2/SF3 source commits.
+SF2 SIO-coupled timeline implementation did not cross into the framework. The
+SF2 resident-control-flow classifier also did not cross: canonical code owns
+only marker publication/consumption, while SF3 retains its independently tested
+classifier and `overlay_native = false` title policy.
 
 Validation:
 
@@ -307,4 +310,36 @@ stderr matches the ordinary lane at
 `89bb21f6adf81a7cff80e718cee89dc0756ac70f8e868058a3a9e58330398499`,
 and both cards reproduce the ordinary/Baseline hashes. The ordinary and
 diagnostic execution lanes are therefore qualified independently. Crash dump
-serializer bounds and unpromoted-shard lifecycle remain separate Batch 2 work.
+serializer bounds and unpromoted-shard lifecycle remained separate at that
+checkpoint.
+
+Final implementation checkpoint:
+
+- Canonical commits `588a5000` and `a922eebe` pass the expanded framework suite
+  45/45. Merge `86676d3b` records their ancestry; SF3 reconciliation commit
+  `451276df` passes 70/70 under the qualified MinGW/Ninja lane plus real C syntax
+  checks for both serializers.
+- Ordinary executable SHA-256 is
+  `6E1F561F750FA62174E546EEA272862E3A896BB38FBC559B5397196C72B317F9`;
+  diagnostic executable SHA-256 is
+  `6D438329EB215FEA09CCF967CDE1F22E14E1F7BCDAC972ABFAA7C1DA9926998B`.
+- Both products report compatibility ID `psxrecomp-a5a00dcee1b07392`. Their
+  routes were explicitly rebound with the unchanged 3,000-sample body SHA-256
+  `dc57139288ebc5f17de801264619ff855aedb6973da5e54c4ad6cb1917662f5b`.
+- Runs `framework-batch2-final-ordinary-run1/2` and
+  `framework-batch2-final-diagnostic-run1/2` all reached the bounded marker.
+  After replacing only the isolated writable-state and replay-route paths,
+  ordinary stdout hashes to
+  `8a708e369bad9a8dea7157c041e40eb104aa3f218c56a43b08df4b686a1e0fbf`
+  and diagnostic stdout to
+  `34960da3915d5505c5d90f06a323244404d75ccfd5162962f1e9a1ceeaedc381`.
+  Each equals its corresponding pre-change run under the same normalization.
+- Raw stderr is identical across all four processes at
+  `EFBCC7B119D254FAF365D9949A6BB775A72670AB7B16F4A75BCD00ED9468FB68`.
+  Every process reproduces card 1
+  `A717D08D25E78DB0ED71DCEB6CFC0A5A6249B71727820C0C69B5E89AE570CC3F`
+  and card 2
+  `7706C7D43EDAF8CB7618E574F03457105153E3BDC196DB803A600AD96A8F58E8`.
+
+Batch 2 implementation is qualified. The plan's longer two-process complete
+Mission 1 replay remains the unclaimed exit gate.

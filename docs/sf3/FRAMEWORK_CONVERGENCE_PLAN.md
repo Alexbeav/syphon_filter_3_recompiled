@@ -117,11 +117,12 @@ SF3's `overlay_native = false` remains title policy. The generic framework owns
 the switch and honest metrics; it must not encode why SCUS-94640 selects it.
 
 Progress: the additive compiler/history contract, recoverable legacy `.d`
-migration and deterministic input core are canonically adopted. Framework
-tests, two ordinary SF3 compatibility processes and two separately configured
-diagnostic processes pass with matching per-lane logs and common card hashes.
-Crash serializer separation and safe unpromoted-shard policy remain open before
-this batch reaches its full implementation scope.
+migration, deterministic input core, bounded crash serializers and generic
+unpromoted-shard lifecycle are canonically adopted. The evidence classifier
+that selects an SF3 quarantine remains project policy. Framework tests and two
+fresh ordinary plus two separately configured diagnostic SF3 processes pass
+with matching per-lane logs and common card hashes. Implementation scope is
+qualified; the complete-Mission-1 replay exit gate below remains open.
 
 Exit gate:
 
