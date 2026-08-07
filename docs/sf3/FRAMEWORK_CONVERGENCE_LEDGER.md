@@ -91,3 +91,34 @@ the SF2 tests. If behavior already matches, the first framework commit should
 be reconstructed from the generic hunks and tests rather than cherry-picked.
 Then run both focused contracts and the full framework suite before creating a
 framework tag or changing SF3 dependencies.
+
+## Batch 1 framework branch checkpoint
+
+An ignored in-repository worktree now checks out
+`framework/convergence-batch1` from `framework/master` at `0cfa9fe`. Three
+generic commits applied without conflicts:
+
+| New framework commit | Source lineage | Content |
+|---|---|---|
+| `13aee712` | `4b5edc7` | bounded depth-24 upload telemetry |
+| `e289210c` | `09be64b` | OpenGL 15/24-bit VRAM ownership handoff and regression |
+| `49e428c6` | `485b79b` | active-read seek retarget and regression |
+
+The branch contains no title docs, probes, addresses or payload. The stronger
+SF2 generic commits were used directly because their diffs were already clean;
+the independent SF3 mixed commits remain evidence, not import sources.
+
+Validation:
+
+- CLI targets built successfully.
+- The complete 40-test framework suite passes with `PYTHONUTF8=1`.
+- Both newly imported contracts pass.
+- GCC 16.1.0 ICEs in unchanged `function_analysis.cpp` at `-O3`; rebuilding the
+  same Release/`NDEBUG` suite at `-O2` succeeds. This is recorded as a toolchain
+  qualification issue, not attributed to the imported changes.
+- Omitting `PYTHONUTF8=1` reproduces three Windows code-page decoding failures;
+  the required UTF-8 environment resolves them without source changes.
+
+The branch is local only. It is not tagged, pushed or consumed by SF3 yet. The
+next gate is exact diff/payload audit followed by an SF3 generation/build using
+this framework branch and two ordinary compatibility runs.
