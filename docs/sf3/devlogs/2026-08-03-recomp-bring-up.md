@@ -1236,3 +1236,43 @@ A fresh ordinary diagnostics-off 4:3 executable then consumed the unchanged
 marker; normalized logs and both cards match. Card hashes remain
 `A717D08D...CC3F` and `7706C7D4...8E8`. No human test is required for this
 framework-only, source-identical checkpoint.
+
+### R28 — additive overlay closure and deterministic input core
+
+Batch 2 begins with the smallest dependency-complete lifecycle contracts. The
+canonical framework already wrote immutable `overlay_captures.json.d` history,
+but its compiler still consumed only the replace-on-latest file. Commit
+`f8bd4ff8` closes that contract by preserving reused-address byte variants and
+unioning their evidence while skipping torn contributions. SF2 commit
+`17e9bbaa` supplied the independent legacy migration: if an older runtime left
+`.d` as one file, `d62fe45c` archives and copies it into the directory or rolls
+back for retry rather than overwriting it.
+
+SF2 and SF3 had incompatible input implementations. The selected framework
+core is SF3's title-neutral serializer/replay library because it is separated
+from SIO/main-loop policy, carries a source compatibility identity, bounds its
+parser and advances only when the real consumer is ready. Commit `a1d2d77d`
+removes the title label from its regression and makes the checks active under
+`NDEBUG`. SF2 route tooling and SF3 route wiring remain consumer layers.
+
+The framework recompiler suite passes 42/42 and the Release runtime input
+target passes. SF3 adopts the canonical ancestry at `b806480e`; its MinGW/Ninja
+suite passes 68/68. The MSVC build passes 66/68 but produces different expected
+diagnostic text in two existing codegen tests, so it is not substituted for the
+qualified MinGW/Ninja lane.
+
+The first consumer rebuild exposed an evidence-pipeline error rather than a
+runtime regression: Batch 1's CMake clean had removed ignored generated game C,
+and the rebuild relinked only OpenBIOS. Its first jump to retail entry
+`0x800FB368` therefore failed as unknown dispatch. The owned local executable
+was regenerated without editing generated code, producing the expected retail
+translation and dispatch units, and the ignored private framework snapshot was
+refreshed to the audited Batch 2 runtime source.
+
+Two corrected ordinary OpenGL processes then consumed all 3,000 unchanged
+samples. The compatibility header was explicitly rebound for the owning-source
+change; payload SHA-256 stayed
+`dc57139288ebc5f17de801264619ff855aedb6973da5e54c4ad6cb1917662f5b`.
+Normalized stdout/stderr and both cards match, including the prior card hashes
+`A717D08D...CC3F` and `7706C7D4...8E8`. This qualifies the ordinary lane only;
+the separate diagnostic lane is still required before Batch 2 is closed.

@@ -248,3 +248,50 @@ Post-adoption evidence:
 
 Batch 1 is locally adopted and compatibility-qualified. It remains unpushed;
 canonical framework publication needs its own final audit and user review.
+
+## Batch 2 overlay/input checkpoint
+
+Local branch `framework/convergence-batch2` extends Batch 1 with three
+title-neutral commits:
+
+| Framework commit | Source lineage | Content |
+|---|---|---|
+| `f8bd4ff8` | SF3 `70c167a` | compile latest plus immutable `.d` capture history by byte identity |
+| `d62fe45c` | SF2 `17e9bba` | recoverably migrate a legacy `.d` file before publishing new evidence |
+| `a1d2d77d` | SF3 `cbae3a9` | bounded deterministic input serialization/replay core and Release-active test |
+
+SF3 title policy (`overlay_native = false`), route helpers, addresses and the
+SF2 SIO-coupled timeline implementation did not cross into the framework.
+Crash serializers and unpromoted-shard policy remain separately routed work;
+they were not smuggled in with the mixed SF2/SF3 source commits.
+
+Validation:
+
+- Framework recompiler suite: 42/42 with `PYTHONUTF8=1`; dedicated runtime
+  `input_timeline_test` passes as an actual Release CMake target.
+- SF3 MinGW/Ninja Release suite: 68/68. A separately rebuilt MSVC tree passes
+  66/68 but retains two diagnostic-string differences in pre-existing codegen
+  tests; the same sources pass under the qualified MinGW/Ninja lane.
+- Integration commit `b806480e` records the canonical branch as ancestry. The
+  only new SF3 runtime behavior is the recoverable legacy-history migration;
+  the input core and additive loader already existed in the SF3 tree.
+- Ordinary diagnostics-off executable SHA-256:
+  `95E7AD12E5DFA422B4A1B22DF96E5D51504A3B1BFCFCB985E706FA871DA74E37`.
+- The accepted 3,000-sample payload was rebound from
+  `psxrecomp-e9d9d51622b7b96d` to `psxrecomp-d18f3b1313f83741`; body SHA-256
+  remained `dc57139288ebc5f17de801264619ff855aedb6973da5e54c4ad6cb1917662f5b`.
+- Two isolated OpenGL processes reached the bounded 3,000 marker. Normalized
+  stdout hash is `c53cb6472722ab22f45b757b6817e85fb096c3ddee8798a78e2fdd9d6ca8a7a1`;
+  normalized stderr hash is
+  `89bb21f6adf81a7cff80e718cee89dc0756ac70f8e868058a3a9e58330398499`.
+- Both runs reproduce Batch 1 card hashes: card 1
+  `A717D08D25E78DB0ED71DCEB6CFC0A5A6249B71727820C0C69B5E89AE570CC3F`,
+  card 2
+  `7706C7D43EDAF8CB7618E574F03457105153E3BDC196DB803A600AD96A8F58E8`.
+
+Two early consumer attempts failed at the retail entry because the prior CMake
+clean had removed ignored generated game C; CMake then relinked a BIOS-only
+runtime. Regenerating from the owned local executable restored 269 retail
+translation/dispatch units. Those failed outputs are retained and are not
+counted as Batch 2 behavior. The diagnostic-lane comparison remains the next
+Batch 2 gate.

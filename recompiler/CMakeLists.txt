@@ -480,6 +480,7 @@ if(BUILD_TESTING)
                 overlay_candidate_capacity
                 overlay_decodable_fallback
                 overlay_additive_capture_loader
+                overlay_capture_legacy_history
                 overlay_init_guard
                 overlay_native_config_guards
                 overlay_resident_patch_promotion
