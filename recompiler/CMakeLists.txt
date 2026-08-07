@@ -481,9 +481,11 @@ if(BUILD_TESTING)
                 overlay_decodable_fallback
                 overlay_additive_capture_loader
                 overlay_capture_legacy_history
+                overlay_dump_bounds
                 overlay_init_guard
                 overlay_native_config_guards
                 overlay_resident_patch_promotion
+                overlay_unpromoted_lifecycle
                 sdl3_main_single_include
                 sf3_gp0_primitive_analyzer
                 sf3_input_route_helpers

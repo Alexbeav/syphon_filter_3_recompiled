@@ -516,7 +516,7 @@ void psx_crash_trace_dump(const char *reason, void *seh_info) {
         }
     }
     {
-        static char overlay_shadow[128 * 1024];
+        static char overlay_shadow[PSX_OVERLAY_SHADOW_DUMP_CAP];
         static char overlay_shadow_detail[8 * 1024];
         int k = overlay_loader_dump_shadow(
             overlay_shadow, (int)sizeof(overlay_shadow));

@@ -742,6 +742,7 @@ def load_game_resident_text(game_toml: str, toml_doc: dict):
 
 
 def update_unpromoted_marker(dll_path: str, reason: str | None) -> None:
+    """Publish/remove quarantine; the caller owns the evidence policy."""
     marker = os.path.splitext(dll_path)[0] + '.unpromoted'
     if reason is None:
         _best_effort_unlink(marker)
