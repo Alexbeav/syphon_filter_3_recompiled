@@ -69,6 +69,24 @@ void gpu_get_crtc_debug(uint32_t *x1, uint32_t *x2, uint32_t *y1, uint32_t *y2,
 uint64_t gpu_get_gp0_count(void);  /* Total GP0 writes since init */
 void gpu_get_gp0_stats(uint64_t* nop, uint64_t* fill, uint64_t* draw, uint64_t* env, uint64_t* copy);
 
+/* Visual-only precision provenance. A complete triangle is corrected only
+ * when all three packet vertices retain exact address/generation ownership. */
+typedef struct GpuPrecisionStats {
+    uint64_t triangles;
+    uint64_t complete;
+    uint64_t partial;
+    uint64_t unmatched;
+    uint64_t cpu_authored;
+    uint64_t speculative_vertices;
+    uint64_t non_ram_vertices;
+    uint64_t missing_vertices;
+    uint64_t stale_vertices;
+    uint64_t address_mismatch_vertices;
+    uint64_t packed_mismatch_vertices;
+    uint64_t invalid_vertices;
+} GpuPrecisionStats;
+void gpu_precision_get_stats(GpuPrecisionStats *out);
+
 typedef struct {
     uint32_t left, top, right, bottom;
     int32_t offset_x, offset_y;

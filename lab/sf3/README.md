@@ -19,7 +19,7 @@ ctest --test-dir recompiler\build-cli --output-on-failure
 & .\dist\psxrecomp-cli-windows-x86_64\psxrecomp.exe build --disc $Sf3Cue --bios .\bios\openbios.bin --output .\lab\sf3\generated\run-b --name 'Syphon Filter 3'
 python .\lab\sf3\configure_compatibility.py .\lab\sf3\generated\run-a
 python .\lab\sf3\configure_compatibility.py .\lab\sf3\generated\run-b
-$GameRecompiler = (Resolve-Path .\dist\psxrecomp-cli-windows-x86_64\psxrecomp-game.exe).Path
+$GameRecompiler = (Resolve-Path .\dist\psxrecomp-cli-windows-x86_64\libexec\psxrecomp-game.exe).Path
 Push-Location .\lab\sf3\generated\run-a; & $GameRecompiler --config game.toml; Pop-Location
 Push-Location .\lab\sf3\generated\run-b; & $GameRecompiler --config game.toml; Pop-Location
 python tools\compare_generated_projects.py .\lab\sf3\generated\run-a .\lab\sf3\generated\run-b

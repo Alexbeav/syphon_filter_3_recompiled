@@ -3,6 +3,7 @@ from pathlib import Path
 
 root = Path(__file__).resolve().parents[2]
 gpu = (root / "runtime/src/gpu.c").read_text(encoding="utf-8")
+gte = (root / "runtime/src/gte.cpp").read_text(encoding="utf-8")
 render = (root / "runtime/src/gpu_render.c").read_text(encoding="utf-8")
 gl = (root / "runtime/src/gpu_gl_renderer.c").read_text(encoding="utf-8")
 main = (root / "runtime/src/main.cpp").read_text(encoding="utf-8")
@@ -15,10 +16,29 @@ precision_body = precision_body.split("/* Write a single pixel", 1)[0]
 assert "gte_geometry_correction_lookup" not in precision_body
 assert "gp0_cmd_source_addr" in precision_body
 assert "indices[i] * 4u" in precision_body
-assert "gte_precision_load_word" in precision_body
 assert "s_precision_triangle_unmatched++" in precision_body
+assert "gte_precision_query_word" in precision_body
+for reason in (
+    "missing_vertices",
+    "stale_vertices",
+    "address_mismatch_vertices",
+    "packed_mismatch_vertices",
+    "invalid_vertices",
+):
+    assert f"s_precision_stats.{reason}++" in precision_body
 assert "gr_set_precise_triangle(0" in precision_body
 assert "gr_set_perspective_triangle(0" in precision_body
+
+# A failed lookup must retain its exact owner instead of collapsing every
+# moving-model miss into one aggregate counter.
+for status in (
+    "GTE_PRECISION_MISSING",
+    "GTE_PRECISION_STALE",
+    "GTE_PRECISION_ADDRESS_MISMATCH",
+    "GTE_PRECISION_PACKED_MISMATCH",
+    "GTE_PRECISION_INVALID",
+):
+    assert f"return {status}" in gte
 
 # The renderer-neutral boundary must reach software and OpenGL.
 for token in (".set_precise_triangle", ".set_perspective_triangle"):

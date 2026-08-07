@@ -1178,3 +1178,34 @@ therefore restored after the generic CD DMA fix. Visual quality is still open;
 the next evidence is a human 4x/4:3 off/full comparison through the Mission 1
 handoff and gameplay. SF2 Recomp remains the independent PGXP contract
 validator; no SF2 address or title containment was adopted.
+
+### R26 — motion swimming localizes to missing PGXP provenance
+
+The user completed the pending visual countercheck. Static-camera geometry and
+non-moving models improve, but camera/model motion still swims, less severely
+than native PS1 output. The symptom matches the documented SF2 Recomp endpoint,
+so the private corpus, SF2 Recomp and SF2-Modern PGXP work were consulted before
+changing code.
+
+SF3 already implements SF2's strongest transferable pass-1 invariant: exact
+SWC2 packet address, generation and packed retail-value validation with atomic
+all-three-corner fallback. No relaxed SF2 match was imported. Instead, generic
+diagnostics now classify complete, partial and fully unmatched primitives plus
+speculative, non-RAM, missing, stale, address-mismatch, packed-mismatch and
+invalid vertices without changing guest-visible GTE/RAM state or renderer
+eligibility.
+
+A fresh owned-input/OpenBIOS candidate consumed the unchanged 3,000-sample
+route in two clean diagnostic processes on 2026-08-07. Both runs reached the
+required retail states and reported exactly 56,919 candidate triangles, 2,125
+complete corrections, 54,794 fully unmatched triangles and 164,382 missing
+vertex records. Every other rejection category was zero. Complete coverage is
+therefore 3.733%. This confirms missing provenance at final GPU packet
+addresses as the first semantic divergence; it contradicts stale, wrong-
+address, rewritten-packed-value and one-corner-loss explanations.
+
+The next experiment is a bounded classification of the RAM-copy or packet-
+construction path that separates GTE stores from GP0 packet submission. PGXP
+remains fail-closed. Another human test is deferred until that work materially
+changes coverage and passes two automated runs. The broader corpus comparison
+is recorded in `docs/sf3/CORPUS_DIVERGENCE_2026-08-08.md`.

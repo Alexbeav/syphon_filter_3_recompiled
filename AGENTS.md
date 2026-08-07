@@ -7,14 +7,14 @@ explicit, provenance-safe feedback to the private PSX-Ports knowledge corpus.
 
 ## Mission
 
-Determine whether the proven complete-executable, native-overlay-cache and
-bounded dirty-RAM interpreter architecture reaches authentic SCUS-94640 TITLE
-and Mission 1 faster and with less game-specific machinery than the current
-hybrid runtime.
+Preserve and extend the proven complete-executable plus bounded dirty-RAM
+interpreter architecture across authentic SCUS-94640 campaign qualification,
+then qualify optional Redux presentation/input features independently against
+the retail-compatible oracle.
 
-Minimum gate: two deterministic clean runs to stable retail TITLE with measured
-static/native-overlay/interpreter ownership. Stretch gate: retail-selected
-Mission 1 state-0 player control with GPU, SPU/XA and processed PAD evidence.
+The original TITLE and Mission 1 feasibility gates are complete. Current gates
+are defined by `docs/sf3/CURRENT_OBJECTIVE.md` and the 19-row campaign ledger;
+they retain two-process, dispatch-ownership and subsystem evidence rules.
 
 ## Required reading before acting
 
@@ -43,7 +43,12 @@ current objective.
 - Treat `I:\Projects\PSX-References` as read-only research material.
 - Consult `I:\Projects\PSX-Ports` before each new symptom. Update it only at a
   meaningful committed checkpoint and only with normalized, payload-free
-  knowledge authorized by the user's goal.
+knowledge authorized by the user's goal.
+- This lab is the authoritative SF3 working repository. The legacy
+  `I:\Projects\SF3-Recomp-Published` and
+  `I:\Projects\SF3-Recomp-Public-Staging` workspaces may be inspected and
+  retired only after their clean tracked histories are preserved here and any
+  ignored files are inventoried. No other sibling workspace is writable.
 - Never modify or launch another project's binaries.
 
 ## Licensing and provenance
@@ -56,6 +61,12 @@ current objective.
   third-party artifact.
 - Keep all derived game material below ignored `lab/sf3/*` or
   `.local-context/` paths.
+- Public GitHub publication is source-only and owned-input. Before every public
+  push, audit the exact exported tree and package for retail executable/disc
+  data, generated game or BIOS C, overlay captures/caches, cards/saves, RAM or
+  state dumps, screenshots/media, private corpus material, credentials and
+  absolute private paths. CI and release workflows must remain unable to
+  acquire retail input or generate the private game executable.
 - External addresses and sibling fixes are leads until SCUS-94640 independently
   proves them.
 
@@ -69,7 +80,9 @@ current objective.
   substitute native gameplay or encode a title-address containment.
 - Interpreter fallback is compatibility evidence, not native coverage. Measure
   every dispatch tier honestly.
-- No modernization work belongs in this experiment.
+- Optional modernization belongs only in isolated, independently switchable
+  profiles after the compatibility gate. Compatibility remains the oracle;
+  enhancement evidence cannot substitute for campaign or retail correctness.
 
 ## Mandatory consult-test-return loop
 
@@ -102,7 +115,17 @@ For each new symptom:
 ## Git discipline
 
 - Expected branch: `experiment/sf3-recomp-feasibility`.
-- There is no writable project remote. Do not add or push one.
+- The renamed public project remote is
+  `https://github.com/Alexbeav/Syphon-Filter-3-Recompiled.git`. It may be
+  configured in this lab after the existing curated public history is fetched
+  and preserved.
+- Never push the experiment branch or its full lab history directly to public
+  `main`. Publish only an audited source-only curated/export branch that
+  preserves the public repository's history. Never force-push or delete a
+  public branch, tag or release without a separate explicit user instruction.
+- Follow `I:\Projects\PSX-Ports\_shared\DISTRIBUTION_PLAYBOOK.md` and the
+  community contribution policy for every public update. Record the exact
+  source/export identities and payload audit before pushing.
 - Preserve small milestone commits, update the objective/devlog/report, run
   `git diff --check`, relevant Release tests, artifact/provenance scans and a
   footprint check before committing.

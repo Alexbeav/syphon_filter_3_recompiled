@@ -1,6 +1,6 @@
 # Current objective — SF3 Redux Phase 1
 
-Updated: 2026-08-05
+Updated: 2026-08-08
 
 Baseline state: `compatibility_baseline_verified`. A connected human route now
 covers cold boot, Story/Mission 1, death, checkpoint reload, full mission
@@ -22,7 +22,7 @@ world presentation, full-width cinematic mattes, mouse and keyboard are
 human-accepted in Mission 1, and two clean 3,000-sample runs match frame and
 card hashes. HUD/UI remains at its original 4:3 coordinates.
 
-PGXP state: `automated_route_qualified_visible_pending`. The current 4x/4:3
+PGXP state: `coverage_localized_visible_not_accepted`. The current 4x/4:3
 candidate has independent off, geometry-only and geometry-plus-perspective
 profiles. Two clean diagnostic processes per profile consume the 3,000-sample
 Mission 1 handoff route with live state-0 pages and no freeze/stall. The final
@@ -30,8 +30,15 @@ samples distinguish the switches: off records zero correction hits,
 geometry-only records about 2.1k geometry and zero perspective hits, and full
 PGXP records about 2.1k of each. Two ordinary uninstrumented Release processes
 also consume all 42,480 samples with byte-identical cards and normalized logs.
-The next gate is a visible 4:3 off/full A/B; visual improvement and artifact
-freedom are not yet claimed.
+The user reports that stationary scenes/non-moving models improve, but camera
+or model motion still exposes swimming. A fresh reason-classified diagnostic
+candidate consumed the same 3,000-sample route twice with identical results:
+56,919 candidate triangles, 2,125 complete corrections (3.733%), 54,794 fully
+unmatched triangles and 164,382 missing vertex records. Partial, stale,
+address-mismatch, packed-mismatch, speculative and invalid counts are all zero.
+The next gate is bounded provenance transport through a proven packet-building
+or RAM-copy owner, followed by two automated off/full comparisons. Another
+visible A/B is not warranted until coverage changes materially.
 
 Campaign state: `qualification_matrix_initialized`. The source-owned
 [`CAMPAIGN_QUALIFICATION.md`](CAMPAIGN_QUALIFICATION.md) ledger separates the
@@ -117,7 +124,7 @@ accepted route, keep an off switch, and record honest native/fallback ownership.
 | Campaign overlays beyond early Mission 2 | overlay coverage | performance risk and incomplete recompilation ownership | safe Mission 2 endpoint: seven regions, 9.81M native dispatches, 270,891 fallbacks | extend only from exact-byte additive history and replay each promotion |
 | Diagnostic display readback can alter host timing | validation observer | a clean observed run may not represent ordinary Release timing | OpenGL ring capture flushes/reads back even without CPU-VRAM synchronization; route observer is source/build validated only | reproduce under a recorded route, localize with bounded capture, then confirm the fix twice in ordinary Release with the observer disabled |
 | Campaign beyond arrival in Mission 4 unverified | retail/content lifecycle | no whole-campaign claim | the guarded 19-row campaign matrix records deterministic Mission 1, human-only Mission 2/3 completion, Mission 4 entry and open later seams | qualify Mission 4 completion and the retail `4 -> 5` seam twice, then advance one adjacent mission at a time |
-| PGXP visual quality at 4x/4:3 | GPU precision presentation | optional geometry/texture stabilization may introduce visual artifacts even when the route remains live | two clean short diagnostics per off/geometry/full profile; active correction counters; two clean 42,480-sample ordinary full-PGXP runs with matching cards | human off/full A/B through TITLE, briefing and Mission 1 gameplay with no cracks, warping, seams or HUD regression |
+| PGXP visual quality at 4x/4:3 | GPU precision presentation/provenance coverage | stationary geometry improves, but models/camera motion retain swimming because only 3.733% of candidate triangles receive complete correction | prior off/geometry/full route qualification; user motion report; two identical reason-classified runs: 2,125/56,919 complete, all 164,382 rejected vertices missing provenance and zero mismatch/stale/partial cases | prove a bounded packet-construction/copy provenance owner, materially improve complete coverage without mixed primitives, pass two automated runs, then repeat human off/full A/B |
 | Cutscene mattes stop at authored 4:3 edges | **closed 2026-08-04**: auxiliary-list mono-quad ownership | no remaining observed impact in Mission 1 cinematics | list 4 carries `GP0 28h` black bands at authored `-192..192`; list 3 is the dense world owner; focused regression plus visible acceptance | passed: bars cover both 16:9 margins without restoring world slabs |
 | HUD/UI remains at 4:3 coordinates | HUD provenance | low-priority inset HUD at 16:9 | human 16:9 Mission 1 capture; `nw_hud_corners` cannot distinguish HUD from world polygons in SF3 | relocate only structurally proven HUD primitives |
 
@@ -250,11 +257,13 @@ not change the 4:3 aspect ratio or the interpreter ownership decision above.
 - Project checkpoint `db98b05` contains both generic fixes and 42/42 tests.
 - Private-corpus commit `87e6c7a` records the independently confirmed
   `PSX-CD-001` candidate and corrected SF3 project snapshot.
-- Public `Alexbeav/syphon_filter_3_recompiled` main is a provenance-clean,
+- Public `Alexbeav/Syphon-Filter-3-Recompiled` main is a provenance-clean,
   source-only history. It excludes retail inputs, generated SF3
   code, overlays, traces, cards, saves, captures and media.
-- The lab retains its fetch-only upstream remote and has no writable project
-  remote. `SF3_Redux` enhancement work has not begun.
+- The lab retains its fetch-only framework upstream and now owns the renamed
+  public project remote. The experiment branch remains non-publishable; only a
+  separately audited curated export may update public history. Redux Phase 1
+  widescreen/mouse is accepted and PGXP coverage work remains open.
 
 Each public source checkpoint is rebuilt from audited paths rather than pushing
 the lab history. Redistributable release assets may carry the MIT OpenBIOS image

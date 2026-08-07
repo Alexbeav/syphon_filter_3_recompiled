@@ -4887,7 +4887,9 @@ static void handle_gpu_state(int id, const char *json)
     GpuWsDebug ws;
     gpu_ws_get_debug(&ws);
     uint32_t precision_candidates = 0, precision_unmatched = 0;
+    GpuPrecisionStats precision;
     gpu_precision_triangle_stats(&precision_candidates, &precision_unmatched);
+    gpu_precision_get_stats(&precision);
     send_fmt("{\"id\":%d,\"ok\":true,"
              "\"display_x\":%d,\"display_y\":%d,"
              "\"width\":%d,\"height\":%d,"
@@ -4901,7 +4903,15 @@ static void handle_gpu_state(int id, const char *json)
              "\"draw_area\":[%u,%u,%u,%u],"
              "\"draw_offset\":[%d,%d],"
              "\"precision\":{\"candidates\":%u,\"unmatched\":%u,"
-             "\"geometry_hits\":%u,\"perspective_hits\":%u},"
+             "\"geometry_hits\":%u,\"perspective_hits\":%u,"
+             "\"triangles\":%llu,\"complete\":%llu,"
+             "\"partial\":%llu,\"fully_unmatched\":%llu,"
+             "\"cpu_authored\":%llu,\"speculative_vertices\":%llu,"
+             "\"non_ram_vertices\":%llu,\"missing_vertices\":%llu,"
+             "\"stale_vertices\":%llu,"
+             "\"address_mismatch_vertices\":%llu,"
+             "\"packed_mismatch_vertices\":%llu,"
+             "\"invalid_vertices\":%llu},"
              "\"ws\":{\"configured\":%d,\"active\":%d,\"game_mode\":%d,"
              "\"present_native_43\":%d,\"x_margin\":%d,"
              "\"activation_margin\":%d,\"squash\":[%d,%d],"
@@ -4934,6 +4944,18 @@ static void handle_gpu_state(int id, const char *json)
              da.offset_x, da.offset_y,
              precision_candidates, precision_unmatched,
              gpu_geometry_correction_hits(), gpu_texture_correction_hits(),
+             (unsigned long long)precision.triangles,
+             (unsigned long long)precision.complete,
+             (unsigned long long)precision.partial,
+             (unsigned long long)precision.unmatched,
+             (unsigned long long)precision.cpu_authored,
+             (unsigned long long)precision.speculative_vertices,
+             (unsigned long long)precision.non_ram_vertices,
+             (unsigned long long)precision.missing_vertices,
+             (unsigned long long)precision.stale_vertices,
+             (unsigned long long)precision.address_mismatch_vertices,
+             (unsigned long long)precision.packed_mismatch_vertices,
+             (unsigned long long)precision.invalid_vertices,
              ws.configured, ws.active, ws.game_mode,
              ws.present_native_43, ws.x_margin, ws.activation_margin,
              ws.xnum, ws.xden,

@@ -29,10 +29,12 @@ Read `AGENTS.md`, then the required SF3 documents it lists. All retail-derived
 outputs belong under ignored `lab/sf3` storage. The fixed target and oracle
 identities live in `lab/sf3/reference-manifest.toml`.
 
-## Non-goals
+## Permanent non-goals
 
 - No native gameplay or frontend replacement.
 - No forced application-state writes or generated-code edits.
 - No SF2 address reuse by analogy.
-- No widescreen, PGXP, interpolation, remastered UI or mouse-camera work.
+- No enhancement that changes retail simulation, authored timing or save state.
+- No widescreen, PGXP, interpolation, remastered UI or mouse-camera claim
+  without an independent compatibility control, off switch and bounded gate.
 - No claim of static coverage when interpreter fallback remains.

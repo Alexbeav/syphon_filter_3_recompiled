@@ -2764,9 +2764,8 @@ static uint32_t s_geometry_correction_hits = 0;
 static uint32_t s_texture_correction_hits = 0;
 static uint32_t s_precision_triangle_candidates = 0;
 static uint32_t s_precision_triangle_unmatched = 0;
+static GpuPrecisionStats s_precision_stats;
 extern void gte_precision_tracking_set(int enabled);
-extern int gte_precision_load_word(uint32_t addr, uint32_t packed,
-                                   int32_t *x16, int32_t *y16, uint16_t *z);
 
 static void gpu_precision_tracking_update(void) {
     gte_precision_tracking_set(
@@ -2778,6 +2777,7 @@ void gpu_geometry_correction_set(int enabled) {
     s_geometry_correction_hits = 0;
     s_precision_triangle_candidates = 0;
     s_precision_triangle_unmatched = 0;
+    memset(&s_precision_stats, 0, sizeof(s_precision_stats));
     gpu_precision_tracking_update();
 }
 
@@ -2786,6 +2786,7 @@ void gpu_texture_correction_set(int enabled) {
     s_texture_correction_hits = 0;
     s_precision_triangle_candidates = 0;
     s_precision_triangle_unmatched = 0;
+    memset(&s_precision_stats, 0, sizeof(s_precision_stats));
     gpu_precision_tracking_update();
 }
 
@@ -2807,6 +2808,10 @@ uint32_t gpu_geometry_correction_hits(void) {
 void gpu_precision_triangle_stats(uint32_t *candidates, uint32_t *unmatched) {
     if (candidates) *candidates = s_precision_triangle_candidates;
     if (unmatched) *unmatched = s_precision_triangle_unmatched;
+}
+
+void gpu_precision_get_stats(GpuPrecisionStats *out) {
+    if (out) *out = s_precision_stats;
 }
 
 /* DMA-list ownership is stable across frames and repeated coordinate values;
@@ -2835,24 +2840,52 @@ static void prepare_precision_triangle(int i0, int i1, int i2,
                                        const int32_t vy[3], int textured) {
     gr_set_precise_triangle(0, 0,0, 0,0, 0,0);
     gr_set_perspective_triangle(0, 0.0f, 0.0f, 0.0f);
-    if ((!s_geometry_correction_enabled &&
-         !(textured && s_texture_correction_enabled)) ||
-        gp0_cmd_source_addr == 0xFFFFFFFFu)
+    if (!s_geometry_correction_enabled &&
+        !(textured && s_texture_correction_enabled))
         return;
+
+    s_precision_stats.triangles++;
+    if (gp0_cmd_source_addr == 0xFFFFFFFFu) {
+        s_precision_stats.cpu_authored++;
+        return;
+    }
 
     const int indices[3] = {i0, i1, i2};
     int32_t fx[3], fy[3];
     uint16_t z[3];
+    int matched = 0;
     s_precision_triangle_candidates++;
     for (int i = 0; i < 3; ++i) {
         const uint32_t addr =
             (gp0_cmd_source_addr + (uint32_t)indices[i] * 4u) & 0x1FFFFCu;
-        if (!gte_precision_load_word(addr, gp0_cmd_buf[indices[i]],
-                                     &fx[i], &fy[i], &z[i])) {
-            s_precision_triangle_unmatched++;
-            return;
+        const GtePrecisionStatus status = gte_precision_query_word(
+            addr, gp0_cmd_buf[indices[i]], &fx[i], &fy[i], &z[i]);
+        if (status == GTE_PRECISION_EXACT) {
+            matched++;
+            continue;
         }
+        if (status == GTE_PRECISION_SPECULATIVE)
+            s_precision_stats.speculative_vertices++;
+        else if (status == GTE_PRECISION_NON_RAM)
+            s_precision_stats.non_ram_vertices++;
+        else if (status == GTE_PRECISION_MISSING)
+            s_precision_stats.missing_vertices++;
+        else if (status == GTE_PRECISION_STALE)
+            s_precision_stats.stale_vertices++;
+        else if (status == GTE_PRECISION_ADDRESS_MISMATCH)
+            s_precision_stats.address_mismatch_vertices++;
+        else if (status == GTE_PRECISION_PACKED_MISMATCH)
+            s_precision_stats.packed_mismatch_vertices++;
+        else if (status == GTE_PRECISION_INVALID)
+            s_precision_stats.invalid_vertices++;
     }
+    if (matched == 0) s_precision_stats.unmatched++;
+    else if (matched != 3) s_precision_stats.partial++;
+    if (matched != 3) {
+        s_precision_triangle_unmatched++;
+        return;
+    }
+    s_precision_stats.complete++;
 
     if (s_geometry_correction_enabled) {
         for (int i = 0; i < 3; ++i) {

@@ -567,6 +567,10 @@ int test_precision_speculative_transaction() {
 
     gte_precision_speculative_begin();
     gte_precision_speculative_begin();
+    if (gte_precision_query_word(address, packed, &got_x, &got_y, &got_z) !=
+        GTE_PRECISION_SPECULATIVE)
+        return fail_value("speculative precision status", 0, 0, packed,
+                          GTE_PRECISION_SPECULATIVE, 0);
     if (gte_precision_load_word(address, packed, &got_x, &got_y, &got_z) != 0)
         return fail_value("speculative precision read", 0, 0, packed, 0, 1);
     if (gte_geometry_correction_lookup(packed, &got_x, &got_y) != 0)
@@ -666,11 +670,19 @@ int test_precision_address_identity() {
         x != bx || y != by || z != 0x3400u)
         return fail_value("address-owned projection B", 0, 0, packed,
                           static_cast<uint32_t>(bx), static_cast<uint32_t>(x));
+    if (gte_precision_query_word(addr_a, packed ^ 1u, &x, &y, &z) !=
+        GTE_PRECISION_PACKED_MISMATCH)
+        return fail_value("packed mismatch status", 0, 0, packed,
+                          GTE_PRECISION_PACKED_MISMATCH, 0);
     if (gte_precision_load_word(addr_a + 4u, packed, &x, &y, &z) != 0)
         return fail_value("same packed value at wrong address", 0, 0,
                           packed, 0, 1);
 
     gte_precision_timeline_invalidate();
+    if (gte_precision_query_word(addr_a, packed, &x, &y, &z) !=
+        GTE_PRECISION_STALE)
+        return fail_value("stale generation status", 0, 0, packed,
+                          GTE_PRECISION_STALE, 0);
     if (gte_precision_load_word(addr_a, packed, &x, &y, &z) != 0 ||
         gte_precision_load_word(addr_b, packed, &x, &y, &z) != 0)
         return fail_value("stale generation rejected", 0, 0, packed, 0, 1);
