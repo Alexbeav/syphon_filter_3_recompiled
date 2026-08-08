@@ -34,6 +34,12 @@ if(BUILD_TESTING)
     target_link_libraries(psx_keybinds_test PRIVATE ${PSX_SDL_LIBRARIES})
     add_test(NAME psx_keybinds_test COMMAND psx_keybinds_test)
 
+    add_executable(mod_enhancement_state_test
+        tests/test_mod_enhancement_state.c
+        src/mod_enhancement_state.c)
+    target_include_directories(mod_enhancement_state_test PRIVATE include)
+    add_test(NAME mod_enhancement_state_test COMMAND mod_enhancement_state_test)
+
     add_executable(launcher_device_roundtrip_test
         tests/test_launcher_device_roundtrip.cpp)
     target_include_directories(launcher_device_roundtrip_test PRIVATE include)
