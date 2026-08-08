@@ -26,6 +26,7 @@
 #include "ws_aspect_cone_math.h"
 #include "ws_ui_group.h"
 #include "ws_projection_compose.h"
+#include "pgxp_shared_edge.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -2764,9 +2765,43 @@ static uint32_t s_geometry_correction_hits = 0;
 static uint32_t s_texture_correction_hits = 0;
 static uint32_t s_precision_triangle_candidates = 0;
 static uint32_t s_precision_triangle_unmatched = 0;
+static GpuPrecisionStats s_precision_stats;
+static int s_precision_missing_sample_armed = 1;
+#define PRECISION_EDGE_SLOTS 4096u
+#define PRECISION_TEMPORAL_SLOTS 16384u
+#define PRECISION_TABLE_PROBES 16u
+typedef struct {
+    uint32_t valid;
+    uint32_t frame;
+    uint32_t a;
+    uint32_t b;
+    uint32_t source_addr;
+    uint16_t ot_rank;
+    uint16_t az;
+    uint16_t bz;
+    int32_t afx;
+    int32_t afy;
+    int32_t bfx;
+    int32_t bfy;
+    uint8_t complete;
+} PrecisionEdgeSlot;
+typedef struct {
+    uint32_t valid;
+    uint32_t addr[3];
+    uint32_t frame;
+    uint8_t complete;
+} PrecisionTemporalSlot;
+static PrecisionEdgeSlot s_precision_edges[PRECISION_EDGE_SLOTS];
+static PrecisionTemporalSlot s_precision_temporal[PRECISION_TEMPORAL_SLOTS];
+static uint32_t s_precision_edge_frame = UINT32_MAX;
 extern void gte_precision_tracking_set(int enabled);
-extern int gte_precision_load_word(uint32_t addr, uint32_t packed,
-                                   int32_t *x16, int32_t *y16, uint16_t *z);
+extern int gte_precision_debug_store_attempt(uint32_t addr, uint32_t *pc,
+                                              uint8_t *reg);
+extern void gte_precision_cull_stats_reset(void);
+extern void gte_precision_cull_stats_get(
+    uint64_t *complete, uint64_t *disagreements,
+    uint64_t *overrides, uint64_t *native_culled, uint64_t *native_visible,
+    int32_t *latest_native_area, int8_t *latest_precise_sign);
 
 static void gpu_precision_tracking_update(void) {
     gte_precision_tracking_set(
@@ -2778,6 +2813,11 @@ void gpu_geometry_correction_set(int enabled) {
     s_geometry_correction_hits = 0;
     s_precision_triangle_candidates = 0;
     s_precision_triangle_unmatched = 0;
+    memset(&s_precision_stats, 0, sizeof(s_precision_stats));
+    memset(s_precision_edges, 0, sizeof(s_precision_edges));
+    memset(s_precision_temporal, 0, sizeof(s_precision_temporal));
+    s_precision_edge_frame = UINT32_MAX;
+    gte_precision_cull_stats_reset();
     gpu_precision_tracking_update();
 }
 
@@ -2786,6 +2826,11 @@ void gpu_texture_correction_set(int enabled) {
     s_texture_correction_hits = 0;
     s_precision_triangle_candidates = 0;
     s_precision_triangle_unmatched = 0;
+    memset(&s_precision_stats, 0, sizeof(s_precision_stats));
+    memset(s_precision_edges, 0, sizeof(s_precision_edges));
+    memset(s_precision_temporal, 0, sizeof(s_precision_temporal));
+    s_precision_edge_frame = UINT32_MAX;
+    gte_precision_cull_stats_reset();
     gpu_precision_tracking_update();
 }
 
@@ -2809,6 +2854,24 @@ void gpu_precision_triangle_stats(uint32_t *candidates, uint32_t *unmatched) {
     if (unmatched) *unmatched = s_precision_triangle_unmatched;
 }
 
+void gpu_precision_get_stats(GpuPrecisionStats *out) {
+    gte_precision_cull_stats_get(
+        &s_precision_stats.precise_nclip_complete,
+        &s_precision_stats.precise_nclip_sign_disagreements,
+        &s_precision_stats.precise_nclip_overrides,
+        &s_precision_stats.native_culled_precise_visible,
+        &s_precision_stats.native_visible_precise_culled,
+        &s_precision_stats.latest_nclip_native_area,
+        &s_precision_stats.latest_nclip_precise_sign);
+    if (out) *out = s_precision_stats;
+    s_precision_stats.sampled_missing_addr = 0;
+    s_precision_stats.sampled_missing_packed = 0;
+    s_precision_stats.sampled_missing_store_pc = 0;
+    s_precision_stats.sampled_missing_store_result = 0;
+    s_precision_stats.sampled_missing_store_reg = 0;
+    s_precision_missing_sample_armed = 1;
+}
+
 /* DMA-list ownership is stable across frames and repeated coordinate values;
  * packed SXY provenance is not. */
 static int ws_nw_compensate_triangle(uint32_t w0, uint32_t w1, uint32_t w2,
@@ -2825,6 +2888,208 @@ static int ws_nw_compensate_triangle(uint32_t w0, uint32_t w1, uint32_t w2,
     return 1;
 }
 
+static uint32_t precision_position_key(uint32_t packed) {
+    return packed & 0x07FF07FFu;
+}
+
+static uint32_t precision_hash3(uint32_t a, uint32_t b, uint32_t c) {
+    uint32_t h = a * 0x9E3779B1u;
+    h ^= b + 0x85EBCA6Bu + (h << 6) + (h >> 2);
+    h ^= c + 0xC2B2AE35u + (h << 6) + (h >> 2);
+    return h;
+}
+
+static uint32_t precision_abs_delta(int32_t a, int32_t b) {
+    const int64_t delta = (int64_t)a - (int64_t)b;
+    return (uint32_t)(delta < 0 ? -delta : delta);
+}
+
+/* PGXP screen coordinates are signed 11-bit integer positions with 16-bit
+ * fractional precision, so their twice-area fits comfortably in int64_t.
+ * Keep this exact: a zero or sign change means edge reconciliation altered
+ * triangle topology, which can erase a small retail-visible polygon. */
+static int64_t precision_area2(const int32_t x[3], const int32_t y[3]) {
+    const int64_t x10 = (int64_t)x[1] - x[0];
+    const int64_t y10 = (int64_t)y[1] - y[0];
+    const int64_t x20 = (int64_t)x[2] - x[0];
+    const int64_t y20 = (int64_t)y[2] - y[0];
+    return x10 * y20 - y10 * x20;
+}
+
+static void precision_record_edge(uint32_t packed_a, uint32_t packed_b,
+                                  uint32_t source_addr, uint16_t ot_rank,
+                                  int complete,
+                                  int32_t *p_afx, int32_t *p_afy,
+                                  int32_t *p_bfx, int32_t *p_bfy,
+                                  uint16_t az, uint16_t bz) {
+    const uint32_t frame = (uint32_t)s_frame_count;
+    if (s_precision_edge_frame != frame) {
+        memset(s_precision_edges, 0, sizeof(s_precision_edges));
+        s_precision_edge_frame = frame;
+    }
+
+    uint32_t a = precision_position_key(packed_a);
+    uint32_t b = precision_position_key(packed_b);
+    int32_t afx = *p_afx, afy = *p_afy;
+    int32_t bfx = *p_bfx, bfy = *p_bfy;
+    int reversed = 0;
+    if (a == b) return;
+    if (a > b) {
+        const uint32_t packed_swap = a;
+        const int32_t fx_swap = afx;
+        const int32_t fy_swap = afy;
+        a = b;
+        b = packed_swap;
+        afx = bfx;
+        afy = bfy;
+        bfx = fx_swap;
+        bfy = fy_swap;
+        const uint16_t z_swap = az;
+        az = bz;
+        bz = z_swap;
+        reversed = 1;
+    }
+
+    const uint32_t bucket = precision_hash3(a, b, ot_rank) &
+                            (PRECISION_EDGE_SLOTS - 1u);
+    for (uint32_t probe = 0; probe < PRECISION_TABLE_PROBES; ++probe) {
+        PrecisionEdgeSlot *slot = &s_precision_edges[
+            (bucket + probe) & (PRECISION_EDGE_SLOTS - 1u)];
+        if (!slot->valid) {
+            slot->valid = 1;
+            slot->frame = frame;
+            slot->a = a;
+            slot->b = b;
+            slot->source_addr = source_addr;
+            slot->ot_rank = ot_rank;
+            slot->az = az;
+            slot->bz = bz;
+            slot->afx = afx;
+            slot->afy = afy;
+            slot->bfx = bfx;
+            slot->bfy = bfy;
+            slot->complete = complete ? 1u : 0u;
+            return;
+        }
+        if (slot->frame != frame || slot->a != a || slot->b != b ||
+            slot->ot_rank != ot_rank)
+            continue;
+        const uint32_t source_distance = slot->source_addr > source_addr
+            ? slot->source_addr - source_addr
+            : source_addr - slot->source_addr;
+        if (source_distance > 0x10000u) continue;
+        if (slot->complete != (complete ? 1u : 0u)) {
+            s_precision_stats.mixed_shared_edges++;
+            s_precision_stats.latest_mixed_edge_a = a;
+            s_precision_stats.latest_mixed_edge_b = b;
+            if (complete) {
+                s_precision_stats.latest_mixed_complete_addr = source_addr;
+                s_precision_stats.latest_mixed_fallback_addr =
+                    slot->source_addr;
+            } else {
+                s_precision_stats.latest_mixed_complete_addr =
+                    slot->source_addr;
+                s_precision_stats.latest_mixed_fallback_addr = source_addr;
+            }
+        } else if (complete) {
+            const PgxpSharedEdgeSample first = {
+                slot->a, slot->b, slot->source_addr, slot->ot_rank,
+                slot->az, slot->bz, slot->afx, slot->afy,
+                slot->bfx, slot->bfy, slot->complete
+            };
+            PgxpSharedEdgeSample second = {
+                a, b, source_addr, ot_rank, az, bz,
+                afx, afy, bfx, bfy, complete ? 1u : 0u
+            };
+            if (!pgxp_shared_edge_canonicalize(&first, &second)) return;
+            s_precision_stats.precise_shared_edge_mismatches++;
+            uint32_t max_delta = precision_abs_delta(slot->afx, afx);
+            uint32_t delta = precision_abs_delta(slot->afy, afy);
+            if (delta > max_delta) max_delta = delta;
+            delta = precision_abs_delta(slot->bfx, bfx);
+            if (delta > max_delta) max_delta = delta;
+            delta = precision_abs_delta(slot->bfy, bfy);
+            if (delta > max_delta) max_delta = delta;
+            if (max_delta <= 256u)
+                s_precision_stats.precise_edge_delta_le_1_256++;
+            else if (max_delta <= 4096u)
+                s_precision_stats.precise_edge_delta_le_1_16++;
+            else if (max_delta <= 32768u)
+                s_precision_stats.precise_edge_delta_le_1_2++;
+            else
+                s_precision_stats.precise_edge_delta_gt_1_2++;
+            s_precision_stats.latest_precise_edge_a = a;
+            s_precision_stats.latest_precise_edge_b = b;
+            s_precision_stats.latest_precise_first_addr = slot->source_addr;
+            s_precision_stats.latest_precise_second_addr = source_addr;
+            s_precision_stats.latest_precise_frame = frame;
+            s_precision_stats.latest_precise_max_delta = max_delta;
+            if (!reversed) {
+                *p_afx = second.precise_ax;
+                *p_afy = second.precise_ay;
+                *p_bfx = second.precise_bx;
+                *p_bfy = second.precise_by;
+            } else {
+                *p_afx = second.precise_bx;
+                *p_afy = second.precise_by;
+                *p_bfx = second.precise_ax;
+                *p_bfy = second.precise_ay;
+            }
+        }
+        return;
+    }
+    s_precision_stats.edge_table_drops++;
+}
+
+static void precision_record_temporal(const uint32_t addr[3], int complete) {
+    const uint32_t frame = (uint32_t)s_frame_count;
+    const uint32_t bucket = precision_hash3(addr[0], addr[1], addr[2]) &
+                            (PRECISION_TEMPORAL_SLOTS - 1u);
+    PrecisionTemporalSlot *oldest = NULL;
+    for (uint32_t probe = 0; probe < PRECISION_TABLE_PROBES; ++probe) {
+        PrecisionTemporalSlot *slot = &s_precision_temporal[
+            (bucket + probe) & (PRECISION_TEMPORAL_SLOTS - 1u)];
+        if (!oldest || slot->frame < oldest->frame) oldest = slot;
+        if (!slot->valid) {
+            slot->valid = 1;
+            slot->addr[0] = addr[0];
+            slot->addr[1] = addr[1];
+            slot->addr[2] = addr[2];
+            slot->frame = frame;
+            slot->complete = complete ? 1u : 0u;
+            return;
+        }
+        if (slot->addr[0] != addr[0] || slot->addr[1] != addr[1] ||
+            slot->addr[2] != addr[2])
+            continue;
+        if (slot->frame != frame && frame > slot->frame &&
+            frame - slot->frame <= 2u &&
+            slot->complete != (complete ? 1u : 0u)) {
+            s_precision_stats.temporal_eligibility_flips++;
+            if (complete) s_precision_stats.temporal_to_complete++;
+            else s_precision_stats.temporal_to_fallback++;
+            s_precision_stats.latest_flip_addr = addr[0];
+            s_precision_stats.latest_flip_previous_frame = slot->frame;
+            s_precision_stats.latest_flip_current_frame = frame;
+            s_precision_stats.latest_flip_previous_complete = slot->complete;
+            s_precision_stats.latest_flip_current_complete =
+                complete ? 1u : 0u;
+        }
+        if (slot->frame != frame) {
+            slot->frame = frame;
+            slot->complete = complete ? 1u : 0u;
+        }
+        return;
+    }
+    oldest->valid = 1;
+    oldest->addr[0] = addr[0];
+    oldest->addr[1] = addr[1];
+    oldest->addr[2] = addr[2];
+    oldest->frame = frame;
+    oldest->complete = complete ? 1u : 0u;
+    s_precision_stats.temporal_table_drops++;
+}
+
 /* Attach derived precision only when every vertex maps to an exact SWC2 store
  * at the same DMA packet address and current generation.  A packed SXY value
  * is not an identity: values recur across frames, submissions and UI.  Exact
@@ -2835,22 +3100,100 @@ static void prepare_precision_triangle(int i0, int i1, int i2,
                                        const int32_t vy[3], int textured) {
     gr_set_precise_triangle(0, 0,0, 0,0, 0,0);
     gr_set_perspective_triangle(0, 0.0f, 0.0f, 0.0f);
-    if ((!s_geometry_correction_enabled &&
-         !(textured && s_texture_correction_enabled)) ||
-        gp0_cmd_source_addr == 0xFFFFFFFFu)
+    if (!s_geometry_correction_enabled &&
+        !(textured && s_texture_correction_enabled))
         return;
 
+    s_precision_stats.triangles++;
+    if (gp0_cmd_source_addr == 0xFFFFFFFFu) {
+        s_precision_stats.cpu_authored++;
+        return;
+    }
+
     const int indices[3] = {i0, i1, i2};
-    int32_t fx[3], fy[3];
-    uint16_t z[3];
+    int32_t fx[3] = {0, 0, 0}, fy[3] = {0, 0, 0};
+    int32_t original_fx[3] = {0, 0, 0}, original_fy[3] = {0, 0, 0};
+    uint16_t z[3] = {0, 0, 0};
+    uint32_t addrs[3];
+    int matched = 0;
     s_precision_triangle_candidates++;
     for (int i = 0; i < 3; ++i) {
-        const uint32_t addr =
+        const uint32_t addr = addrs[i] =
             (gp0_cmd_source_addr + (uint32_t)indices[i] * 4u) & 0x1FFFFCu;
-        if (!gte_precision_load_word(addr, gp0_cmd_buf[indices[i]],
-                                     &fx[i], &fy[i], &z[i])) {
-            s_precision_triangle_unmatched++;
-            return;
+        const GtePrecisionStatus status = gte_precision_query_word(
+            addr, gp0_cmd_buf[indices[i]], &fx[i], &fy[i], &z[i]);
+        if (status == GTE_PRECISION_EXACT) {
+            matched++;
+            continue;
+        }
+        if (status == GTE_PRECISION_SPECULATIVE)
+            s_precision_stats.speculative_vertices++;
+        else if (status == GTE_PRECISION_NON_RAM)
+            s_precision_stats.non_ram_vertices++;
+        else if (status == GTE_PRECISION_MISSING) {
+            s_precision_stats.missing_vertices++;
+            s_precision_stats.latest_missing_addr = addr;
+            s_precision_stats.latest_missing_packed = gp0_cmd_buf[indices[i]];
+            if (s_precision_missing_sample_armed) {
+                s_precision_stats.sampled_missing_addr = addr;
+                s_precision_stats.sampled_missing_packed =
+                    gp0_cmd_buf[indices[i]];
+                s_precision_stats.sampled_missing_store_result =
+                    gte_precision_debug_store_attempt(
+                        addr, &s_precision_stats.sampled_missing_store_pc,
+                        &s_precision_stats.sampled_missing_store_reg);
+                s_precision_missing_sample_armed = 0;
+            }
+        }
+        else if (status == GTE_PRECISION_STALE)
+            s_precision_stats.stale_vertices++;
+        else if (status == GTE_PRECISION_ADDRESS_MISMATCH)
+            s_precision_stats.address_mismatch_vertices++;
+        else if (status == GTE_PRECISION_PACKED_MISMATCH)
+            s_precision_stats.packed_mismatch_vertices++;
+        else if (status == GTE_PRECISION_INVALID)
+            s_precision_stats.invalid_vertices++;
+    }
+    memcpy(original_fx, fx, sizeof(original_fx));
+    memcpy(original_fy, fy, sizeof(original_fy));
+    if (matched == 0) s_precision_stats.unmatched++;
+    else if (matched != 3) s_precision_stats.partial++;
+    precision_record_temporal(addrs, matched == 3);
+    precision_record_edge(gp0_cmd_buf[indices[0]], gp0_cmd_buf[indices[1]],
+                          addrs[0], gp0_ot_rank, matched == 3,
+                          &fx[0], &fy[0], &fx[1], &fy[1], z[0], z[1]);
+    precision_record_edge(gp0_cmd_buf[indices[1]], gp0_cmd_buf[indices[2]],
+                          addrs[1], gp0_ot_rank, matched == 3,
+                          &fx[1], &fy[1], &fx[2], &fy[2], z[1], z[2]);
+    precision_record_edge(gp0_cmd_buf[indices[2]], gp0_cmd_buf[indices[0]],
+                          addrs[2], gp0_ot_rank, matched == 3,
+                          &fx[2], &fy[2], &fx[0], &fy[0], z[2], z[0]);
+    if (matched != 3) {
+        s_precision_triangle_unmatched++;
+        return;
+    }
+    s_precision_stats.complete++;
+
+    const int canonicalized =
+        memcmp(original_fx, fx, sizeof(fx)) != 0 ||
+        memcmp(original_fy, fy, sizeof(fy)) != 0;
+    if (canonicalized) {
+        const int64_t area_before = precision_area2(original_fx, original_fy);
+        const int64_t area_after = precision_area2(fx, fy);
+        s_precision_stats.canonicalized_triangles++;
+        if (area_before != 0 && area_after == 0)
+            s_precision_stats.canonicalized_area_collapses++;
+        if ((area_before < 0 && area_after > 0) ||
+            (area_before > 0 && area_after < 0))
+            s_precision_stats.canonicalized_winding_flips++;
+        if (!pgxp_triangle_topology_preserved(area_before, area_after)) {
+            s_precision_stats.latest_topology_addr = gp0_cmd_source_addr;
+            s_precision_stats.latest_topology_frame = (uint32_t)s_frame_count;
+            s_precision_stats.latest_topology_area_before = area_before;
+            s_precision_stats.latest_topology_area_after = area_after;
+            memcpy(fx, original_fx, sizeof(fx));
+            memcpy(fy, original_fy, sizeof(fy));
+            s_precision_stats.canonicalization_rollbacks++;
         }
     }
 

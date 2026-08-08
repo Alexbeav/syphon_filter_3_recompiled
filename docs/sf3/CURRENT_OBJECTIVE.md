@@ -1,6 +1,21 @@
 # Current objective — SF3 Redux Phase 1
 
-Updated: 2026-08-04
+Updated: 2026-08-08
+
+## v0.2.2-alpha PGXP release qualification
+
+Human A/B accepts the combined component-aware CPU/GTE provenance,
+perspective-texture, topology-safe shared-edge and exact-FIFO precise-culling
+path as good enough to ship. The dominant motion wobble and polygon
+disappearance are removed; minor texture wobble and character-model seams
+remain explicit presentation debt.
+
+The source-only owned-input kit builds the private executable from an exact
+fresh extraction. Its generated widescreen profile independently verifies
+16:9, geometry precision, perspective textures and precise culling enabled.
+The private Release executable remains responsive after a 12-second hidden
+OpenGL smoke. No retail executable/disc data, generated game code, overlay
+cache, save/card, screenshot, movie or audio enters the public archive.
 
 Baseline state: `compatibility_baseline_verified`. A connected human route now
 covers cold boot, Story/Mission 1, death, checkpoint reload, full mission

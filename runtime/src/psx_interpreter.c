@@ -67,6 +67,9 @@ static uint32_t s_trace_write_idx;
 /* Pending load delay slot (R3000A has a 1-instruction load delay). */
 static uint32_t s_load_reg;
 static uint32_t s_load_val;
+static uint32_t s_load_precision_addr;
+static uint8_t  s_load_precision_gte_reg;
+static uint8_t  s_load_precision_kind; /* 0=none, 1=GTE SXY, 2=exact RAM word */
 
 /* ---- Init ---- */
 
@@ -79,6 +82,9 @@ void interp_init(CPUState* cpu) {
     s_trace_write_idx = 0;
     s_load_reg = 0;
     s_load_val = 0;
+    s_load_precision_addr = 0;
+    s_load_precision_gte_reg = 0;
+    s_load_precision_kind = 0;
     s_vblank_count = 0;
     memset(s_trace_ring, 0, sizeof(s_trace_ring));
 }
@@ -135,7 +141,10 @@ static void trace_record(CPUState* cpu, uint32_t insn) {
 /* ---- Register write (enforces $0 = 0) ---- */
 
 static inline void set_reg(CPUState* cpu, uint32_t r, uint32_t v) {
-    if (r != 0) cpu->gpr[r] = v;
+    if (r != 0) {
+        gte_precision_gpr_invalidate((uint8_t)r);
+        cpu->gpr[r] = v;
+    }
 }
 
 /* ---- Apply pending load delay ---- */
@@ -143,13 +152,61 @@ static inline void set_reg(CPUState* cpu, uint32_t r, uint32_t v) {
 static inline void apply_load_delay(CPUState* cpu) {
     if (s_load_reg != 0) {
         cpu->gpr[s_load_reg] = s_load_val;
+        if (s_load_precision_kind == 1)
+            gte_precision_gpr_from_gte((uint8_t)s_load_reg,
+                                       s_load_precision_gte_reg, s_load_val);
+        else if (s_load_precision_kind == 2)
+            gte_precision_gpr_from_ram((uint8_t)s_load_reg,
+                                       s_load_precision_addr, s_load_val);
+        else
+            gte_precision_gpr_invalidate((uint8_t)s_load_reg);
         s_load_reg = 0;
+        s_load_precision_kind = 0;
     }
 }
 
 static inline void set_load_delay(uint32_t reg, uint32_t val) {
     s_load_reg = reg;
     s_load_val = val;
+    s_load_precision_kind = 0;
+}
+
+static inline void set_reg_precision_shift(CPUState* cpu, uint32_t dst,
+                                           uint32_t src, uint32_t amount,
+                                           uint32_t kind, uint32_t value) {
+    if (dst == 0) return;
+    cpu->gpr[dst] = value;
+    gte_precision_gpr_shift((uint8_t)dst, (uint8_t)src, (uint8_t)amount,
+                            (uint8_t)kind, value);
+}
+
+static inline void set_reg_precision_bitwise(CPUState* cpu, uint32_t dst,
+                                             uint32_t lhs, uint32_t rhs,
+                                             uint32_t kind, uint32_t value) {
+    if (dst == 0) return;
+    cpu->gpr[dst] = value;
+    gte_precision_gpr_bitwise((uint8_t)dst, (uint8_t)lhs, (uint8_t)rhs,
+                              (uint8_t)kind, value);
+}
+
+static inline void set_reg_precision_andi(CPUState* cpu, uint32_t dst,
+                                          uint32_t src, uint32_t immediate,
+                                          uint32_t value) {
+    if (dst == 0) return;
+    cpu->gpr[dst] = value;
+    gte_precision_gpr_andi((uint8_t)dst, (uint8_t)src, immediate, value);
+}
+
+static inline void set_load_delay_gte(uint32_t reg, uint32_t val, uint32_t gte_reg) {
+    set_load_delay(reg, val);
+    s_load_precision_kind = 1;
+    s_load_precision_gte_reg = (uint8_t)gte_reg;
+}
+
+static inline void set_load_delay_ram(uint32_t reg, uint32_t val, uint32_t addr) {
+    set_load_delay(reg, val);
+    s_load_precision_kind = 2;
+    s_load_precision_addr = addr;
 }
 
 /* ---- Exception ---- */
@@ -204,9 +261,10 @@ static void exec_one(CPUState* cpu) {
         uint32_t rd = RD(insn);
         uint32_t sa = SA(insn);
         switch (func) {
-        case 0x00: set_reg(cpu, rd, rt_val << sa); break;           /* SLL */
-        case 0x02: set_reg(cpu, rd, rt_val >> sa); break;           /* SRL */
-        case 0x03: set_reg(cpu, rd, (uint32_t)((int32_t)rt_val >> sa)); break; /* SRA */
+        case 0x00: set_reg_precision_shift(cpu, rd, RT(insn), sa, 0, rt_val << sa); break; /* SLL */
+        case 0x02: set_reg_precision_shift(cpu, rd, RT(insn), sa, 1, rt_val >> sa); break; /* SRL */
+        case 0x03: set_reg_precision_shift(cpu, rd, RT(insn), sa, 2,
+                                           (uint32_t)((int32_t)rt_val >> sa)); break; /* SRA */
         case 0x04: set_reg(cpu, rd, rt_val << (rs_val & 31)); break; /* SLLV */
         case 0x06: set_reg(cpu, rd, rt_val >> (rs_val & 31)); break; /* SRLV */
         case 0x07: set_reg(cpu, rd, (uint32_t)((int32_t)rt_val >> (rs_val & 31))); break; /* SRAV */
@@ -258,8 +316,10 @@ static void exec_one(CPUState* cpu) {
             set_reg(cpu, rd, (uint32_t)(int32_t)r); break;
         }
         case 0x23: set_reg(cpu, rd, rs_val - rt_val); break;       /* SUBU */
-        case 0x24: set_reg(cpu, rd, rs_val & rt_val); break;       /* AND */
-        case 0x25: set_reg(cpu, rd, rs_val | rt_val); break;       /* OR */
+        case 0x24: set_reg_precision_bitwise(cpu, rd, RS(insn), RT(insn), 0,
+                                             rs_val & rt_val); break; /* AND */
+        case 0x25: set_reg_precision_bitwise(cpu, rd, RS(insn), RT(insn), 1,
+                                             rs_val | rt_val); break; /* OR */
         case 0x26: set_reg(cpu, rd, rs_val ^ rt_val); break;       /* XOR */
         case 0x27: set_reg(cpu, rd, ~(rs_val | rt_val)); break;    /* NOR */
         case 0x2A: set_reg(cpu, rd, (int32_t)rs_val < (int32_t)rt_val ? 1 : 0); break; /* SLT */
@@ -337,7 +397,8 @@ static void exec_one(CPUState* cpu) {
     case 0x09: set_reg(cpu, RT(insn), rs_val + (uint32_t)SIMM(insn)); break; /* ADDIU */
     case 0x0A: set_reg(cpu, RT(insn), (int32_t)rs_val < SIMM(insn) ? 1 : 0); break; /* SLTI */
     case 0x0B: set_reg(cpu, RT(insn), rs_val < (uint32_t)SIMM(insn) ? 1 : 0); break; /* SLTIU */
-    case 0x0C: set_reg(cpu, RT(insn), rs_val & IMM16(insn)); break; /* ANDI */
+    case 0x0C: set_reg_precision_andi(cpu, RT(insn), RS(insn), IMM16(insn),
+                                      rs_val & IMM16(insn)); break; /* ANDI */
     case 0x0D: set_reg(cpu, RT(insn), rs_val | IMM16(insn)); break; /* ORI */
     case 0x0E: set_reg(cpu, RT(insn), rs_val ^ IMM16(insn)); break; /* XORI */
     case 0x0F: set_reg(cpu, RT(insn), (uint32_t)IMM16(insn) << 16); break; /* LUI */
@@ -370,13 +431,15 @@ static void exec_one(CPUState* cpu) {
         uint32_t cop_op = RS(insn);
         switch (cop_op) {
         case 0x00: /* MFC2 */
-            set_load_delay(RT(insn), gte_read_data(cpu, RD(insn)));
+            set_load_delay_gte(RT(insn), gte_read_data(cpu, RD(insn)), RD(insn));
             break;
         case 0x02: /* CFC2 */
             set_load_delay(RT(insn), gte_read_ctrl(cpu, RD(insn)));
             break;
         case 0x04: /* MTC2 */
             gte_write_data(cpu, RD(insn), rt_val);
+            gte_precision_gte_from_gpr((uint8_t)RD(insn),
+                                       (uint8_t)RT(insn), rt_val);
             break;
         case 0x06: /* CTC2 */
             gte_write_ctrl(cpu, RD(insn), rt_val);
@@ -420,7 +483,7 @@ static void exec_one(CPUState* cpu) {
     }
     case 0x23: { /* LW */
         uint32_t addr = rs_val + (uint32_t)SIMM(insn);
-        set_load_delay(RT(insn), cpu->read_word(addr));
+        set_load_delay_ram(RT(insn), cpu->read_word(addr), addr);
         break;
     }
     case 0x24: { /* LBU */
@@ -475,6 +538,7 @@ static void exec_one(CPUState* cpu) {
     case 0x2B: { /* SW */
         uint32_t addr = rs_val + (uint32_t)SIMM(insn);
         cpu->write_word(addr, rt_val);
+        gte_precision_store_gpr(addr, (uint8_t)RT(insn), rt_val);
         break;
     }
     case 0x2E: { /* SWR */

@@ -16,7 +16,8 @@ Current validated scope:
 - retail GPU, SPU/XA, CD-ROM and PAD activity with measured native-overlay and
   interpreter ownership;
 - human-accepted 4x rendering, native 16:9 world presentation, full-width
-  cinematic mattes, and mouse/keyboard control through arrival in Mission 4;
+  cinematic mattes, PGXP precise geometry/culling, and mouse/keyboard control
+  through arrival in Mission 4;
 - deterministic Release regression routes and the complete framework suite.
 
 Visible/manual validation revoked the earlier native-overlay compatibility
@@ -28,8 +29,9 @@ disabled until entry-level native/interpreter equivalence is proved.
 
 The public download is a clean bootstrap package, not a pre-generated game
 binary. It verifies the user's supported disc, generates retail-derived code
-locally, applies the accepted SF3 profile, and compiles a private Release build.
-Download it from [GitHub Releases](https://github.com/Alexbeav/syphon_filter_3_recompiled/releases)
+locally, applies the accepted widescreen/PGXP SF3 profile, and compiles a
+private Release build.
+Download it from [GitHub Releases](https://github.com/Alexbeav/Syphon-Filter-3-Recompiled/releases)
 and see [`docs/sf3/PUBLIC_BUILD.md`](docs/sf3/PUBLIC_BUILD.md).
 
 You must supply your own legally obtained USA BIN/CUE image. Retail executable,

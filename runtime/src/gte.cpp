@@ -219,11 +219,65 @@ static PreciseProjection s_precise_sxy[4] = {};
 struct PrecisionStoreEntry {
     uint32_t addr;
     PreciseProjection projection;
+    uint32_t packed;
+    uint32_t x_mask;
+    uint32_t y_mask;
     uint32_t generation;
 };
 static PrecisionStoreEntry s_precision_store[PRECISION_STORE_SIZE];
+struct PrecisionStoreAttempt {
+    uint32_t addr;
+    uint32_t pc;
+    int32_t result;
+    uint8_t reg;
+};
+static PrecisionStoreAttempt s_precision_attempt[PRECISION_STORE_SIZE];
+extern "C" uint32_t g_debug_last_store_pc;
 static uint32_t s_precision_generation = 1;
 static int s_precision_tracking = 0;
+struct PrecisionGprEntry {
+    PreciseProjection projection;
+    uint32_t packed;
+    uint32_t x_mask;
+    uint32_t y_mask;
+    uint32_t generation;
+};
+static PrecisionGprEntry s_precision_gpr[32] = {};
+static uint64_t s_precise_nclip_complete = 0;
+static uint64_t s_precise_nclip_sign_disagreements = 0;
+static uint64_t s_precise_nclip_overrides = 0;
+static uint64_t s_native_culled_precise_visible = 0;
+static uint64_t s_native_visible_precise_culled = 0;
+static int32_t s_latest_nclip_native_area = 0;
+static int8_t s_latest_nclip_precise_sign = 0;
+static int s_precise_culling_enabled = 0;
+
+extern "C" void gte_precision_culling_set(int enabled) {
+    s_precise_culling_enabled = enabled ? 1 : 0;
+}
+
+extern "C" void gte_precision_cull_stats_reset(void) {
+    s_precise_nclip_complete = 0;
+    s_precise_nclip_sign_disagreements = 0;
+    s_precise_nclip_overrides = 0;
+    s_native_culled_precise_visible = 0;
+    s_native_visible_precise_culled = 0;
+    s_latest_nclip_native_area = 0;
+    s_latest_nclip_precise_sign = 0;
+}
+
+extern "C" void gte_precision_cull_stats_get(
+    uint64_t *complete, uint64_t *disagreements,
+    uint64_t *overrides, uint64_t *native_culled, uint64_t *native_visible,
+    int32_t *latest_native_area, int8_t *latest_precise_sign) {
+    if (complete) *complete = s_precise_nclip_complete;
+    if (disagreements) *disagreements = s_precise_nclip_sign_disagreements;
+    if (overrides) *overrides = s_precise_nclip_overrides;
+    if (native_culled) *native_culled = s_native_culled_precise_visible;
+    if (native_visible) *native_visible = s_native_visible_precise_culled;
+    if (latest_native_area) *latest_native_area = s_latest_nclip_native_area;
+    if (latest_precise_sign) *latest_precise_sign = s_latest_nclip_precise_sign;
+}
 static PreciseProjection s_speculative_saved_sxy[4];
 static uint32_t s_speculative_depth = 0;
 static int s_speculative_timeline_invalidated = 0;
@@ -244,6 +298,7 @@ static void gte_geom_generation_advance(void) {
 
 extern "C" void gte_precision_timeline_invalidate(void) {
     for (int i = 0; i < 4; ++i) s_precise_sxy[i].valid = 0;
+    for (int i = 0; i < 32; ++i) s_precision_gpr[i].generation = 0;
     /* Raw machine-state restore is authoritative even if host polling reached
      * it during a speculative validation pass. Defer the generation advance
      * until the outer transaction ends so old provenance cannot be restored. */
@@ -290,48 +345,312 @@ static inline int precision_ram_address(uint32_t addr, uint32_t *physical) {
     return 1;
 }
 
+/* GTE packet builders also stage words in the 1 KiB CPU scratchpad before an
+ * exact LW/SW copy reaches DMA-visible RAM. Scratchpad keys live in a disjoint
+ * host-only namespace; final GPU lookup remains RAM-only. */
+static inline int precision_source_address(uint32_t addr, uint32_t *key) {
+    if (precision_ram_address(addr, key)) return 1;
+    const uint32_t mapped = addr & 0x1FFFFFFFu;
+    if (mapped >= 0x1F800000u && mapped < 0x1F800400u) {
+        *key = 0x80000000u | (mapped & 0x3FCu);
+        return 1;
+    }
+    return 0;
+}
+
+static GtePrecisionStatus precision_query_source(
+    uint32_t addr, uint32_t packed, int32_t *x16, int32_t *y16, uint16_t *z) {
+    uint32_t key;
+    if (!precision_source_address(addr, &key)) return GTE_PRECISION_NON_RAM;
+    const PrecisionStoreEntry &entry = s_precision_store[precision_hash(key)];
+    if (entry.generation == 0) return GTE_PRECISION_MISSING;
+    if (entry.generation != s_precision_generation) return GTE_PRECISION_STALE;
+    if (entry.addr != key) return GTE_PRECISION_ADDRESS_MISMATCH;
+    if (!entry.projection.valid || entry.projection.z == 0)
+        return GTE_PRECISION_INVALID;
+    if (entry.packed != packed)
+        return GTE_PRECISION_PACKED_MISMATCH;
+    /* GTE screen coordinates are signed 11-bit values. A CPU reconstruction
+     * is exact only when every payload bit of both components still descends
+     * from the same projection and the reconstructed integer halves match it. */
+    if ((entry.x_mask & 0x000007FFu) != 0x000007FFu ||
+        (entry.y_mask & 0x07FF0000u) != 0x07FF0000u ||
+        (packed & 0xFFFFu) != (entry.projection.packed & 0xFFFFu) ||
+        (packed >> 16) != (entry.projection.packed >> 16))
+        return GTE_PRECISION_INVALID;
+    if (x16) *x16 = entry.projection.x16;
+    if (y16) *y16 = entry.projection.y16;
+    if (z) *z = entry.projection.z;
+    return GTE_PRECISION_EXACT;
+}
+
 extern "C" void gte_precision_tracking_set(int enabled) {
     s_precision_tracking = enabled ? 1 : 0;
+    std::memset(s_precision_gpr, 0, sizeof(s_precision_gpr));
     gte_precision_generation_advance();
 }
 
 extern "C" void gte_precision_store_word(uint32_t addr, uint8_t reg) {
+    uint32_t key;
+    if (!precision_source_address(addr, &key)) return;
+    PrecisionStoreAttempt &attempt = s_precision_attempt[precision_hash(key)];
+    attempt = {key, g_debug_last_store_pc, -1, reg};
     if (s_speculative_depth != 0 || s_gte_replay_sandbox || !s_precision_tracking ||
-        reg < 12 || reg > 15) return;
+        reg < 12 || reg > 15) {
+        attempt.result = -2;
+        return;
+    }
     int index = reg == 15 ? 2 : (int)reg - 12;
     const PreciseProjection &projection = s_precise_sxy[index];
     if (!projection.valid) return;
-    uint32_t physical;
-    if (!precision_ram_address(addr, &physical)) return;
-    PrecisionStoreEntry &entry = s_precision_store[precision_hash(physical)];
-    entry.addr = physical;
+    PrecisionStoreEntry &entry = s_precision_store[precision_hash(key)];
+    entry.addr = key;
     entry.projection = projection;
+    entry.packed = projection.packed;
+    entry.x_mask = 0x0000FFFFu;
+    entry.y_mask = 0xFFFF0000u;
     entry.generation = s_precision_generation;
+    attempt.result = 1;
+}
+
+extern "C" int gte_precision_debug_store_attempt(uint32_t addr,
+                                                    uint32_t *pc,
+                                                    uint8_t *reg) {
+    uint32_t key;
+    if (!precision_source_address(addr, &key)) return 0;
+    const PrecisionStoreAttempt &attempt =
+        s_precision_attempt[precision_hash(key)];
+    if (attempt.addr != key) return 0;
+    if (pc) *pc = attempt.pc;
+    if (reg) *reg = attempt.reg;
+    return attempt.result;
+}
+
+extern "C" void gte_precision_gpr_invalidate(uint8_t gpr) {
+    if (gpr == 0 || gpr >= 32 || s_speculative_depth != 0 ||
+        s_gte_replay_sandbox || !s_precision_tracking) return;
+    s_precision_gpr[gpr].generation = 0;
+}
+
+extern "C" void gte_precision_gpr_from_gte(uint8_t gpr, uint8_t reg,
+                                             uint32_t packed) {
+    if (gpr == 0 || gpr >= 32) return;
+    gte_precision_gpr_invalidate(gpr);
+    if (s_speculative_depth != 0 || s_gte_replay_sandbox ||
+        !s_precision_tracking || reg < 12 || reg > 15) return;
+    const int index = reg == 15 ? 2 : (int)reg - 12;
+    const PreciseProjection &projection = s_precise_sxy[index];
+    if (!projection.valid || projection.packed != packed) return;
+    s_precision_gpr[gpr].projection = projection;
+    s_precision_gpr[gpr].packed = packed;
+    s_precision_gpr[gpr].x_mask = 0x0000FFFFu;
+    s_precision_gpr[gpr].y_mask = 0xFFFF0000u;
+    s_precision_gpr[gpr].generation = s_precision_generation;
+}
+
+static int precision_load_value(uint32_t addr, uint32_t packed,
+                                PrecisionGprEntry *value) {
+    uint32_t key;
+    if (!precision_source_address(addr, &key)) return 0;
+    const PrecisionStoreEntry &entry = s_precision_store[precision_hash(key)];
+    if (entry.generation != s_precision_generation || entry.addr != key ||
+        !entry.projection.valid || entry.packed != packed) return 0;
+    value->projection = entry.projection;
+    value->packed = entry.packed;
+    value->x_mask = entry.x_mask;
+    value->y_mask = entry.y_mask;
+    value->generation = entry.generation;
+    return 1;
+}
+
+extern "C" void gte_precision_gpr_from_ram(uint8_t gpr, uint32_t addr,
+                                             uint32_t packed) {
+    if (gpr == 0 || gpr >= 32) return;
+    gte_precision_gpr_invalidate(gpr);
+    if (s_speculative_depth != 0 || s_gte_replay_sandbox ||
+        !s_precision_tracking) return;
+    PrecisionGprEntry value = {};
+    if (!precision_load_value(addr, packed, &value)) return;
+    s_precision_gpr[gpr] = value;
+}
+
+extern "C" uint32_t gte_precision_gpr_load_word(uint8_t gpr, uint32_t addr,
+                                                  uint32_t packed) {
+    gte_precision_gpr_from_ram(gpr, addr, packed);
+    return packed;
+}
+
+extern "C" void gte_precision_store_gpr(uint32_t addr, uint8_t gpr,
+                                          uint32_t packed) {
+    if (gpr == 0 || gpr >= 32 || s_speculative_depth != 0 ||
+        s_gte_replay_sandbox || !s_precision_tracking) return;
+    const PrecisionGprEntry &source = s_precision_gpr[gpr];
+    if (source.generation != s_precision_generation ||
+        !source.projection.valid || source.packed != packed) return;
+    uint32_t key;
+    if (!precision_source_address(addr, &key)) return;
+    PrecisionStoreEntry &target = s_precision_store[precision_hash(key)];
+    target.addr = key;
+    target.projection = source.projection;
+    target.packed = source.packed;
+    target.x_mask = source.x_mask;
+    target.y_mask = source.y_mask;
+    target.generation = s_precision_generation;
+}
+
+static inline int precision_gpr_live(const PrecisionGprEntry &entry) {
+    return entry.generation == s_precision_generation &&
+           entry.projection.valid;
+}
+
+static inline int precision_same_projection(const PrecisionGprEntry &a,
+                                            const PrecisionGprEntry &b) {
+    return a.projection.packed == b.projection.packed &&
+           a.projection.x16 == b.projection.x16 &&
+           a.projection.y16 == b.projection.y16 &&
+           a.projection.z == b.projection.z;
+}
+
+extern "C" void gte_precision_gpr_shift(uint8_t dst, uint8_t src,
+                                          uint8_t amount, uint8_t kind,
+                                          uint32_t result) {
+    if (dst == 0 || dst >= 32 || src >= 32 || amount >= 32 ||
+        s_speculative_depth != 0 || s_gte_replay_sandbox ||
+        !s_precision_tracking) return;
+    const PrecisionGprEntry source = s_precision_gpr[src];
+    s_precision_gpr[dst].generation = 0;
+    if (!precision_gpr_live(source)) return;
+    const uint32_t expected = kind == 0 ? source.packed << amount :
+        (kind == 1 ? source.packed >> amount :
+         (uint32_t)((int32_t)source.packed >> amount));
+    if (expected != result || kind > 2) return;
+    PrecisionGprEntry value = source;
+    value.packed = result;
+    if (kind == 0) {
+        value.x_mask <<= amount;
+        value.y_mask <<= amount;
+    } else {
+        value.x_mask >>= amount;
+        value.y_mask >>= amount;
+    }
+    s_precision_gpr[dst] = value;
+}
+
+extern "C" void gte_precision_gpr_andi(uint8_t dst, uint8_t src,
+                                         uint32_t immediate,
+                                         uint32_t result) {
+    if (dst == 0 || dst >= 32 || src >= 32 || s_speculative_depth != 0 ||
+        s_gte_replay_sandbox || !s_precision_tracking) return;
+    const PrecisionGprEntry source = s_precision_gpr[src];
+    s_precision_gpr[dst].generation = 0;
+    if (!precision_gpr_live(source) ||
+        (source.packed & immediate) != result) return;
+    PrecisionGprEntry value = source;
+    value.packed = result;
+    value.x_mask &= immediate;
+    value.y_mask &= immediate;
+    s_precision_gpr[dst] = value;
+}
+
+extern "C" void gte_precision_gpr_bitwise(uint8_t dst, uint8_t lhs,
+                                            uint8_t rhs, uint8_t kind,
+                                            uint32_t result) {
+    if (dst == 0 || dst >= 32 || lhs >= 32 || rhs >= 32 || kind > 1 ||
+        s_speculative_depth != 0 || s_gte_replay_sandbox ||
+        !s_precision_tracking) return;
+    const PrecisionGprEntry a = s_precision_gpr[lhs];
+    const PrecisionGprEntry b = s_precision_gpr[rhs];
+    s_precision_gpr[dst].generation = 0;
+    const uint32_t a_packed = precision_gpr_live(a) ? a.packed : 0;
+    const uint32_t b_packed = precision_gpr_live(b) ? b.packed : 0;
+    const uint32_t actual_a = precision_gpr_live(a) ? a_packed :
+        (lhs == dst ? a.packed : 0);
+    const uint32_t actual_b = precision_gpr_live(b) ? b_packed :
+        (rhs == dst ? b.packed : 0);
+    (void)actual_a;
+    (void)actual_b;
+
+    /* The raw operands are retained in live entries. An untagged operand has
+     * no cached raw value, so callers use this helper only when at least one
+     * tagged operand exists; result consistency plus mask blocking below keeps
+     * propagation conservative. */
+    const int a_live = precision_gpr_live(a);
+    const int b_live = precision_gpr_live(b);
+    if (!a_live && !b_live) return;
+    if (a_live && b_live && !precision_same_projection(a, b)) return;
+    PrecisionGprEntry value = a_live ? a : b;
+    if (a_live && b_live) {
+        if ((kind == 0 ? (a.packed & b.packed) : (a.packed | b.packed)) != result)
+            return;
+        if (kind == 0) {
+            value.x_mask = (a.x_mask & b.packed) | (b.x_mask & a.packed);
+            value.y_mask = (a.y_mask & b.packed) | (b.y_mask & a.packed);
+        } else {
+            value.x_mask = (a.x_mask & ~b.packed) | (b.x_mask & ~a.packed);
+            value.y_mask = (a.y_mask & ~b.packed) | (b.y_mask & ~a.packed);
+        }
+    } else {
+        /* With one untagged operand, derive which tagged bits demonstrably
+         * survived by comparing the tagged value with the final result. */
+        const PrecisionGprEntry &tagged = a_live ? a : b;
+        if (kind == 0) {
+            value.x_mask = tagged.x_mask & result;
+            value.y_mask = tagged.y_mask & result;
+        } else {
+            const uint32_t preserved = ~(result ^ tagged.packed);
+            value.x_mask = tagged.x_mask & preserved;
+            value.y_mask = tagged.y_mask & preserved;
+        }
+    }
+    value.packed = result;
+    s_precision_gpr[dst] = value;
+}
+
+extern "C" void gte_precision_gte_from_gpr(uint8_t reg, uint8_t gpr,
+                                             uint32_t packed) {
+    if (reg < 12 || reg > 15 || gpr == 0 || gpr >= 32 ||
+        s_speculative_depth != 0 || s_gte_replay_sandbox ||
+        !s_precision_tracking) return;
+    const PrecisionGprEntry source = s_precision_gpr[gpr];
+    if (!precision_gpr_live(source) || source.packed != packed ||
+        (source.x_mask & 0x000007FFu) != 0x000007FFu ||
+        (source.y_mask & 0x07FF0000u) != 0x07FF0000u ||
+        (packed & 0xFFFFu) != (source.projection.packed & 0xFFFFu) ||
+        (packed >> 16) != (source.projection.packed >> 16)) return;
+    const int index = reg == 15 ? 2 : (int)reg - 12;
+    s_precise_sxy[index] = source.projection;
+    s_precise_sxy[index].packed = packed;
+    s_precise_sxy[index].valid = source.projection.z != 0;
 }
 
 extern "C" void gte_precision_invalidate_word(uint32_t addr) {
     if (s_speculative_depth != 0 || s_gte_replay_sandbox || !s_precision_tracking) return;
-    uint32_t physical;
-    if (!precision_ram_address(addr, &physical)) return;
-    PrecisionStoreEntry &entry = s_precision_store[precision_hash(physical)];
-    if (entry.generation == s_precision_generation && entry.addr == physical)
+    uint32_t key;
+    if (!precision_source_address(addr, &key)) return;
+    PrecisionStoreEntry &entry = s_precision_store[precision_hash(key)];
+    if (entry.generation == s_precision_generation && entry.addr == key) {
         entry.generation = 0;
+        PrecisionStoreAttempt &attempt =
+            s_precision_attempt[precision_hash(key)];
+        attempt = {key, g_debug_last_store_pc, -3, 0};
+    }
+}
+
+extern "C" GtePrecisionStatus gte_precision_query_word(
+    uint32_t addr, uint32_t packed, int32_t *x16, int32_t *y16,
+    uint16_t *z) {
+    if (!s_precision_tracking) return GTE_PRECISION_DISABLED;
+    if (s_speculative_depth != 0) return GTE_PRECISION_SPECULATIVE;
+    uint32_t physical;
+    if (!precision_ram_address(addr, &physical)) return GTE_PRECISION_NON_RAM;
+    return precision_query_source(physical, packed, x16, y16, z);
 }
 
 extern "C" int gte_precision_load_word(uint32_t addr, uint32_t packed,
                                         int32_t *x16, int32_t *y16,
                                         uint16_t *z) {
-    if (s_speculative_depth != 0 || !s_precision_tracking) return 0;
-    uint32_t physical;
-    if (!precision_ram_address(addr, &physical)) return 0;
-    const PrecisionStoreEntry &entry = s_precision_store[precision_hash(physical)];
-    if (entry.generation != s_precision_generation || entry.addr != physical ||
-        !entry.projection.valid || entry.projection.packed != packed)
-        return 0;
-    if (x16) *x16 = entry.projection.x16;
-    if (y16) *y16 = entry.projection.y16;
-    if (z) *z = entry.projection.z;
-    return entry.projection.z != 0;
+    return gte_precision_query_word(addr, packed, x16, y16, z) ==
+           GTE_PRECISION_EXACT;
 }
 
 static inline uint32_t geom_hash(uint32_t packed) {
@@ -904,6 +1223,41 @@ void gte_nclip(GTEState* gte, uint32_t instr) {
     int64_t mac0 = (int64_t)sx0 * (sy1 - sy2) +
                    (int64_t)sx1 * (sy2 - sy0) +
                    (int64_t)sx2 * (sy0 - sy1);
+    if (s_precision_tracking &&
+        s_precise_sxy[0].valid && s_precise_sxy[1].valid &&
+        s_precise_sxy[2].valid &&
+        s_precise_sxy[0].packed == (uint32_t)gte->SXY[0] &&
+        s_precise_sxy[1].packed == (uint32_t)gte->SXY[1] &&
+        s_precise_sxy[2].packed == (uint32_t)gte->SXY[2]) {
+        const long double x10 = (long double)s_precise_sxy[1].x16 -
+                                s_precise_sxy[0].x16;
+        const long double y10 = (long double)s_precise_sxy[1].y16 -
+                                s_precise_sxy[0].y16;
+        const long double x20 = (long double)s_precise_sxy[2].x16 -
+                                s_precise_sxy[0].x16;
+        const long double y20 = (long double)s_precise_sxy[2].y16 -
+                                s_precise_sxy[0].y16;
+        const long double precise_area = x10 * y20 - y10 * x20;
+        const int native_sign = (mac0 > 0) - (mac0 < 0);
+        const int precise_sign = (precise_area > 0) - (precise_area < 0);
+        s_precise_nclip_complete++;
+        if (native_sign != precise_sign) {
+            s_precise_nclip_sign_disagreements++;
+            if (native_sign <= 0 && precise_sign > 0)
+                s_native_culled_precise_visible++;
+            if (native_sign > 0 && precise_sign <= 0)
+                s_native_visible_precise_culled++;
+            s_latest_nclip_native_area = (int32_t)mac0;
+            s_latest_nclip_precise_sign = (int8_t)precise_sign;
+            /* NCLIP consumers use MAC0's sign for the visibility decision.
+             * Preserve native magnitude whenever both calculations agree;
+             * on an exact disagreement, substitute only the precise sign. */
+            if (s_precise_culling_enabled) {
+                mac0 = precise_sign;
+                s_precise_nclip_overrides++;
+            }
+        }
+    }
     gte->check_mac0_overflow(mac0);
     gte->MAC0 = static_cast<int32_t>(mac0);
     gte->set_error_flag();
@@ -1892,21 +2246,29 @@ extern "C" void gte_write_data(CPUState* cpu, uint8_t reg, uint32_t val) {
         case 12: case 13:
             cpu->gte_data[reg] = val;
             if (!PSXRecomp::GTE::s_gte_replay_sandbox)
-                for (int i = 0; i < 4; ++i) PSXRecomp::GTE::s_precise_sxy[i].valid = 0;
+                PSXRecomp::GTE::s_precise_sxy[reg - 12].valid = 0;
             break;
         case 14:
             cpu->gte_data[14] = val;
             cpu->gte_data[15] = val;
-            if (!PSXRecomp::GTE::s_gte_replay_sandbox)
-                for (int i = 0; i < 4; ++i) PSXRecomp::GTE::s_precise_sxy[i].valid = 0;
+            if (!PSXRecomp::GTE::s_gte_replay_sandbox) {
+                PSXRecomp::GTE::s_precise_sxy[2].valid = 0;
+                PSXRecomp::GTE::s_precise_sxy[3].valid = 0;
+            }
             break;
         case 15:
             cpu->gte_data[12] = cpu->gte_data[13];
             cpu->gte_data[13] = cpu->gte_data[14];
             cpu->gte_data[14] = val;
             cpu->gte_data[15] = val;
-            if (!PSXRecomp::GTE::s_gte_replay_sandbox)
-                for (int i = 0; i < 4; ++i) PSXRecomp::GTE::s_precise_sxy[i].valid = 0;
+            if (!PSXRecomp::GTE::s_gte_replay_sandbox) {
+                PSXRecomp::GTE::s_precise_sxy[0] =
+                    PSXRecomp::GTE::s_precise_sxy[1];
+                PSXRecomp::GTE::s_precise_sxy[1] =
+                    PSXRecomp::GTE::s_precise_sxy[2];
+                PSXRecomp::GTE::s_precise_sxy[2].valid = 0;
+                PSXRecomp::GTE::s_precise_sxy[3].valid = 0;
+            }
             break;
         case 23:
             cpu->gte_data[23] = 0;

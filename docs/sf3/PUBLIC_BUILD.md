@@ -19,15 +19,17 @@ Maintainers build the audited package with:
 $env:PYTHONUTF8 = '1'
 python tools\build_cli.py release
 powershell -ExecutionPolicy Bypass -File tools\package_sf3_bootstrap.ps1 `
-  -Version v0.1.0-alpha
+  -Version v0.2.2-alpha
 ```
 
 The package test checks every declared path, size and SHA-256 and rejects extra
 files. The packager additionally rejects retail-media extensions, SCUS payloads,
 overlay/capture/report/card names, and generated/private directory boundaries.
 
-The supported first profile is 4× OpenGL at 16:9 with the human-accepted SF3
+The supported enhanced profile is 4× OpenGL at 16:9 with PGXP precise geometry,
+perspective textures, exact-FIFO precise culling, the human-accepted SF3
 mouse/keyboard mapping and full-width cinematic mattes. A 4× 4:3 compatibility
-profile is also available from the PowerShell entry point. HUD relocation is
-still low-priority presentation debt, and campaign validation beyond arrival in
-Mission 4 remains incomplete.
+profile is also available from the PowerShell entry point. Minor residual
+texture wobble and model seams remain, HUD relocation is still low-priority
+presentation debt, and campaign validation beyond arrival in Mission 4 remains
+incomplete.

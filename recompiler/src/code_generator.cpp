@@ -188,8 +188,9 @@ std::string CodeGenerator::translate_lw(uint32_t instr) {
         /* load to $zero: no GPR write, but the data access + R3000A interlock still run */
         return fmt::format("(void)psx_cyc_load_word(cpu, {}, 0, 0x{:X}u);", addr, mask);
     }
-    return fmt::format("{} = psx_cyc_load_word(cpu, {}, {}, 0x{:X}u);",
-                       reg_name(rt), addr, rt, mask);
+    return fmt::format("{} = gte_precision_gpr_load_word({}, {}, "
+                       "psx_cyc_load_word(cpu, {}, {}, 0x{:X}u));",
+                       reg_name(rt), rt, addr, addr, rt, mask);
 }
 
 std::string CodeGenerator::translate_sw(uint32_t instr) {
@@ -198,10 +199,14 @@ std::string CodeGenerator::translate_sw(uint32_t instr) {
     int16_t offset = get_imm16(instr);
 
     if (offset == 0) {
-        return fmt::format("psx_store_cycle_barrier(); cpu->write_word({}, {});", reg_name(rs), reg_name(rt));
+        return fmt::format("psx_store_cycle_barrier(); cpu->write_word({}, {}); "
+                           "gte_precision_store_gpr({}, {}, {});",
+                           reg_name(rs), reg_name(rt), reg_name(rs), rt, reg_name(rt));
     } else {
-        return fmt::format("psx_store_cycle_barrier(); cpu->write_word({} + {}, {});",
-                          reg_name(rs), offset, reg_name(rt));
+        return fmt::format("psx_store_cycle_barrier(); cpu->write_word({} + {}, {}); "
+                           "gte_precision_store_gpr({} + {}, {}, {});",
+                          reg_name(rs), offset, reg_name(rt), reg_name(rs), offset,
+                          rt, reg_name(rt));
     }
 }
 
@@ -1474,6 +1479,8 @@ std::string CodeGenerator::translate_instruction(uint32_t addr, uint32_t instr) 
                         } else {
                             code = gte_read + fmt::format("{} = cpu->gte_data[{}];  /* mfc2 */", reg_name(rt), rd);
                         }
+                        code += fmt::format(" gte_precision_gpr_from_gte({}, {}, {});",
+                                            rt, rd, reg_name(rt));
                     } else if (cop_op == 0x02) { // CFC2 - move from COP2 control
                         if (PSXRecompGTERegisters::ctrl_read_needs_helper(static_cast<uint8_t>(rd))) {
                             code = gte_read + fmt::format("{} = gte_read_ctrl(cpu, {});  /* cfc2 */", reg_name(rt), rd);
@@ -1573,6 +1580,61 @@ std::string CodeGenerator::translate_instruction(uint32_t addr, uint32_t instr) 
             default:
                 code = fmt::format("/* TODO: opcode=0x{:02X} */", opcode);
         }
+    }
+
+    /* Host-only PGXP tags follow guest register identity, never rounded value.
+     * Component-aware operations update their tag after the guest result exists;
+     * every other architectural write remains conservatively invalidating. */
+    uint32_t precision_dest = 0;
+    bool precision_writes_gpr = false;
+    std::string precision_update;
+    if (opcode == 0x00) {
+        const uint32_t funct = get_funct(instr);
+        if ((funct <= 0x07) || funct == 0x09 || funct == 0x10 || funct == 0x12 ||
+            (funct >= 0x20 && funct <= 0x2B)) {
+            precision_dest = get_rd(instr);
+            precision_writes_gpr = true;
+        }
+        const uint32_t rd = get_rd(instr), rt = get_rt(instr);
+        if (rd != 0 && (funct == 0x00 || funct == 0x02 || funct == 0x03)) {
+            const uint32_t kind = funct == 0x00 ? 0u : (funct == 0x02 ? 1u : 2u);
+            precision_update = fmt::format(
+                " gte_precision_gpr_shift({}, {}, {}, {}, {});",
+                rd, rt, get_shamt(instr), kind, reg_name(rd));
+        } else if (rd != 0 && (funct == 0x24 || funct == 0x25)) {
+            precision_update = fmt::format(
+                " gte_precision_gpr_bitwise({}, {}, {}, {}, {});",
+                rd, get_rs(instr), rt, funct == 0x24 ? 0u : 1u,
+                reg_name(rd));
+        }
+    } else if (opcode == 0x03) {
+        precision_dest = 31;
+        precision_writes_gpr = true;
+    } else if (opcode == 0x01 && (get_rt(instr) == 0x10 || get_rt(instr) == 0x11)) {
+        precision_dest = 31;
+        precision_writes_gpr = true;
+    } else if ((opcode >= 0x08 && opcode <= 0x0F) ||
+               (opcode >= 0x20 && opcode <= 0x26)) {
+        precision_dest = get_rt(instr);
+        precision_writes_gpr = true;
+        if (opcode == 0x0C && precision_dest != 0) {
+            precision_update = fmt::format(
+                " gte_precision_gpr_andi({}, {}, 0x{:04X}u, {});",
+                precision_dest, get_rs(instr), get_imm16_u(instr),
+                reg_name(precision_dest));
+        }
+    } else if ((opcode == 0x10 || opcode == 0x12) &&
+               (((instr >> 21) & 0x1Fu) == 0x00 || ((instr >> 21) & 0x1Fu) == 0x02)) {
+        precision_dest = get_rt(instr);
+        precision_writes_gpr = true;
+    }
+    if (precision_writes_gpr && precision_dest != 0 && precision_update.empty())
+        code = fmt::format("gte_precision_gpr_invalidate({}); ", precision_dest) + code;
+    if (!precision_update.empty()) code += precision_update;
+    if (opcode == 0x12 && ((instr >> 21) & 0x1Fu) == 0x04) {
+        const uint32_t rt = get_rt(instr), rd = get_rd(instr);
+        code += fmt::format(" gte_precision_gte_from_gpr({}, {}, {});",
+                            rd, rt, reg_name(rt));
     }
 
     return config_.indent + code + comment;

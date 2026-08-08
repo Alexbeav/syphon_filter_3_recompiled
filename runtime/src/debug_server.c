@@ -4887,7 +4887,9 @@ static void handle_gpu_state(int id, const char *json)
     GpuWsDebug ws;
     gpu_ws_get_debug(&ws);
     uint32_t precision_candidates = 0, precision_unmatched = 0;
+    GpuPrecisionStats precision;
     gpu_precision_triangle_stats(&precision_candidates, &precision_unmatched);
+    gpu_precision_get_stats(&precision);
     send_fmt("{\"id\":%d,\"ok\":true,"
              "\"display_x\":%d,\"display_y\":%d,"
              "\"width\":%d,\"height\":%d,"
@@ -4901,7 +4903,53 @@ static void handle_gpu_state(int id, const char *json)
              "\"draw_area\":[%u,%u,%u,%u],"
              "\"draw_offset\":[%d,%d],"
              "\"precision\":{\"candidates\":%u,\"unmatched\":%u,"
-             "\"geometry_hits\":%u,\"perspective_hits\":%u},"
+             "\"geometry_hits\":%u,\"perspective_hits\":%u,"
+             "\"triangles\":%llu,\"complete\":%llu,"
+             "\"partial\":%llu,\"fully_unmatched\":%llu,"
+             "\"cpu_authored\":%llu,\"speculative_vertices\":%llu,"
+             "\"non_ram_vertices\":%llu,\"missing_vertices\":%llu,"
+             "\"stale_vertices\":%llu,"
+             "\"address_mismatch_vertices\":%llu,"
+             "\"packed_mismatch_vertices\":%llu,"
+             "\"invalid_vertices\":%llu,"
+             "\"mixed_shared_edges\":%llu,"
+             "\"precise_shared_edge_mismatches\":%llu,"
+             "\"precise_edge_delta_buckets\":[%llu,%llu,%llu,%llu],"
+             "\"canonicalized_triangles\":%llu,"
+             "\"canonicalized_area_collapses\":%llu,"
+             "\"canonicalized_winding_flips\":%llu,"
+             "\"canonicalization_rollbacks\":%llu,"
+             "\"precise_nclip_complete\":%llu,"
+             "\"precise_nclip_sign_disagreements\":%llu,"
+             "\"precise_nclip_overrides\":%llu,"
+             "\"native_culled_precise_visible\":%llu,"
+             "\"native_visible_precise_culled\":%llu,"
+             "\"temporal_eligibility_flips\":%llu,"
+             "\"temporal_to_complete\":%llu,"
+             "\"temporal_to_fallback\":%llu,"
+             "\"edge_table_drops\":%llu,"
+             "\"temporal_table_drops\":%llu,"
+             "\"latest_mixed_edge\":[\"0x%08X\",\"0x%08X\"],"
+             "\"latest_mixed_complete_addr\":\"0x%08X\","
+             "\"latest_mixed_fallback_addr\":\"0x%08X\","
+             "\"latest_precise_edge\":[\"0x%08X\",\"0x%08X\"],"
+             "\"latest_precise_addrs\":[\"0x%08X\",\"0x%08X\"],"
+             "\"latest_precise_frame\":%u,"
+             "\"latest_precise_max_delta\":%u,"
+             "\"latest_topology_addr\":\"0x%08X\","
+             "\"latest_topology_frame\":%u,"
+             "\"latest_topology_area\":[%lld,%lld],"
+             "\"latest_nclip\":[%d,%d],"
+             "\"latest_flip_addr\":\"0x%08X\","
+             "\"latest_flip_frames\":[%u,%u],"
+             "\"latest_flip_complete\":[%u,%u],"
+             "\"latest_missing_addr\":\"0x%08X\","
+             "\"latest_missing_packed\":\"0x%08X\","
+             "\"sampled_missing_addr\":\"0x%08X\","
+             "\"sampled_missing_packed\":\"0x%08X\","
+             "\"sampled_missing_store_pc\":\"0x%08X\","
+             "\"sampled_missing_store_result\":%d,"
+             "\"sampled_missing_store_reg\":%u},"
              "\"ws\":{\"configured\":%d,\"active\":%d,\"game_mode\":%d,"
              "\"present_native_43\":%d,\"x_margin\":%d,"
              "\"activation_margin\":%d,\"squash\":[%d,%d],"
@@ -4934,6 +4982,66 @@ static void handle_gpu_state(int id, const char *json)
              da.offset_x, da.offset_y,
              precision_candidates, precision_unmatched,
              gpu_geometry_correction_hits(), gpu_texture_correction_hits(),
+             (unsigned long long)precision.triangles,
+             (unsigned long long)precision.complete,
+             (unsigned long long)precision.partial,
+             (unsigned long long)precision.unmatched,
+             (unsigned long long)precision.cpu_authored,
+             (unsigned long long)precision.speculative_vertices,
+             (unsigned long long)precision.non_ram_vertices,
+             (unsigned long long)precision.missing_vertices,
+             (unsigned long long)precision.stale_vertices,
+             (unsigned long long)precision.address_mismatch_vertices,
+             (unsigned long long)precision.packed_mismatch_vertices,
+             (unsigned long long)precision.invalid_vertices,
+             (unsigned long long)precision.mixed_shared_edges,
+             (unsigned long long)precision.precise_shared_edge_mismatches,
+             (unsigned long long)precision.precise_edge_delta_le_1_256,
+             (unsigned long long)precision.precise_edge_delta_le_1_16,
+             (unsigned long long)precision.precise_edge_delta_le_1_2,
+             (unsigned long long)precision.precise_edge_delta_gt_1_2,
+             (unsigned long long)precision.canonicalized_triangles,
+             (unsigned long long)precision.canonicalized_area_collapses,
+             (unsigned long long)precision.canonicalized_winding_flips,
+             (unsigned long long)precision.canonicalization_rollbacks,
+             (unsigned long long)precision.precise_nclip_complete,
+             (unsigned long long)precision.precise_nclip_sign_disagreements,
+             (unsigned long long)precision.precise_nclip_overrides,
+             (unsigned long long)precision.native_culled_precise_visible,
+             (unsigned long long)precision.native_visible_precise_culled,
+             (unsigned long long)precision.temporal_eligibility_flips,
+             (unsigned long long)precision.temporal_to_complete,
+             (unsigned long long)precision.temporal_to_fallback,
+             (unsigned long long)precision.edge_table_drops,
+             (unsigned long long)precision.temporal_table_drops,
+             precision.latest_mixed_edge_a,
+             precision.latest_mixed_edge_b,
+             precision.latest_mixed_complete_addr,
+             precision.latest_mixed_fallback_addr,
+             precision.latest_precise_edge_a,
+             precision.latest_precise_edge_b,
+             precision.latest_precise_first_addr,
+             precision.latest_precise_second_addr,
+             precision.latest_precise_frame,
+             precision.latest_precise_max_delta,
+             precision.latest_topology_addr,
+             precision.latest_topology_frame,
+             (long long)precision.latest_topology_area_before,
+             (long long)precision.latest_topology_area_after,
+             precision.latest_nclip_native_area,
+             (int)precision.latest_nclip_precise_sign,
+             precision.latest_flip_addr,
+             precision.latest_flip_previous_frame,
+             precision.latest_flip_current_frame,
+             precision.latest_flip_previous_complete,
+             precision.latest_flip_current_complete,
+             precision.latest_missing_addr,
+             precision.latest_missing_packed,
+             precision.sampled_missing_addr,
+             precision.sampled_missing_packed,
+             precision.sampled_missing_store_pc,
+             precision.sampled_missing_store_result,
+             precision.sampled_missing_store_reg,
              ws.configured, ws.active, ws.game_mode,
              ws.present_native_43, ws.x_margin, ws.activation_margin,
              ws.xnum, ws.xden,

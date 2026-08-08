@@ -35,6 +35,7 @@ extern "C" void psx_event_step_conservative_env_init(void);
 #include "gpu_render.h"
 extern "C" void gpu_geometry_correction_set(int enabled);
 extern "C" void gpu_texture_correction_set(int enabled);
+extern "C" void gte_precision_culling_set(int enabled);
 #include "gpu_gl_renderer.h"
 #include "gpu_vk_renderer.h"
 #include "frame_pacing.h"
@@ -614,6 +615,7 @@ static int           g_frame_interpolation = 0;
 static int           g_frame_interpolation_fps = 0;
 static int           g_geometry_precision = 0;
 static int           g_perspective_textures = 0;
+static int           g_precise_culling = 0;
 static int           g_frame_interpolation_blend =
     PSX_MOD_FRAME_INTERPOLATION_LINEAR;
 static int           g_frame_interpolation_blend_default =
@@ -5375,6 +5377,7 @@ int main(int argc, char** argv) {
             g_geometry_precision = gc.runtime.video_geometry_precision ? 1 : 0;
             g_perspective_textures =
                 gc.runtime.video_perspective_textures ? 1 : 0;
+            g_precise_culling = gc.runtime.video_precise_culling ? 1 : 0;
             g_video_renderer   = gc.runtime.video_renderer;
             g_video_screen     = gc.runtime.video_screen_kind;
             g_video_aspect_num = gc.runtime.video_aspect_num;
@@ -6801,10 +6804,13 @@ session_reboot:
     gr_set_texture_filter(g_video_texfilter);
     gpu_geometry_correction_set(g_geometry_precision);
     gpu_texture_correction_set(g_perspective_textures);
+    gte_precision_culling_set(g_precise_culling);
     std::fprintf(stdout,
-                 "psxrecomp: geometry precision %s; perspective textures %s\n",
+                 "psxrecomp: geometry precision %s; perspective textures %s; "
+                 "precise culling %s\n",
                  g_geometry_precision ? "enabled" : "disabled",
-                 g_perspective_textures ? "enabled" : "disabled");
+                 g_perspective_textures ? "enabled" : "disabled",
+                 g_precise_culling ? "enabled" : "disabled");
     /* Display aspect. Identity at the default 4:3. The present letterbox uses
      * this aspect; native-wide fills it with a genuinely wider frame (no
      * stretch), squash mode stretches the 4:3 frame into it. */

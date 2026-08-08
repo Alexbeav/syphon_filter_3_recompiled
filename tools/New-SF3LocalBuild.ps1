@@ -104,7 +104,9 @@ if ($actualExeSha256 -cne $expectedExeSha256) {
 $profileConfig = if ($VideoProfile -eq 'widescreen-4x') { 'game-wide.toml' } else { 'game.toml' }
 $configureArgs = @($configure, $output)
 if ($VideoProfile -eq 'widescreen-4x') {
-    $configureArgs += @('--widescreen', '--output-config', $profileConfig)
+    $configureArgs += @(
+        '--widescreen', '--pgxp', '--precise-culling',
+        '--output-config', $profileConfig)
 }
 & python @configureArgs
 if ($LASTEXITCODE -ne 0) { throw 'SF3 profile configuration failed.' }
@@ -123,8 +125,11 @@ if ($generatedConfig -notmatch '(?m)^id\s*=\s*"SCUS-94640"\s*$' -or
     throw 'Generated SF3 configuration failed its identity/compatibility contract.'
 }
 if ($VideoProfile -eq 'widescreen-4x' -and
-    $generatedConfig -notmatch '(?m)^aspect_ratio\s*=\s*"16:9"\s*$') {
-    throw 'Generated SF3 configuration is missing the accepted widescreen profile.'
+    ($generatedConfig -notmatch '(?m)^aspect_ratio\s*=\s*"16:9"\s*$' -or
+     $generatedConfig -notmatch '(?m)^geometry_precision\s*=\s*true\s*$' -or
+     $generatedConfig -notmatch '(?m)^perspective_textures\s*=\s*true\s*$' -or
+     $generatedConfig -notmatch '(?m)^precise_culling\s*=\s*true\s*$')) {
+    throw 'Generated SF3 configuration is missing the accepted widescreen/PGXP profile.'
 }
 
 $metadata = [ordered]@{

@@ -13,6 +13,7 @@ using PSXRecomp::GTE::gte_mfc2;
 using PSXRecomp::GTE::gte_mtc2;
 
 extern "C" void gte_canonicalize_cpu_state(CPUState *cpu);
+extern "C" uint32_t g_debug_last_store_pc = 0;
 extern "C" void gte_test_set_precise_valid_mask(uint32_t mask);
 extern "C" uint32_t gte_test_get_precise_valid_mask(void);
 extern "C" void gte_test_set_timeline_generations(uint32_t precision,
@@ -20,6 +21,7 @@ extern "C" void gte_test_set_timeline_generations(uint32_t precision,
 extern "C" uint32_t gte_test_get_precision_generation(void);
 extern "C" uint32_t gte_test_get_geometry_generation(void);
 extern "C" void gte_precision_tracking_set(int enabled);
+extern "C" void gte_precision_culling_set(int enabled);
 extern "C" void gte_precision_invalidate_word(uint32_t addr);
 extern "C" int gte_precision_load_word(uint32_t addr, uint32_t packed,
                                         int32_t *x16, int32_t *y16,
@@ -488,7 +490,10 @@ int test_precise_sxy_invalidation() {
     for (uint8_t reg = 0; reg < 32; ++reg) {
         gte_test_set_precise_valid_mask(0xFu);
         gte_write_data(&cpu, reg, 0x12345678u);
-        const uint32_t expected = (reg >= 12 && reg <= 15) ? 0u : 0xFu;
+        uint32_t expected = 0xFu;
+        if (reg == 12) expected = 0xEu;
+        if (reg == 13) expected = 0xDu;
+        if (reg == 14 || reg == 15) expected = 0x3u;
         const uint32_t actual = gte_test_get_precise_valid_mask();
         if (actual != expected)
             return fail_value("precise SXY invalidation", 0, reg,
@@ -567,6 +572,10 @@ int test_precision_speculative_transaction() {
 
     gte_precision_speculative_begin();
     gte_precision_speculative_begin();
+    if (gte_precision_query_word(address, packed, &got_x, &got_y, &got_z) !=
+        GTE_PRECISION_SPECULATIVE)
+        return fail_value("speculative precision status", 0, 0, packed,
+                          GTE_PRECISION_SPECULATIVE, 0);
     if (gte_precision_load_word(address, packed, &got_x, &got_y, &got_z) != 0)
         return fail_value("speculative precision read", 0, 0, packed, 0, 1);
     if (gte_geometry_correction_lookup(packed, &got_x, &got_y) != 0)
@@ -666,14 +675,186 @@ int test_precision_address_identity() {
         x != bx || y != by || z != 0x3400u)
         return fail_value("address-owned projection B", 0, 0, packed,
                           static_cast<uint32_t>(bx), static_cast<uint32_t>(x));
+    if (gte_precision_query_word(addr_a, packed ^ 1u, &x, &y, &z) !=
+        GTE_PRECISION_PACKED_MISMATCH)
+        return fail_value("packed mismatch status", 0, 0, packed,
+                          GTE_PRECISION_PACKED_MISMATCH, 0);
     if (gte_precision_load_word(addr_a + 4u, packed, &x, &y, &z) != 0)
         return fail_value("same packed value at wrong address", 0, 0,
                           packed, 0, 1);
 
     gte_precision_timeline_invalidate();
+    if (gte_precision_query_word(addr_a, packed, &x, &y, &z) !=
+        GTE_PRECISION_STALE)
+        return fail_value("stale generation status", 0, 0, packed,
+                          GTE_PRECISION_STALE, 0);
     if (gte_precision_load_word(addr_a, packed, &x, &y, &z) != 0 ||
         gte_precision_load_word(addr_b, packed, &x, &y, &z) != 0)
         return fail_value("stale generation rejected", 0, 0, packed, 0, 1);
+    return 0;
+}
+
+int test_precision_gpr_transport() {
+    constexpr uint32_t packed = 0x00310022u;
+    constexpr uint32_t src = 0x00102040u;
+    constexpr uint32_t dst = 0x00112080u;
+    constexpr uint32_t dst2 = 0x00112084u;
+    constexpr int32_t x16 = 0x00201234, y16 = -0x00105678;
+    constexpr uint16_t z = 0x2345u;
+    int32_t x = 0, y = 0;
+    uint16_t got_z = 0;
+
+    gte_precision_tracking_set(1);
+    gte_test_seed_precise_projection(2, packed, x16, y16, z);
+    gte_precision_gpr_from_gte(8, 14, packed);
+    gte_precision_store_gpr(dst, 8, packed);
+    if (gte_precision_query_word(dst, packed, &x, &y, &got_z) != GTE_PRECISION_EXACT ||
+        x != x16 || y != y16 || got_z != z)
+        return fail_value("MFC2 GPR SW transport", 0, 14, packed, z, got_z);
+
+    gte_precision_gpr_invalidate(8);
+    gte_precision_store_gpr(dst2, 8, packed);
+    if (gte_precision_query_word(dst2, packed, &x, &y, &got_z) == GTE_PRECISION_EXACT)
+        return fail_value("GPR overwrite invalidates", 0, 8, packed, 0, 1);
+
+    gte_precision_store_word(src, 14);
+    gte_precision_gpr_from_ram(9, src, packed);
+    gte_precision_store_gpr(dst2, 9, packed);
+    if (gte_precision_query_word(dst2, packed, &x, &y, &got_z) != GTE_PRECISION_EXACT ||
+        x != x16 || y != y16 || got_z != z)
+        return fail_value("LW GPR SW transport", 0, 9, packed, z, got_z);
+
+    gte_precision_gpr_from_ram(10, src + 4u, packed);
+    gte_precision_store_gpr(dst2 + 4u, 10, packed);
+    if (gte_precision_query_word(dst2 + 4u, packed, &x, &y, &got_z) == GTE_PRECISION_EXACT)
+        return fail_value("RAM source address identity", 0, 10, packed, 0, 1);
+
+    gte_precision_gpr_from_gte(11, 14, packed);
+    gte_precision_store_gpr(dst2 + 8u, 11, packed ^ 1u);
+    if (gte_precision_query_word(dst2 + 8u, packed ^ 1u, &x, &y, &got_z) == GTE_PRECISION_EXACT)
+        return fail_value("GPR packed mismatch", 0, 11, packed, 0, 1);
+
+    gte_precision_gpr_from_gte(12, 14, packed);
+    gte_precision_timeline_invalidate();
+    gte_precision_store_gpr(dst2 + 12u, 12, packed);
+    if (gte_precision_query_word(dst2 + 12u, packed, &x, &y, &got_z) == GTE_PRECISION_EXACT)
+        return fail_value("GPR timeline invalidation", 0, 12, packed, 0, 1);
+
+    /* Scratchpad is a valid exact construction source but never a final
+     * DMA-visible packet owner. SWC2->scratchpad->LW/GPR->SW/RAM must retain
+     * provenance without making direct GPU scratchpad queries eligible. */
+    constexpr uint32_t scratch = 0x1F800120u;
+    constexpr uint32_t scratch_dst = 0x00112100u;
+    gte_test_seed_precise_projection(2, packed, x16, y16, z);
+    gte_precision_store_word(scratch, 14);
+    if (gte_precision_query_word(scratch, packed, &x, &y, &got_z) !=
+        GTE_PRECISION_NON_RAM)
+        return fail_value("scratchpad final query rejected", 0, 14, packed,
+                          GTE_PRECISION_NON_RAM, 0);
+    gte_precision_gpr_from_ram(13, scratch, packed);
+    gte_precision_store_gpr(scratch_dst, 13, packed);
+    if (gte_precision_query_word(scratch_dst, packed, &x, &y, &got_z) !=
+            GTE_PRECISION_EXACT || x != x16 || y != y16 || got_z != z)
+        return fail_value("scratchpad packet-copy transport", 0, 13, packed,
+                          z, got_z);
+    return 0;
+}
+
+int test_precision_cpu_component_reconstruction() {
+    constexpr uint32_t packed = 0x00310022u;
+    constexpr int32_t x16 = 0x00221234;
+    constexpr int32_t y16 = 0x00315678;
+    constexpr uint16_t z = 0x2345u;
+    constexpr uint32_t scratch = 0x1F800180u;
+    constexpr uint32_t dst = 0x00112200u;
+    int32_t got_x = 0, got_y = 0;
+    uint16_t got_z = 0;
+
+    gte_precision_tracking_set(1);
+    gte_test_seed_precise_projection(0, packed, x16, y16, z);
+    gte_precision_gpr_from_gte(13, 12, packed);
+
+    uint32_t yword = packed << 5;
+    gte_precision_gpr_shift(14, 13, 5, 0, yword);
+    yword >>= 21;
+    gte_precision_gpr_shift(14, 14, 21, 1, yword);
+    yword <<= 11;
+    gte_precision_gpr_shift(14, 14, 11, 0, yword);
+
+    const uint32_t depth_word = 0x154u << 22;
+    gte_precision_gpr_invalidate(12);
+    const uint32_t depth_y = depth_word | yword;
+    gte_precision_gpr_bitwise(12, 12, 14, 1, depth_y);
+
+    const uint32_t xword = packed & 0x07FFu;
+    gte_precision_gpr_andi(1, 13, 0x07FFu, xword);
+    const uint32_t table_word = depth_y | xword;
+    gte_precision_gpr_bitwise(12, 12, 1, 1, table_word);
+    gte_precision_store_gpr(scratch, 12, table_word);
+    gte_precision_gpr_from_ram(24, scratch, table_word);
+
+    uint32_t xout = table_word << 21;
+    gte_precision_gpr_shift(1, 24, 21, 0, xout);
+    xout = (uint32_t)((int32_t)xout >> 21);
+    gte_precision_gpr_shift(1, 1, 21, 2, xout);
+    xout &= 0xFFFFu;
+    gte_precision_gpr_andi(1, 1, 0xFFFFu, xout);
+
+    uint32_t yout = table_word << 10;
+    gte_precision_gpr_shift(12, 24, 10, 0, yout);
+    yout = (uint32_t)((int32_t)yout >> 21);
+    gte_precision_gpr_shift(12, 12, 21, 2, yout);
+    yout <<= 16;
+    gte_precision_gpr_shift(12, 12, 16, 0, yout);
+    const uint32_t rebuilt = yout | xout;
+    gte_precision_gpr_bitwise(12, 12, 1, 1, rebuilt);
+
+    CPUState cpu = {};
+    gte_write_data(&cpu, 12, rebuilt);
+    gte_precision_gte_from_gpr(12, 12, rebuilt);
+    gte_precision_store_word(dst, 12);
+    if (gte_precision_query_word(dst, rebuilt, &got_x, &got_y, &got_z) !=
+            GTE_PRECISION_EXACT || got_x != x16 || got_y != y16 || got_z != z)
+        return fail_value("CPU component reconstruction", 0, 12, rebuilt,
+                          z, got_z);
+
+    /* A changed coordinate payload must not inherit the original fraction. */
+    const uint32_t changed = rebuilt ^ 1u;
+    gte_precision_gpr_bitwise(12, 12, 0, 1, changed);
+    gte_write_data(&cpu, 13, changed);
+    gte_precision_gte_from_gpr(13, 12, changed);
+    gte_precision_store_word(dst + 4u, 13);
+    if (gte_precision_query_word(dst + 4u, changed, nullptr, nullptr, nullptr) ==
+        GTE_PRECISION_EXACT)
+        return fail_value("changed coordinate rejected", 0, 13, changed, 0, 1);
+    return 0;
+}
+
+int test_precision_nclip_opt_in() {
+    GTEState gte = {};
+    constexpr uint32_t p0 = 0x00000000u;
+    constexpr uint32_t p1 = 0x00000001u;
+    constexpr uint32_t p2 = 0x00000002u;
+    gte.SXY[0] = p0;
+    gte.SXY[1] = p1;
+    gte.SXY[2] = p2;
+    gte_precision_tracking_set(1);
+    gte_test_seed_precise_projection(0, p0, 0, 0, 1);
+    gte_test_seed_precise_projection(1, p1, 1 << 16, 0, 1);
+    gte_test_seed_precise_projection(2, p2, 2 << 16, 1, 1);
+
+    gte_precision_culling_set(0);
+    PSXRecomp::GTE::gte_nclip(&gte, 0x06u);
+    if (gte.MAC0 != 0)
+        return fail_value("precise NCLIP default off", 0, 0, 0, 0,
+                          static_cast<uint32_t>(gte.MAC0));
+
+    gte_precision_culling_set(1);
+    PSXRecomp::GTE::gte_nclip(&gte, 0x06u);
+    gte_precision_culling_set(0);
+    if (gte.MAC0 != 1)
+        return fail_value("precise NCLIP exact sign override", 0, 0, 0, 1,
+                          static_cast<uint32_t>(gte.MAC0));
     return 0;
 }
 
@@ -689,6 +870,9 @@ int main() {
     if (int rc = test_precise_sxy_invalidation()) return rc;
     if (int rc = test_precision_speculative_transaction()) return rc;
     if (int rc = test_precision_address_identity()) return rc;
+    if (int rc = test_precision_gpr_transport()) return rc;
+    if (int rc = test_precision_cpu_component_reconstruction()) return rc;
+    if (int rc = test_precision_nclip_opt_in()) return rc;
     std::puts("PASS: canonical GTE register helpers match GTEState transfer oracle");
     return 0;
 }

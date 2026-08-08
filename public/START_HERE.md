@@ -17,9 +17,9 @@ choose a new private output directory. Generation and compilation can take
 several minutes.
 
 The bootstrap verifies the extracted retail executable against the supported
-SHA-256 before applying the accepted 4×, widescreen, mouse and keyboard profile.
-It does not launch the game automatically. The final executable path is printed
-when compilation completes.
+SHA-256 before applying the accepted 4×, widescreen, PGXP precise-geometry,
+precise-culling, mouse and keyboard profile. It does not launch the game
+automatically. The final executable path is printed when compilation completes.
 
 The generated directory and executable contain retail-derived code. Keep them
 private; do not upload or redistribute them. The bootstrap package itself is

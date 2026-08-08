@@ -69,6 +69,72 @@ void gpu_get_crtc_debug(uint32_t *x1, uint32_t *x2, uint32_t *y1, uint32_t *y2,
 uint64_t gpu_get_gp0_count(void);  /* Total GP0 writes since init */
 void gpu_get_gp0_stats(uint64_t* nop, uint64_t* fill, uint64_t* draw, uint64_t* env, uint64_t* copy);
 
+/* Visual-only precision provenance. A complete triangle is corrected only
+ * when all three packet vertices retain exact address/generation ownership. */
+typedef struct GpuPrecisionStats {
+    uint64_t triangles;
+    uint64_t complete;
+    uint64_t partial;
+    uint64_t unmatched;
+    uint64_t cpu_authored;
+    uint64_t speculative_vertices;
+    uint64_t non_ram_vertices;
+    uint64_t missing_vertices;
+    uint64_t stale_vertices;
+    uint64_t address_mismatch_vertices;
+    uint64_t packed_mismatch_vertices;
+    uint64_t invalid_vertices;
+    uint64_t mixed_shared_edges;
+    uint64_t precise_shared_edge_mismatches;
+    uint64_t precise_edge_delta_le_1_256;
+    uint64_t precise_edge_delta_le_1_16;
+    uint64_t precise_edge_delta_le_1_2;
+    uint64_t precise_edge_delta_gt_1_2;
+    uint64_t canonicalized_triangles;
+    uint64_t canonicalized_area_collapses;
+    uint64_t canonicalized_winding_flips;
+    uint64_t canonicalization_rollbacks;
+    uint64_t precise_nclip_complete;
+    uint64_t precise_nclip_sign_disagreements;
+    uint64_t precise_nclip_overrides;
+    uint64_t native_culled_precise_visible;
+    uint64_t native_visible_precise_culled;
+    uint64_t temporal_eligibility_flips;
+    uint64_t temporal_to_complete;
+    uint64_t temporal_to_fallback;
+    uint64_t edge_table_drops;
+    uint64_t temporal_table_drops;
+    uint32_t latest_mixed_edge_a;
+    uint32_t latest_mixed_edge_b;
+    uint32_t latest_mixed_complete_addr;
+    uint32_t latest_mixed_fallback_addr;
+    uint32_t latest_precise_edge_a;
+    uint32_t latest_precise_edge_b;
+    uint32_t latest_precise_first_addr;
+    uint32_t latest_precise_second_addr;
+    uint32_t latest_precise_frame;
+    uint32_t latest_precise_max_delta;
+    uint32_t latest_topology_addr;
+    uint32_t latest_topology_frame;
+    int64_t latest_topology_area_before;
+    int64_t latest_topology_area_after;
+    int32_t latest_nclip_native_area;
+    int8_t latest_nclip_precise_sign;
+    uint32_t latest_flip_addr;
+    uint32_t latest_flip_previous_frame;
+    uint32_t latest_flip_current_frame;
+    uint8_t latest_flip_previous_complete;
+    uint8_t latest_flip_current_complete;
+    uint32_t latest_missing_addr;
+    uint32_t latest_missing_packed;
+    uint32_t sampled_missing_addr;
+    uint32_t sampled_missing_packed;
+    uint32_t sampled_missing_store_pc;
+    int32_t sampled_missing_store_result;
+    uint8_t sampled_missing_store_reg;
+} GpuPrecisionStats;
+void gpu_precision_get_stats(GpuPrecisionStats *out);
+
 typedef struct {
     uint32_t left, top, right, bottom;
     int32_t offset_x, offset_y;

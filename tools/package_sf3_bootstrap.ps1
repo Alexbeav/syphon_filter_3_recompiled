@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [string]$Version = 'v0.1.0-alpha',
+    [string]$Version = 'v0.2.2-alpha',
     [string]$CliPackageDirectory = 'dist\psxrecomp-cli-windows-x86_64'
 )
 
