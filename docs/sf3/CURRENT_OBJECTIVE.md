@@ -11,16 +11,16 @@ previous catastrophic red/checkered failure and deterministic opening-room
 textured-shard defect are fixed. Visible 4x testing confirms a clean Mission 1
 opening room and connected, comfortable play through arrival in Mission 4.
 
-Framework convergence state: `batch2_implementation_qualified`. The canonical
-branch closes additive capture history, legacy migration, deterministic input,
-bounded overlay crash serialization and the policy-neutral unpromoted-shard
-lifecycle. Its 45/45 recompiler suite and dedicated Release input target pass;
-SF3 records the complete batch as ancestry and passes 70/70 under MinGW/Ninja.
-After the final runtime reconciliation, two fresh ordinary and two separately
-configured diagnostic 3,000-sample OpenGL processes match within their lanes,
-match the corresponding pre-change semantic receipts and reproduce the same
-card hashes. The longer two-process complete-Mission-1 Batch 2 exit gate remains
-open and is not implied by this implementation checkpoint.
+Framework convergence state: `batch3_lifecycle_implemented`. Batch 2 remains
+qualified as recorded below. The canonical Batch 3 branch now adds launcher-
+owned dual input bindings and a resettable, title-neutral enhancement state
+core. SF3 preserves independent geometry and perspective flags (including the
+perspective-only diagnostic baseline), resets widescreen/PGXP/mouse state
+before every same-process plugin activation and compiles the guarded mouse hook
+independently of its default enablement. The canonical suite passes 46/46; SF3
+passes 72/72 plus a full generated-runtime Release compile/link contract. The
+remaining Batch 3 gate is to express SF3's four default-off launcher Mods and
+run the all-off/single/combination automated route matrix before human testing.
 
 Redux state: `phase1_widescreen_human_accepted`. The isolated branch has a
 clean 4x/4:3 control and a 4x/16:9 default candidate, keyboard mapping,

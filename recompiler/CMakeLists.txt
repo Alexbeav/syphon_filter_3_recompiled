@@ -476,6 +476,7 @@ if(BUILD_TESTING)
                 jalr_link_register_guards
                 launcher_vulkan_option
                 launcher_enhancement_input_guards
+                mod_enhancement_activation_guards
                 mod_controller_override
                 overlay_call_unit_irq_guards
                 overlay_candidate_capacity

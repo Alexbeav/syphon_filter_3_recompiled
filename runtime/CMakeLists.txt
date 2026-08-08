@@ -34,6 +34,12 @@ if(BUILD_TESTING)
     target_link_libraries(psx_keybinds_test PRIVATE ${PSX_SDL_LIBRARIES})
     add_test(NAME psx_keybinds_test COMMAND psx_keybinds_test)
 
+    add_executable(mod_enhancement_state_test
+        tests/test_mod_enhancement_state.c
+        src/mod_enhancement_state.c)
+    target_include_directories(mod_enhancement_state_test PRIVATE include)
+    add_test(NAME mod_enhancement_state_test COMMAND mod_enhancement_state_test)
+
     add_executable(frame_color_stats_test
         tests/test_frame_color_stats.c
         src/frame_color_stats.c)

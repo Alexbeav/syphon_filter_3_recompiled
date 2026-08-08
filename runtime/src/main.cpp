@@ -42,6 +42,7 @@ extern "C" void gpu_texture_correction_set(int enabled);
 #include "sio.h"
 #include "mouse_pad_adapter.h"
 #include "mouse_camera.h"
+#include "mod_enhancement_state.h"
 #include "psx_netplay.h"
 #include "psx_lobby_client.h"
 #include "spu.h"
@@ -671,21 +672,39 @@ static int           g_video_aspect_den = 3;
 static bool          g_ws_adaptive_view = false;
 static int           g_ws_adaptive_max_num = 16;
 static int           g_ws_adaptive_max_den = 9;
+static PsxModEnhancementState g_mod_enhancements{};
+static bool g_mod_enhancements_initialized = false;
+
+static void apply_mod_enhancement_state() {
+    if (!g_mod_enhancements_initialized) return;
+    const PsxModEnhancementConfig& state = g_mod_enhancements.current;
+    g_video_aspect_num = (int)state.aspect_num;
+    g_video_aspect_den = (int)state.aspect_den;
+    g_ws_adaptive_view = state.adaptive_aspect != 0;
+    g_ws_adaptive_max_num = (int)state.adaptive_max_num;
+    g_ws_adaptive_max_den = (int)state.adaptive_max_den;
+    g_geometry_precision = state.geometry_precision ? 1 : 0;
+    g_perspective_textures = state.perspective_textures ? 1 : 0;
+    g_mouse_camera_enabled = state.mouse_camera ? 1 : 0;
+    g_mouse_camera_config.enabled = g_mouse_camera_enabled;
+    psx_mouse_camera_set_enabled(g_mouse_camera_enabled);
+    mouse_pad_reset();
+    mouse_pad_configure(g_mouse_pad_enabled || g_mouse_camera_enabled,
+                        g_mouse_pad_counts_per_frame,
+                        g_mouse_pad_aim_counts_per_frame);
+}
 
 extern "C" int psx_mod_set_fixed_display_aspect(
     uint32_t numerator, uint32_t denominator) {
-    if (numerator == 0 || denominator == 0 ||
-        numerator > 99 || denominator > 99 ||
-        3u * numerator < 4u * denominator ||
-        9u * numerator > 32u * denominator) {
+    if (!g_mod_enhancements_initialized ||
+        !psx_mod_enhancement_set_fixed_aspect(
+            &g_mod_enhancements, numerator, denominator)) {
         std::fprintf(stderr,
             "psxrecomp: mod rejected invalid display aspect %u:%u\n",
             (unsigned)numerator, (unsigned)denominator);
         return 0;
     }
-    g_video_aspect_num = (int)numerator;
-    g_video_aspect_den = (int)denominator;
-    g_ws_adaptive_view = false;
+    apply_mod_enhancement_state();
     std::fprintf(stdout, "psxrecomp: mod selected fixed display aspect %u:%u\n",
                  (unsigned)numerator, (unsigned)denominator);
     return 1;
@@ -693,23 +712,47 @@ extern "C" int psx_mod_set_fixed_display_aspect(
 
 extern "C" int psx_mod_set_adaptive_display_aspect(
     uint32_t max_numerator, uint32_t max_denominator) {
-    if (max_numerator == 0 || max_denominator == 0 ||
-        max_numerator > 99 || max_denominator > 99 ||
-        3u * max_numerator < 4u * max_denominator ||
-        9u * max_numerator > 32u * max_denominator) {
+    if (!g_mod_enhancements_initialized ||
+        !psx_mod_enhancement_set_adaptive_aspect(
+            &g_mod_enhancements, max_numerator, max_denominator)) {
         std::fprintf(stderr,
             "psxrecomp: mod rejected invalid adaptive display aspect %u:%u\n",
             (unsigned)max_numerator, (unsigned)max_denominator);
         return 0;
     }
-    g_ws_adaptive_view = true;
-    g_ws_adaptive_max_num = (int)max_numerator;
-    g_ws_adaptive_max_den = (int)max_denominator;
+    apply_mod_enhancement_state();
     std::fprintf(stdout,
         "psxrecomp: mod selected adaptive display aspect "
         "(initial %d:%d, range 4:3 through %u:%u)\n",
         g_video_aspect_num, g_video_aspect_den,
         (unsigned)max_numerator, (unsigned)max_denominator);
+    return 1;
+}
+
+extern "C" int psx_mod_set_pgxp_mode(uint32_t mode) {
+    if (!g_mod_enhancements_initialized ||
+        !psx_mod_enhancement_set_pgxp_mode(&g_mod_enhancements, mode)) {
+        std::fprintf(stderr, "psxrecomp: mod rejected invalid PGXP mode %u\n",
+                     (unsigned)mode);
+        return 0;
+    }
+    apply_mod_enhancement_state();
+    std::fprintf(stdout, "psxrecomp: mod selected PGXP mode %u\n",
+                 (unsigned)mode);
+    return 1;
+}
+
+extern "C" int psx_mod_set_pgxp(int enabled) {
+    return psx_mod_set_pgxp_mode(
+        enabled ? PSX_MOD_PGXP_FULL : PSX_MOD_PGXP_OFF);
+}
+
+extern "C" int psx_mod_set_mouse_camera(int enabled) {
+    if (!g_mod_enhancements_initialized) return 0;
+    psx_mod_enhancement_set_mouse_camera(&g_mod_enhancements, enabled);
+    apply_mod_enhancement_state();
+    std::fprintf(stdout, "psxrecomp: mod %s direct mouse camera\n",
+                 enabled ? "enabled" : "disabled");
     return 1;
 }
 
@@ -6680,9 +6723,20 @@ int main(int argc, char** argv) {
         g_mouse_camera_config.enabled = atoi(e) ? 1 : 0;
     psx_mouse_camera_configure(&g_mouse_camera_config);
     g_mouse_camera_enabled = g_mouse_camera_config.enabled;
-    mouse_pad_configure(g_mouse_pad_enabled || g_mouse_camera_enabled,
-                        g_mouse_pad_counts_per_frame,
-                        g_mouse_pad_aim_counts_per_frame);
+    const PsxModEnhancementConfig enhancement_baseline = {
+        (uint32_t)g_video_aspect_num,
+        (uint32_t)g_video_aspect_den,
+        g_ws_adaptive_view ? 1 : 0,
+        (uint32_t)g_ws_adaptive_max_num,
+        (uint32_t)g_ws_adaptive_max_den,
+        g_geometry_precision ? 1 : 0,
+        g_perspective_textures ? 1 : 0,
+        g_mouse_camera_enabled ? 1 : 0,
+    };
+    psx_mod_enhancement_initialize(&g_mod_enhancements,
+                                   &enhancement_baseline);
+    g_mod_enhancements_initialized = true;
+    apply_mod_enhancement_state();
     if (g_mouse_pad_enabled) {
         std::fprintf(stdout,
             "psxrecomp: mouse PAD adapter enabled (%d chase, %d aim counts/frame)\n",
@@ -6716,12 +6770,15 @@ int main(int argc, char** argv) {
             return 1;
         }
     }
-    /* Activation callbacks are re-run after every launcher session. Clear
-     * game-owned controller overrides first so disabling a package cannot
-     * leave its prior mode latched across a soft return to the launcher. */
+    /* Activation callbacks are re-run after every launcher session. Restore
+     * the complete non-Mod enhancement and controller baselines first so
+     * disabling a package cannot leave prior state latched across a soft
+     * return to the launcher. */
     g_mod_controller_mode_override[0] = -1;
     g_mod_controller_mode_override[1] = -1;
     g_frame_interpolation_blend = g_frame_interpolation_blend_default;
+    psx_mod_enhancement_reset(&g_mod_enhancements);
+    apply_mod_enhancement_state();
     mod_runtime_activate_plugins();
     if (g_mod_controller_mode_override[0] >= 0)
         p1_mode = g_mod_controller_mode_override[0];

@@ -343,3 +343,36 @@ Final implementation checkpoint:
 
 Batch 2 implementation is qualified. The plan's longer two-process complete
 Mission 1 replay remains the unclaimed exit gate.
+
+## Batch 3 launcher lifecycle checkpoint
+
+Canonical branch `framework/convergence-batch3` adds three title-neutral
+checkpoints:
+
+| Framework commit | Source lineage | Content |
+|---|---|---|
+| `fdf23abd` | bounded extraction from SF2 `452cc0c` | launcher-owned dual keyboard/mouse bindings and live reload contract |
+| `c1b24451` | new generic reconciliation | resettable aspect, PGXP and mouse enhancement state |
+| `1ce3b001` | SF3 diagnostic requirement | independent geometry/perspective baseline flags, including perspective-only operation |
+
+SF3 records those commits as ancestry and wires the state core into plugin
+activation. Before each activation pass it restores the complete non-Mod
+baseline, resets pending mouse-camera and mouse-PAD state, then permits narrow
+trusted callbacks to select fixed/adaptive aspect, PGXP off/geometry/full or
+mouse camera. The guarded guest camera hook is emitted whenever its verified
+title site exists, not only when the default runtime flag is enabled.
+
+Validation at this checkpoint:
+
+- canonical recompiler suite: 46/46 with `PYTHONUTF8=1`;
+- strict standalone enhancement-state C test passes and preserves a
+  perspective-only diagnostic baseline across contamination/reset;
+- SF3 MinGW/Ninja Release suite: 72/72, including the new activation-order
+  structural guard;
+- a clean compile harness rooted at current framework source compiles and links
+  all 249 SF3 generated translation units into
+  `SF3_Framework_Batch_3_Compile_Contract.exe`.
+
+This qualifies the lifecycle implementation, not the Batch 3 exit gate. The
+next step is source-owned, default-off SF3 package/plugin definitions followed
+by automated all-off, single-feature and representative-combination routes.

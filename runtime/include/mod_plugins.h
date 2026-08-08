@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "mod_enhancement_state.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -61,6 +62,14 @@ int psx_mod_set_fixed_display_aspect(uint32_t numerator,
  */
 int psx_mod_set_adaptive_display_aspect(uint32_t max_numerator,
                                         uint32_t max_denominator);
+
+/* Complete PGXP presentation states use enum PsxModPgxpMode. OFF preserves
+ * native integer/affine rendering; GEOMETRY enables only all-corner precise
+ * XY; FULL additionally enables perspective-correct texture interpolation. */
+int psx_mod_set_pgxp_mode(uint32_t mode);
+/* Compatibility wrapper: true selects FULL, false selects OFF. */
+int psx_mod_set_pgxp(int enabled);
+int psx_mod_set_mouse_camera(int enabled);
 /*
  * Set the wall-clock cadence of simulated guest VBlanks. A value of zero
  * removes frontend pacing; 60 and higher request that many native guest

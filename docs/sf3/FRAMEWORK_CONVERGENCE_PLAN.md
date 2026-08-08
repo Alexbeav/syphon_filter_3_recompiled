@@ -133,6 +133,13 @@ Exit gate:
 
 ### Batch 3 — renderer-neutral enhancements and launcher Mods
 
+Implementation checkpoint (2026-08-08): canonical commits `fdf23abd`,
+`c1b24451` and `1ce3b001` provide dual bindings plus a complete resettable
+enhancement state. SF3 has wired pre-activation reset for aspect, independent
+geometry/perspective precision and mouse-camera state; 72/72 tests and a full
+generated-runtime Release compile/link pass. Package/plugin definitions and the
+automated feature matrix remain in progress; no visible test is requested yet.
+
 Adopt one generic lifecycle for Widescreen, PGXP and Mouse Look. Use SF2
 `452cc0c` as the launcher-Mod reference, but independently express SF3 title
 configuration. Each feature must be available and independently toggleable,
