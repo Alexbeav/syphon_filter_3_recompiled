@@ -40,6 +40,7 @@ def set_setting_value(text: str, table: str, key: str,
 def configure(project: Path, widescreen: bool = False, pgxp: bool = False,
               geometry_precision: bool = False,
               perspective_textures: bool = False,
+              precise_culling: bool = False,
               output_config: str | None = None,
               launcher_mods: bool = False) -> bool:
     game_toml = project / (output_config or "game.toml")
@@ -101,6 +102,7 @@ def configure(project: Path, widescreen: bool = False, pgxp: bool = False,
                 ("video", "aspect_ratio", '"4:3"'),
                 ("video", "geometry_precision", "false"),
                 ("video", "perspective_textures", "false"),
+                ("video", "precise_culling", "false"),
                 ("controller.mouse_camera", "enabled", "false"),
             ):
                 text, changed = set_setting_value(text, table, key, value)
@@ -112,6 +114,7 @@ def configure(project: Path, widescreen: bool = False, pgxp: bool = False,
     for enabled, key in (
         (geometry_precision, "geometry_precision"),
         (perspective_textures, "perspective_textures"),
+        (precise_culling, "precise_culling"),
     ):
         if enabled:
             text, changed = set_setting_value(text, "video", key, "true")
@@ -216,6 +219,9 @@ def main() -> int:
         "--perspective-textures", action="store_true",
         help="emit only the perspective-texture PGXP axis")
     parser.add_argument(
+        "--precise-culling", action="store_true",
+        help="opt into exact-FIFO PGXP NCLIP sign substitution")
+    parser.add_argument(
         "--output-config",
         help="write/read a sibling config instead of changing game.toml")
     parser.add_argument(
@@ -226,6 +232,7 @@ def main() -> int:
     changed = configure(project, widescreen=args.widescreen, pgxp=args.pgxp,
                         geometry_precision=args.geometry_precision,
                         perspective_textures=args.perspective_textures,
+                        precise_culling=args.precise_culling,
                         output_config=args.output_config,
                         launcher_mods=args.launcher_mods)
     print(f"SF3 compatibility/presentation defaults "

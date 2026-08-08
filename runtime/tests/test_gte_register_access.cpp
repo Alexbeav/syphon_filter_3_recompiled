@@ -21,6 +21,7 @@ extern "C" void gte_test_set_timeline_generations(uint32_t precision,
 extern "C" uint32_t gte_test_get_precision_generation(void);
 extern "C" uint32_t gte_test_get_geometry_generation(void);
 extern "C" void gte_precision_tracking_set(int enabled);
+extern "C" void gte_precision_culling_set(int enabled);
 extern "C" void gte_precision_invalidate_word(uint32_t addr);
 extern "C" int gte_precision_load_word(uint32_t addr, uint32_t packed,
                                         int32_t *x16, int32_t *y16,
@@ -829,6 +830,34 @@ int test_precision_cpu_component_reconstruction() {
     return 0;
 }
 
+int test_precision_nclip_opt_in() {
+    GTEState gte = {};
+    constexpr uint32_t p0 = 0x00000000u;
+    constexpr uint32_t p1 = 0x00000001u;
+    constexpr uint32_t p2 = 0x00000002u;
+    gte.SXY[0] = p0;
+    gte.SXY[1] = p1;
+    gte.SXY[2] = p2;
+    gte_precision_tracking_set(1);
+    gte_test_seed_precise_projection(0, p0, 0, 0, 1);
+    gte_test_seed_precise_projection(1, p1, 1 << 16, 0, 1);
+    gte_test_seed_precise_projection(2, p2, 2 << 16, 1, 1);
+
+    gte_precision_culling_set(0);
+    PSXRecomp::GTE::gte_nclip(&gte, 0x06u);
+    if (gte.MAC0 != 0)
+        return fail_value("precise NCLIP default off", 0, 0, 0, 0,
+                          static_cast<uint32_t>(gte.MAC0));
+
+    gte_precision_culling_set(1);
+    PSXRecomp::GTE::gte_nclip(&gte, 0x06u);
+    gte_precision_culling_set(0);
+    if (gte.MAC0 != 1)
+        return fail_value("precise NCLIP exact sign override", 0, 0, 0, 1,
+                          static_cast<uint32_t>(gte.MAC0));
+    return 0;
+}
+
 } // namespace
 
 int main() {
@@ -843,6 +872,7 @@ int main() {
     if (int rc = test_precision_address_identity()) return rc;
     if (int rc = test_precision_gpr_transport()) return rc;
     if (int rc = test_precision_cpu_component_reconstruction()) return rc;
+    if (int rc = test_precision_nclip_opt_in()) return rc;
     std::puts("PASS: canonical GTE register helpers match GTEState transfer oracle");
     return 0;
 }

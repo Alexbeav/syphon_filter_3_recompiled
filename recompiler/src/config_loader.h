@@ -327,6 +327,9 @@ struct RuntimeConfig {
     // integer XY and affine UV interpolation.
     bool                  video_geometry_precision = false;
     bool                  video_perspective_textures = false;
+    // Experimental PGXP NCLIP sign substitution. This changes guest-visible
+    // MAC0 only for an exact three-vertex precision FIFO match.
+    bool                  video_precise_culling = false;
 
     // renderer: "software" | "opengl" (default) | "vulkan". Selects the
     // rasterizer/present backend. The software rasterizer remains the explicit

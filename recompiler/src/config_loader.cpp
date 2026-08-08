@@ -517,6 +517,10 @@ static RuntimeConfig parse_runtime_block(const toml::value& cfg, const fs::path&
             rt.video_perspective_textures =
                 toml::find<bool>(video, "perspective_textures");
         }
+        if (video.contains("precise_culling")) {
+            rt.video_precise_culling =
+                toml::find<bool>(video, "precise_culling");
+        }
         if (video.contains("renderer")) {
             const auto mode = toml::find<std::string>(video, "renderer");
             if (mode == "software")     rt.video_renderer = 0;

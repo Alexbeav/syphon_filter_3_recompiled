@@ -93,6 +93,18 @@ with tempfile.TemporaryDirectory() as temp:
         output_config="game-pgxp-geometry.toml")
 
     assert module.configure(
+        project, widescreen=True, geometry_precision=True,
+        precise_culling=True,
+        output_config="game-pgxp-culling-wide.toml")
+    culling = tomllib.loads(
+        (project / "game-pgxp-culling-wide.toml").read_text(
+            encoding="utf-8"))
+    assert culling["video"]["precise_culling"] is True
+    assert culling["video"]["aspect_ratio"] == "16:9"
+    assert culling["widescreen"]["offer"] is True
+    assert culling["controller"]["mouse_camera"]["enabled"] is True
+
+    assert module.configure(
         project, perspective_textures=True,
         output_config="game-pgxp-perspective.toml")
     perspective = (project / "game-pgxp-perspective.toml").read_text(

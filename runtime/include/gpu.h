@@ -96,6 +96,7 @@ typedef struct GpuPrecisionStats {
     uint64_t canonicalization_rollbacks;
     uint64_t precise_nclip_complete;
     uint64_t precise_nclip_sign_disagreements;
+    uint64_t precise_nclip_overrides;
     uint64_t native_culled_precise_visible;
     uint64_t native_visible_precise_culled;
     uint64_t temporal_eligibility_flips;

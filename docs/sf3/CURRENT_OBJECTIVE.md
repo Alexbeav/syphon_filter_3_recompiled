@@ -40,7 +40,7 @@ world presentation, full-width cinematic mattes, mouse and keyboard are
 human-accepted in Mission 1, and two clean 3,000-sample runs match frame and
 card hashes. HUD/UI remains at its original 4:3 coordinates.
 
-PGXP state: `precise_culling_candidate_in_progress`. The current 4x/4:3
+PGXP state: `precise_culling_human_accepted`. The current 4x/4:3
 candidate has independent off, geometry-only and geometry-plus-perspective
 profiles. Two clean diagnostic processes per profile consume the 3,000-sample
 Mission 1 handoff route with live state-0 pages and no freeze/stall. The final
@@ -63,10 +63,18 @@ Geometry-only A/B rules out perspective-depth correction as that face's owner.
 The SF1 PC port's full-precision culling invariant led to an observation-only
 NCLIP comparison: 393,174 exact FIFO comparisons contained 34,122 sign
 disagreements, including 20,721 native-nonpositive versus precise-positive
-cases. The next isolated experiment is exact-three-vertex precise NCLIP,
-explicitly classified as an optional guest-visible presentation divergence;
+cases. The isolated, default-off exact-three-vertex NCLIP candidate now passes
+a source-owned regression and two deterministic observer-free 3,000-sample
+routes with matching normalized logs and baseline card hashes. Diagnostic runs
+apply 32,081-32,682 sign overrides and reach live state 0. This remains an
+optional guest-visible presentation divergence now accepted by human A/B;
 native compatibility remains unchanged. See
 `docs/sf3/PGXP_CPU_COMPONENT_PASS1.md`.
+
+Human A/B now accepts the precise-culling candidate as good enough to ship.
+The prior face dropout and prominent character seams are no longer blocking;
+very minor texture wobble remains documented. The enhancement stays opt-in
+and exact-FIFO guarded, with native NCLIP retained as the compatibility oracle.
 
 Campaign state: `qualification_matrix_initialized`. The source-owned
 [`CAMPAIGN_QUALIFICATION.md`](CAMPAIGN_QUALIFICATION.md) ledger separates the
@@ -152,7 +160,7 @@ accepted route, keep an off switch, and record honest native/fallback ownership.
 | Campaign overlays beyond early Mission 2 | overlay coverage | performance risk and incomplete recompilation ownership | safe Mission 2 endpoint: seven regions, 9.81M native dispatches, 270,891 fallbacks | extend only from exact-byte additive history and replay each promotion |
 | Diagnostic display readback can alter host timing | validation observer | a clean observed run may not represent ordinary Release timing | OpenGL ring capture flushes/reads back even without CPU-VRAM synchronization; route observer is source/build validated only | reproduce under a recorded route, localize with bounded capture, then confirm the fix twice in ordinary Release with the observer disabled |
 | Campaign beyond arrival in Mission 4 unverified | retail/content lifecycle | no whole-campaign claim | the guarded 19-row campaign matrix records deterministic Mission 1, human-only Mission 2/3 completion, Mission 4 entry and open later seams | qualify Mission 4 completion and the retail `4 -> 5` seam twice, then advance one adjacent mission at a time |
-| PGXP visual quality at 4x/4:3 | GPU precision presentation/provenance coverage | motion wobble is removed; character seams and a couch texture A/B snap remain | generic component-aware CPU transport; two clean routes at 187,190/202,170 and 180,298/194,910 complete triangles; human major-improvement verdict | classify adjacent complete/unmatched primitives and temporal eligibility, add a shared-edge regression, fix only the proven generic invariant, and repeat two clean routes before final human acceptance |
+| PGXP visual quality at 4x/4:3 | accepted opt-in enhancement; residual GPU presentation debt | very minor texture wobble remains; prior model swimming, blocking seams and distant face dropout are accepted as resolved | component-aware CPU transport, topology-safe shared-edge reconciliation, default-off exact-FIFO NCLIP, two deterministic routes, 32k active overrides and human ship verdict | independently validate the generic invariant in SF2; pursue residual wobble only from a new bounded first divergence |
 | Cutscene mattes stop at authored 4:3 edges | **closed 2026-08-04**: auxiliary-list mono-quad ownership | no remaining observed impact in Mission 1 cinematics | list 4 carries `GP0 28h` black bands at authored `-192..192`; list 3 is the dense world owner; focused regression plus visible acceptance | passed: bars cover both 16:9 margins without restoring world slabs |
 | HUD/UI remains at 4:3 coordinates | HUD provenance | low-priority inset HUD at 16:9 | human 16:9 Mission 1 capture; `nw_hud_corners` cannot distinguish HUD from world polygons in SF3 | relocate only structurally proven HUD primitives |
 

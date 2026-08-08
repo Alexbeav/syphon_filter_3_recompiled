@@ -1352,3 +1352,30 @@ The direct profile configurator now replaces existing TOML values instead of
 inserting duplicate keys, enables mouse camera for direct widescreen profiles,
 and explicitly sets `widescreen.offer = true`; launcher-installed features
 remain independently default off.
+
+### R32 — optional exact-FIFO precise NCLIP candidate
+
+With explicit authorization for an isolated visual divergence test, the
+framework gained a default-off `video.precise_culling` flag. It changes
+guest-visible MAC0 only when all three precise projections exactly match the
+live packed SXY FIFO and their winding sign disagrees with quantized NCLIP.
+Native magnitude is retained on agreement; disagreement substitutes only the
+precise sign. The GTE regression proves default-off identity and the guarded
+opt-in case.
+
+A regenerated full-retail diagnostic executable completed three observed
+3,000-sample routes through briefing state 8 and live Mission 1 state 0. The
+observer caught different transient intermediate substates, preventing its
+strict transition-list comparison, but all durable gates and established card
+hashes matched. Two additional observer-free processes then consumed all
+3,000 samples with identical normalized logs, stderr and cards. Diagnostic
+routes applied 32,081-32,682 precise NCLIP overrides. The test profile isolates
+geometry plus precise culling, leaves perspective textures off, and explicitly
+enables native-wide 16:9, the widescreen offer and mouse camera. Visual
+acceptance remains open.
+
+Human A/B accepts the precise-culling build as good enough to ship. The
+previous distant face loss and prominent model seams are no longer blockers.
+Very minor texture wobble remains and is intentionally recorded rather than
+hidden by a solved-PGXP claim. The feature remains optional and exact-FIFO
+guarded; native NCLIP is unchanged when the setting is off.

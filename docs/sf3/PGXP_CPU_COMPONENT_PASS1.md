@@ -2,7 +2,7 @@
 
 Updated: 2026-08-08
 
-Status: `in_progress_major_improvement_precise_culling_candidate`
+Status: `human_accepted_precise_culling_minor_texture_wobble_remaining`
 
 ## Result
 
@@ -85,3 +85,36 @@ therefore be isolated, optional, exact-three-vertex-only and explicitly report
 that it changes guest-visible MAC0/branch behavior. Compatibility remains the
 unchanged native oracle. SF2 Recomp remains a selective pass-1 comparison, not
 a claim of solved PGXP; GT2 `FAIL-031` remains the negative validator.
+
+## Optional precise-NCLIP experiment
+
+The authorized behavior candidate is now implemented behind
+`[video].precise_culling`, default off. It changes MAC0 only when precision
+tracking has three valid projections whose packed values exactly equal the
+current GTE SXY FIFO, and only when native and precise winding signs disagree.
+Agreement retains the native NCLIP magnitude; disagreement substitutes only
+`-1`, `0` or `+1`. A source-owned GTE regression proves both default-off
+identity and the exact-match opt-in result.
+
+Three diagnostic 3,000-sample processes reached briefing state 8 and live
+Mission 1 state 0 with no known corruption signature. Their observer sampled
+different transient application-state intermediates, so the strict diagnostic
+transition-list comparator did not qualify a pair. The independent
+observer-free gate did: two clean processes consumed all 3,000 samples with
+identical normalized logs, stderr and cards. Card SHA-256 remains
+`a717d08d...70cc3f` and `7706c7d4...8f58e8`. The diagnostic routes applied
+32,081-32,682 exact-FIFO NCLIP overrides. This proves execution and activation,
+not visual acceptance.
+
+The human candidate deliberately isolates geometry plus precise culling with
+perspective textures off. Its generated profile explicitly enables 16:9,
+`widescreen.offer` and direct mouse camera. The next gate is an A/B at the
+distant bellhop face, character seams and starting-room couch; native culling
+remains the compatibility control.
+
+Human validation accepts this candidate as good enough to ship. The distant
+face loss and material character seams are resolved to the user's satisfaction.
+Very minor texture wobble remains and is recorded as presentation debt rather
+than represented as fully solved PGXP. Precise culling therefore graduates as
+an accepted opt-in enhancement; default-off native culling remains the strict
+compatibility path.

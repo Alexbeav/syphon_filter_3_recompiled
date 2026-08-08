@@ -245,14 +245,21 @@ struct PrecisionGprEntry {
 static PrecisionGprEntry s_precision_gpr[32] = {};
 static uint64_t s_precise_nclip_complete = 0;
 static uint64_t s_precise_nclip_sign_disagreements = 0;
+static uint64_t s_precise_nclip_overrides = 0;
 static uint64_t s_native_culled_precise_visible = 0;
 static uint64_t s_native_visible_precise_culled = 0;
 static int32_t s_latest_nclip_native_area = 0;
 static int8_t s_latest_nclip_precise_sign = 0;
+static int s_precise_culling_enabled = 0;
+
+extern "C" void gte_precision_culling_set(int enabled) {
+    s_precise_culling_enabled = enabled ? 1 : 0;
+}
 
 extern "C" void gte_precision_cull_stats_reset(void) {
     s_precise_nclip_complete = 0;
     s_precise_nclip_sign_disagreements = 0;
+    s_precise_nclip_overrides = 0;
     s_native_culled_precise_visible = 0;
     s_native_visible_precise_culled = 0;
     s_latest_nclip_native_area = 0;
@@ -261,10 +268,11 @@ extern "C" void gte_precision_cull_stats_reset(void) {
 
 extern "C" void gte_precision_cull_stats_get(
     uint64_t *complete, uint64_t *disagreements,
-    uint64_t *native_culled, uint64_t *native_visible,
+    uint64_t *overrides, uint64_t *native_culled, uint64_t *native_visible,
     int32_t *latest_native_area, int8_t *latest_precise_sign) {
     if (complete) *complete = s_precise_nclip_complete;
     if (disagreements) *disagreements = s_precise_nclip_sign_disagreements;
+    if (overrides) *overrides = s_precise_nclip_overrides;
     if (native_culled) *native_culled = s_native_culled_precise_visible;
     if (native_visible) *native_visible = s_native_visible_precise_culled;
     if (latest_native_area) *latest_native_area = s_latest_nclip_native_area;
@@ -1241,6 +1249,13 @@ void gte_nclip(GTEState* gte, uint32_t instr) {
                 s_native_visible_precise_culled++;
             s_latest_nclip_native_area = (int32_t)mac0;
             s_latest_nclip_precise_sign = (int8_t)precise_sign;
+            /* NCLIP consumers use MAC0's sign for the visibility decision.
+             * Preserve native magnitude whenever both calculations agree;
+             * on an exact disagreement, substitute only the precise sign. */
+            if (s_precise_culling_enabled) {
+                mac0 = precise_sign;
+                s_precise_nclip_overrides++;
+            }
         }
     }
     gte->check_mac0_overflow(mac0);

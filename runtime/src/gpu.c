@@ -2800,7 +2800,7 @@ extern int gte_precision_debug_store_attempt(uint32_t addr, uint32_t *pc,
 extern void gte_precision_cull_stats_reset(void);
 extern void gte_precision_cull_stats_get(
     uint64_t *complete, uint64_t *disagreements,
-    uint64_t *native_culled, uint64_t *native_visible,
+    uint64_t *overrides, uint64_t *native_culled, uint64_t *native_visible,
     int32_t *latest_native_area, int8_t *latest_precise_sign);
 
 static void gpu_precision_tracking_update(void) {
@@ -2858,6 +2858,7 @@ void gpu_precision_get_stats(GpuPrecisionStats *out) {
     gte_precision_cull_stats_get(
         &s_precision_stats.precise_nclip_complete,
         &s_precision_stats.precise_nclip_sign_disagreements,
+        &s_precision_stats.precise_nclip_overrides,
         &s_precision_stats.native_culled_precise_visible,
         &s_precision_stats.native_visible_precise_culled,
         &s_precision_stats.latest_nclip_native_area,

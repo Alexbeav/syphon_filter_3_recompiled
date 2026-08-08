@@ -4921,6 +4921,7 @@ static void handle_gpu_state(int id, const char *json)
              "\"canonicalization_rollbacks\":%llu,"
              "\"precise_nclip_complete\":%llu,"
              "\"precise_nclip_sign_disagreements\":%llu,"
+             "\"precise_nclip_overrides\":%llu,"
              "\"native_culled_precise_visible\":%llu,"
              "\"native_visible_precise_culled\":%llu,"
              "\"temporal_eligibility_flips\":%llu,"
@@ -5005,6 +5006,7 @@ static void handle_gpu_state(int id, const char *json)
              (unsigned long long)precision.canonicalization_rollbacks,
              (unsigned long long)precision.precise_nclip_complete,
              (unsigned long long)precision.precise_nclip_sign_disagreements,
+             (unsigned long long)precision.precise_nclip_overrides,
              (unsigned long long)precision.native_culled_precise_visible,
              (unsigned long long)precision.native_visible_precise_culled,
              (unsigned long long)precision.temporal_eligibility_flips,
