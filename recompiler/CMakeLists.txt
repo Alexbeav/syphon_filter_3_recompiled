@@ -409,6 +409,7 @@ if(BUILD_TESTING)
                 gl_depth24_coherency
                 hybrid_dev_any_input
                 launcher_vulkan_option
+                launcher_enhancement_input_guards
                 mod_controller_override
                 overlay_candidate_capacity
                 overlay_decodable_fallback
