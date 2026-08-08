@@ -205,6 +205,35 @@ extern void     gte_precision_timeline_invalidate(void);
 extern void     gte_precision_speculative_begin(void);
 extern void     gte_precision_speculative_end(void);
 extern void     gte_precision_store_word(uint32_t addr, uint8_t reg);
+/* Exact projection provenance carried through ordinary GPR packet assembly.
+ * Every guest GPR write must first invalidate its tag. MFC2/LW then replace
+ * that invalid tag with provenance from the exact GTE register/RAM address;
+ * a full SW may transfer it to its exact destination address. */
+extern void     gte_precision_gpr_invalidate(uint8_t gpr);
+extern void     gte_precision_gpr_from_gte(uint8_t gpr, uint8_t reg,
+                                           uint32_t packed);
+extern void     gte_precision_gpr_from_ram(uint8_t gpr, uint32_t addr,
+                                           uint32_t packed);
+extern uint32_t gte_precision_gpr_load_word(uint8_t gpr, uint32_t addr,
+                                            uint32_t packed);
+extern void     gte_precision_store_gpr(uint32_t addr, uint8_t gpr,
+                                        uint32_t packed);
+/* Component-aware CPU PGXP transport. These helpers update only host-side
+ * provenance after the corresponding guest operation has produced `result`.
+ * Shift kind: 0=SLL, 1=SRL, 2=SRA. Bitwise kind: 0=AND, 1=OR. */
+extern void     gte_precision_gpr_shift(uint8_t dst, uint8_t src,
+                                        uint8_t amount, uint8_t kind,
+                                        uint32_t result);
+extern void     gte_precision_gpr_andi(uint8_t dst, uint8_t src,
+                                       uint32_t immediate, uint32_t result);
+extern void     gte_precision_gpr_bitwise(uint8_t dst, uint8_t lhs,
+                                          uint8_t rhs, uint8_t kind,
+                                          uint32_t result);
+extern void     gte_precision_gte_from_gpr(uint8_t reg, uint8_t gpr,
+                                           uint32_t packed);
+extern int      gte_precision_debug_store_attempt(uint32_t addr,
+                                                   uint32_t *pc,
+                                                   uint8_t *reg);
 typedef enum GtePrecisionStatus {
     GTE_PRECISION_DISABLED = 0,
     GTE_PRECISION_EXACT = 1,

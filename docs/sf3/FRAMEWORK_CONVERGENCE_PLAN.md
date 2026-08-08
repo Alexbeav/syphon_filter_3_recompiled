@@ -163,10 +163,12 @@ Exit gate:
 ### Batch 4 — PGXP provenance transport
 
 Keep the current exact address/generation/packed-value and all-corner atomic
-fallback. Instrument and prove the path that moves projected SXY/depth from GTE
-results into final GP0 packet RAM. The leading generic hypothesis is
-MFC2-to-GPR-to-RAM or a bounded RAM-copy construction path; it is not yet a
-finding.
+fallback. The dominant path is now proven: SF3 packs MFC2 results through GPR
+shifts, masks and OR, transports them through scratchpad, expands them and
+restores GTE data with MTC2 before the final SWC2. Generic component-aware
+provenance raises complete-triangle coverage from 3.733% to about 92.5% and
+removes the observed motion wobble. This remains an in-progress Batch 4
+checkpoint because character seams and a temporal texture snap remain.
 
 Do not use value-only matching. Add a title-neutral provenance-transfer unit
 covering load delay, GPR overwrite, partial stores, timeline invalidation and
@@ -179,6 +181,11 @@ Exit gate:
 - two off/full automated route comparisons preserve retail state;
 - no stitched-geometry cracks in the bounded regression;
 - only then ask for the human motion A/B.
+
+The coverage and motion-A/B gates have passed. The remaining Batch 4 gate is a
+bounded adjacent-primitive/frame-eligibility trace, a mixed-provenance
+shared-edge regression and removal of the residual seam/snap without relaxing
+exact eligibility.
 
 ### Batch 5 — canonical dependency and public kit
 

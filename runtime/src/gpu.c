@@ -2765,7 +2765,10 @@ static uint32_t s_texture_correction_hits = 0;
 static uint32_t s_precision_triangle_candidates = 0;
 static uint32_t s_precision_triangle_unmatched = 0;
 static GpuPrecisionStats s_precision_stats;
+static int s_precision_missing_sample_armed = 1;
 extern void gte_precision_tracking_set(int enabled);
+extern int gte_precision_debug_store_attempt(uint32_t addr, uint32_t *pc,
+                                              uint8_t *reg);
 
 static void gpu_precision_tracking_update(void) {
     gte_precision_tracking_set(
@@ -2812,6 +2815,12 @@ void gpu_precision_triangle_stats(uint32_t *candidates, uint32_t *unmatched) {
 
 void gpu_precision_get_stats(GpuPrecisionStats *out) {
     if (out) *out = s_precision_stats;
+    s_precision_stats.sampled_missing_addr = 0;
+    s_precision_stats.sampled_missing_packed = 0;
+    s_precision_stats.sampled_missing_store_pc = 0;
+    s_precision_stats.sampled_missing_store_result = 0;
+    s_precision_stats.sampled_missing_store_reg = 0;
+    s_precision_missing_sample_armed = 1;
 }
 
 /* DMA-list ownership is stable across frames and repeated coordinate values;
@@ -2868,8 +2877,21 @@ static void prepare_precision_triangle(int i0, int i1, int i2,
             s_precision_stats.speculative_vertices++;
         else if (status == GTE_PRECISION_NON_RAM)
             s_precision_stats.non_ram_vertices++;
-        else if (status == GTE_PRECISION_MISSING)
+        else if (status == GTE_PRECISION_MISSING) {
             s_precision_stats.missing_vertices++;
+            s_precision_stats.latest_missing_addr = addr;
+            s_precision_stats.latest_missing_packed = gp0_cmd_buf[indices[i]];
+            if (s_precision_missing_sample_armed) {
+                s_precision_stats.sampled_missing_addr = addr;
+                s_precision_stats.sampled_missing_packed =
+                    gp0_cmd_buf[indices[i]];
+                s_precision_stats.sampled_missing_store_result =
+                    gte_precision_debug_store_attempt(
+                        addr, &s_precision_stats.sampled_missing_store_pc,
+                        &s_precision_stats.sampled_missing_store_reg);
+                s_precision_missing_sample_armed = 0;
+            }
+        }
         else if (status == GTE_PRECISION_STALE)
             s_precision_stats.stale_vertices++;
         else if (status == GTE_PRECISION_ADDRESS_MISMATCH)

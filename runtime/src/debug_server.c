@@ -4911,7 +4911,14 @@ static void handle_gpu_state(int id, const char *json)
              "\"stale_vertices\":%llu,"
              "\"address_mismatch_vertices\":%llu,"
              "\"packed_mismatch_vertices\":%llu,"
-             "\"invalid_vertices\":%llu},"
+             "\"invalid_vertices\":%llu,"
+             "\"latest_missing_addr\":\"0x%08X\","
+             "\"latest_missing_packed\":\"0x%08X\","
+             "\"sampled_missing_addr\":\"0x%08X\","
+             "\"sampled_missing_packed\":\"0x%08X\","
+             "\"sampled_missing_store_pc\":\"0x%08X\","
+             "\"sampled_missing_store_result\":%d,"
+             "\"sampled_missing_store_reg\":%u},"
              "\"ws\":{\"configured\":%d,\"active\":%d,\"game_mode\":%d,"
              "\"present_native_43\":%d,\"x_margin\":%d,"
              "\"activation_margin\":%d,\"squash\":[%d,%d],"
@@ -4956,6 +4963,13 @@ static void handle_gpu_state(int id, const char *json)
              (unsigned long long)precision.address_mismatch_vertices,
              (unsigned long long)precision.packed_mismatch_vertices,
              (unsigned long long)precision.invalid_vertices,
+             precision.latest_missing_addr,
+             precision.latest_missing_packed,
+             precision.sampled_missing_addr,
+             precision.sampled_missing_packed,
+             precision.sampled_missing_store_pc,
+             precision.sampled_missing_store_result,
+             precision.sampled_missing_store_reg,
              ws.configured, ws.active, ws.game_mode,
              ws.present_native_43, ws.x_margin, ws.activation_margin,
              ws.xnum, ws.xden,

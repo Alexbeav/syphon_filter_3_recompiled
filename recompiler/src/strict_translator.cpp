@@ -38,7 +38,41 @@ std::string emit_gpr_write(uint8_t dest_reg, const std::string& rhs_expr) {
     if (dest_reg == 0) {
         return fmt::format("/* discarded write to $zero ({}) */", rhs_expr);
     }
-    return fmt::format("cpu->gpr[{}] = {};", static_cast<int>(dest_reg), rhs_expr);
+    return fmt::format("gte_precision_gpr_invalidate({}); cpu->gpr[{}] = {};",
+                       static_cast<int>(dest_reg), static_cast<int>(dest_reg), rhs_expr);
+}
+
+std::string emit_gpr_shift_write(uint8_t dest_reg, uint8_t source_reg,
+                                 uint8_t amount, uint8_t kind,
+                                 const std::string& rhs_expr) {
+    if (dest_reg == 0)
+        return fmt::format("/* discarded write to $zero ({}) */", rhs_expr);
+    return fmt::format(
+        "cpu->gpr[{0}] = {1}; gte_precision_gpr_shift({0}, {2}, {3}, {4}, cpu->gpr[{0}]);",
+        static_cast<int>(dest_reg), rhs_expr, static_cast<int>(source_reg),
+        static_cast<int>(amount), static_cast<int>(kind));
+}
+
+std::string emit_gpr_bitwise_write(uint8_t dest_reg, uint8_t lhs,
+                                   uint8_t rhs, uint8_t kind,
+                                   const std::string& rhs_expr) {
+    if (dest_reg == 0)
+        return fmt::format("/* discarded write to $zero ({}) */", rhs_expr);
+    return fmt::format(
+        "cpu->gpr[{0}] = {1}; gte_precision_gpr_bitwise({0}, {2}, {3}, {4}, cpu->gpr[{0}]);",
+        static_cast<int>(dest_reg), rhs_expr, static_cast<int>(lhs),
+        static_cast<int>(rhs), static_cast<int>(kind));
+}
+
+std::string emit_gpr_andi_write(uint8_t dest_reg, uint8_t source_reg,
+                                uint16_t immediate,
+                                const std::string& rhs_expr) {
+    if (dest_reg == 0)
+        return fmt::format("/* discarded write to $zero ({}) */", rhs_expr);
+    return fmt::format(
+        "cpu->gpr[{0}] = {1}; gte_precision_gpr_andi({0}, {2}, 0x{3:X}u, cpu->gpr[{0}]);",
+        static_cast<int>(dest_reg), rhs_expr, static_cast<int>(source_reg),
+        immediate);
 }
 
 const char* gpr_name(uint8_t r) {
@@ -86,7 +120,7 @@ TranslateResult StrictTranslator::translate(const PSXRecomp::DecodedInstruction&
         switch (funct) {
             case 0x00: { // SLL rd, rt, shamt  (raw==0 caught above as NOP)
                 r.supported = true;
-                r.c_code = emit_gpr_write(rd,
+                r.c_code = emit_gpr_shift_write(rd, rt, shamt, 0,
                     fmt::format("cpu->gpr[{}] << {}u", static_cast<int>(rt), static_cast<int>(shamt)));
                 r.comment = fmt::format("sll {}, {}, {}", gpr_name(rd), gpr_name(rt), shamt);
                 return r;
@@ -116,7 +150,7 @@ TranslateResult StrictTranslator::translate(const PSXRecomp::DecodedInstruction&
 
             case 0x02: { // SRL rd, rt, shamt -- logical right shift
                 r.supported = true;
-                r.c_code = emit_gpr_write(rd,
+                r.c_code = emit_gpr_shift_write(rd, rt, shamt, 1,
                     fmt::format("cpu->gpr[{}] >> {}u",
                                 static_cast<int>(rt), static_cast<int>(shamt)));
                 r.comment = fmt::format("srl {}, {}, {}", gpr_name(rd), gpr_name(rt), shamt);
@@ -125,7 +159,7 @@ TranslateResult StrictTranslator::translate(const PSXRecomp::DecodedInstruction&
 
             case 0x03: { // SRA rd, rt, shamt -- arithmetic right shift
                 r.supported = true;
-                r.c_code = emit_gpr_write(rd,
+                r.c_code = emit_gpr_shift_write(rd, rt, shamt, 2,
                     fmt::format("(uint32_t)((int32_t)cpu->gpr[{}] >> {}u)",
                                 static_cast<int>(rt), static_cast<int>(shamt)));
                 r.comment = fmt::format("sra {}, {}, {}", gpr_name(rd), gpr_name(rt), shamt);
@@ -388,8 +422,9 @@ TranslateResult StrictTranslator::translate(const PSXRecomp::DecodedInstruction&
                 if (rd == 0) {
                     write_part = "/* discarded write to $zero */";
                 } else {
-                    write_part = fmt::format("cpu->gpr[{}] = (uint32_t)(int32_t)psx_r;",
-                                             static_cast<int>(rd));
+                    write_part = fmt::format("gte_precision_gpr_invalidate({}); "
+                                             "cpu->gpr[{}] = (uint32_t)(int32_t)psx_r;",
+                                             static_cast<int>(rd), static_cast<int>(rd));
                 }
                 r.c_code = fmt::format(
                     "{{ int32_t psx_a = (int32_t)cpu->gpr[{}]; "
@@ -424,7 +459,7 @@ TranslateResult StrictTranslator::translate(const PSXRecomp::DecodedInstruction&
 
             case 0x24: { // AND rd, rs, rt
                 r.supported = true;
-                r.c_code = emit_gpr_write(rd,
+                r.c_code = emit_gpr_bitwise_write(rd, rs, rt, 0,
                     fmt::format("cpu->gpr[{}] & cpu->gpr[{}]",
                                 static_cast<int>(rs), static_cast<int>(rt)));
                 r.comment = fmt::format("and {}, {}, {}", gpr_name(rd), gpr_name(rs), gpr_name(rt));
@@ -433,7 +468,7 @@ TranslateResult StrictTranslator::translate(const PSXRecomp::DecodedInstruction&
 
             case 0x25: { // OR rd, rs, rt
                 r.supported = true;
-                r.c_code = emit_gpr_write(rd,
+                r.c_code = emit_gpr_bitwise_write(rd, rs, rt, 1,
                     fmt::format("cpu->gpr[{}] | cpu->gpr[{}]",
                                 static_cast<int>(rs), static_cast<int>(rt)));
                 r.comment = fmt::format("or {}, {}, {}", gpr_name(rd), gpr_name(rs), gpr_name(rt));
@@ -496,8 +531,9 @@ TranslateResult StrictTranslator::translate(const PSXRecomp::DecodedInstruction&
                 std::string link;
                 if (rd != 0) {
                     link = fmt::format(
+                        "gte_precision_gpr_invalidate({}); "
                         "cpu->gpr[{}] = 0x{:08X}u; /* link */ ",
-                        static_cast<int>(rd), d.address + 8);
+                        static_cast<int>(rd), static_cast<int>(rd), d.address + 8);
                 }
                 r.pre_delay_code = fmt::format(
                     "uint32_t psx_jt_{:08X} = cpu->gpr[{}]; {}",
@@ -704,7 +740,7 @@ TranslateResult StrictTranslator::translate(const PSXRecomp::DecodedInstruction&
         r.terminator_kind = "jal";
         r.terminator_target = target;
         r.c_code = fmt::format(
-            "cpu->gpr[31] = 0x{:08X}u; /* link $ra */ "
+            "gte_precision_gpr_invalidate(31); cpu->gpr[31] = 0x{:08X}u; /* link $ra */ "
             "cpu->pc = 0x{:08X}u; /* jal 0x{:08X} -- slice terminator (direct) */ return;",
             d.address + 8, target, target);
         r.comment = fmt::format("jal 0x{:08X}", target);
@@ -724,8 +760,9 @@ TranslateResult StrictTranslator::translate(const PSXRecomp::DecodedInstruction&
         if (rt == 0) {
             write_part = "/* discarded write to $zero */";
         } else {
-            write_part = fmt::format("cpu->gpr[{}] = (uint32_t)(int32_t)psx_r;",
-                                     static_cast<int>(rt));
+            write_part = fmt::format("gte_precision_gpr_invalidate({}); "
+                                     "cpu->gpr[{}] = (uint32_t)(int32_t)psx_r;",
+                                     static_cast<int>(rt), static_cast<int>(rt));
         }
         r.c_code = fmt::format(
             "{{ int32_t psx_a = (int32_t)cpu->gpr[{}]; "
@@ -787,7 +824,7 @@ TranslateResult StrictTranslator::translate(const PSXRecomp::DecodedInstruction&
         const uint8_t rt = (d.raw >> 16) & 0x1F;
         const uint16_t uimm = static_cast<uint16_t>(d.raw & 0xFFFF);
         r.supported = true;
-        r.c_code = emit_gpr_write(rt,
+        r.c_code = emit_gpr_andi_write(rt, rs, uimm,
             fmt::format("cpu->gpr[{}] & 0x{:X}u", static_cast<int>(rs), uimm));
         r.comment = fmt::format("andi {}, {}, 0x{:X}", gpr_name(rt), gpr_name(rs), uimm);
         return r;
@@ -877,8 +914,10 @@ TranslateResult StrictTranslator::translate(const PSXRecomp::DecodedInstruction&
             r.c_code = fmt::format("(void)psx_cyc_load_byte(cpu, {}, 0, 0x{:X}u);", addr_expr, mask);
         } else {
             r.c_code = fmt::format(
+                "gte_precision_gpr_invalidate({}); "
                 "cpu->gpr[{}] = (uint32_t)(int32_t)(int8_t)psx_cyc_load_byte(cpu, {}, {}, 0x{:X}u);",
-                static_cast<int>(rt), addr_expr, static_cast<int>(rt), mask);
+                static_cast<int>(rt), static_cast<int>(rt), addr_expr,
+                static_cast<int>(rt), mask);
             r.load_dest = rt;
             r.c_code_deferred = fmt::format(
                 "psx_ldd_{:08X} = (uint32_t)(int32_t)(int8_t)psx_cyc_load_byte(cpu, {}, {}, 0x{:X}u);",
@@ -943,8 +982,10 @@ TranslateResult StrictTranslator::translate(const PSXRecomp::DecodedInstruction&
                 "uint32_t psx_keep_mask   = (1u << psx_shift_left) - 1u; "
                 "uint32_t psx_word        = psx_cyc_load_word(cpu, psx_aligned, {}, 0x{:X}u); "
                 "uint32_t psx_old_rt      = cpu->gpr[{}]; "
+                "gte_precision_gpr_invalidate({}); "
                 "cpu->gpr[{}] = (psx_old_rt & psx_keep_mask) | (psx_word << psx_shift_left);",
-                static_cast<int>(rt), mask, static_cast<int>(rt), static_cast<int>(rt));
+                static_cast<int>(rt), mask, static_cast<int>(rt),
+                static_cast<int>(rt), static_cast<int>(rt));
         r.c_code = fmt::format(
             "{{ uint32_t psx_addr = (uint32_t)((int32_t)cpu->gpr[{}] + ({})); "
             "uint32_t psx_aligned = psx_addr & ~3u; "
@@ -969,8 +1010,10 @@ TranslateResult StrictTranslator::translate(const PSXRecomp::DecodedInstruction&
                 "uint32_t psx_keep_mask   = ~(0xFFFFFFFFu >> psx_shift_right); "
                 "uint32_t psx_word        = psx_cyc_load_word(cpu, psx_aligned, {}, 0x{:X}u); "
                 "uint32_t psx_old_rt      = cpu->gpr[{}]; "
+                "gte_precision_gpr_invalidate({}); "
                 "cpu->gpr[{}] = (psx_old_rt & psx_keep_mask) | (psx_word >> psx_shift_right);",
-                static_cast<int>(rt), mask, static_cast<int>(rt), static_cast<int>(rt));
+                static_cast<int>(rt), mask, static_cast<int>(rt),
+                static_cast<int>(rt), static_cast<int>(rt));
         r.c_code = fmt::format(
             "{{ uint32_t psx_addr = (uint32_t)((int32_t)cpu->gpr[{}] + ({})); "
             "uint32_t psx_aligned = psx_addr & ~3u; "
@@ -989,8 +1032,10 @@ TranslateResult StrictTranslator::translate(const PSXRecomp::DecodedInstruction&
         r.supported = true;
         const std::string body = (rt == 0)
             ? fmt::format("(void)psx_cyc_load_half(cpu, psx_addr, 0, 0x{:X}u);", mask)
-            : fmt::format("cpu->gpr[{}] = (uint32_t)(int32_t)(int16_t)psx_cyc_load_half(cpu, psx_addr, {}, 0x{:X}u);",
-                          static_cast<int>(rt), static_cast<int>(rt), mask);
+            : fmt::format("gte_precision_gpr_invalidate({}); "
+                          "cpu->gpr[{}] = (uint32_t)(int32_t)(int16_t)psx_cyc_load_half(cpu, psx_addr, {}, 0x{:X}u);",
+                          static_cast<int>(rt), static_cast<int>(rt),
+                          static_cast<int>(rt), mask);
         r.c_code = fmt::format(
             "{{ uint32_t psx_addr = (uint32_t)((int32_t)cpu->gpr[{}] + ({})); "
             "if (psx_addr & 1u) {{ psx_unaligned_access(cpu, psx_addr, 0x{:08X}u); return; }} "
@@ -1017,7 +1062,10 @@ TranslateResult StrictTranslator::translate(const PSXRecomp::DecodedInstruction&
         r.supported = true;
         const std::string body = (rt == 0)
             ? fmt::format("(void)psx_cyc_load_word(cpu, psx_addr, 0, 0x{:X}u);", mask)
-            : fmt::format("cpu->gpr[{}] = psx_cyc_load_word(cpu, psx_addr, {}, 0x{:X}u);",
+            : fmt::format("gte_precision_gpr_invalidate({}); "
+                          "cpu->gpr[{}] = gte_precision_gpr_load_word({}, psx_addr, "
+                          "psx_cyc_load_word(cpu, psx_addr, {}, 0x{:X}u));",
+                          static_cast<int>(rt), static_cast<int>(rt),
                           static_cast<int>(rt), static_cast<int>(rt), mask);
         r.c_code = fmt::format(
             "{{ uint32_t psx_addr = (uint32_t)((int32_t)cpu->gpr[{}] + ({})); "
@@ -1049,8 +1097,10 @@ TranslateResult StrictTranslator::translate(const PSXRecomp::DecodedInstruction&
             r.c_code = fmt::format("(void)psx_cyc_load_byte(cpu, {}, 0, 0x{:X}u);", addr_expr, mask);
         } else {
             r.c_code = fmt::format(
+                "gte_precision_gpr_invalidate({}); "
                 "cpu->gpr[{}] = (uint32_t)psx_cyc_load_byte(cpu, {}, {}, 0x{:X}u);",
-                static_cast<int>(rt), addr_expr, static_cast<int>(rt), mask);
+                static_cast<int>(rt), static_cast<int>(rt), addr_expr,
+                static_cast<int>(rt), mask);
             r.load_dest = rt;
             r.c_code_deferred = fmt::format(
                 "psx_ldd_{:08X} = (uint32_t)psx_cyc_load_byte(cpu, {}, {}, 0x{:X}u);",
@@ -1069,8 +1119,10 @@ TranslateResult StrictTranslator::translate(const PSXRecomp::DecodedInstruction&
         r.supported = true;
         const std::string body = (rt == 0)
             ? fmt::format("(void)psx_cyc_load_half(cpu, psx_addr, 0, 0x{:X}u);", mask)
-            : fmt::format("cpu->gpr[{}] = (uint32_t)psx_cyc_load_half(cpu, psx_addr, {}, 0x{:X}u);",
-                          static_cast<int>(rt), static_cast<int>(rt), mask);
+            : fmt::format("gte_precision_gpr_invalidate({}); "
+                          "cpu->gpr[{}] = (uint32_t)psx_cyc_load_half(cpu, psx_addr, {}, 0x{:X}u);",
+                          static_cast<int>(rt), static_cast<int>(rt),
+                          static_cast<int>(rt), mask);
         r.c_code = fmt::format(
             "{{ uint32_t psx_addr = (uint32_t)((int32_t)cpu->gpr[{}] + ({})); "
             "if (psx_addr & 1u) {{ psx_unaligned_access(cpu, psx_addr, 0x{:08X}u); return; }} "
@@ -1202,8 +1254,10 @@ TranslateResult StrictTranslator::translate(const PSXRecomp::DecodedInstruction&
             "{{ psx_store_cycle_barrier(); uint32_t psx_addr = (uint32_t)((int32_t)cpu->gpr[{}] + ({})); "
             "if (psx_addr & 3u) {{ psx_unaligned_access(cpu, psx_addr, 0x{:08X}u); return; }} "
             "g_debug_last_store_pc = 0x{:08X}u; "
-            "cpu->write_word(psx_addr, cpu->gpr[{}]); }}",
-            static_cast<int>(rs), simm, d.address, d.address, static_cast<int>(rt));
+            "cpu->write_word(psx_addr, cpu->gpr[{}]); "
+            "gte_precision_store_gpr(psx_addr, {}, cpu->gpr[{}]); }}",
+            static_cast<int>(rs), simm, d.address, d.address,
+            static_cast<int>(rt), static_cast<int>(rt), static_cast<int>(rt));
         r.comment = fmt::format("sw {}, {}({})", gpr_name(rt), simm, gpr_name(rs));
         return r;
     }
@@ -1330,6 +1384,10 @@ TranslateResult StrictTranslator::translate(const PSXRecomp::DecodedInstruction&
                 r.c_code = gte_read + emit_gpr_write(rt,
                     fmt::format("cpu->gte_data[{}]", static_cast<int>(rd)));
             }
+            if (rt != 0)
+                r.c_code += fmt::format(" gte_precision_gpr_from_gte({}, {}, cpu->gpr[{}]);",
+                                        static_cast<int>(rt), static_cast<int>(rd),
+                                        static_cast<int>(rt));
             r.comment = fmt::format("mfc2 {}, gte_data[{}]", gpr_name(rt), rd);
             return r;
         }
@@ -1358,6 +1416,10 @@ TranslateResult StrictTranslator::translate(const PSXRecomp::DecodedInstruction&
                     "cpu->gte_data[{}] = cpu->gpr[{}];",
                     static_cast<int>(rd), static_cast<int>(rt));
             }
+            r.c_code += fmt::format(
+                " gte_precision_gte_from_gpr({}, {}, cpu->gpr[{}]);",
+                static_cast<int>(rd), static_cast<int>(rt),
+                static_cast<int>(rt));
             r.comment = fmt::format("mtc2 {}, gte_data[{}]", gpr_name(rt), rd);
             return r;
         }

@@ -1300,3 +1300,30 @@ logs, the unchanged route-body hash and the established card hashes. The
 volatility-stripped receipts also equal the corresponding pre-change runs.
 This qualifies Batch 2 implementation without claiming the longer complete
 Mission 1 replay exit gate.
+
+### R30 — component-aware CPU provenance removes PGXP motion wobble
+
+The missing-provenance path was localized from projected GTE output through
+MFC2, GPR shifts/masks/OR packing, scratchpad transport, inverse expansion and
+MTC2 restoration before the final SWC2 packet store. The framework now carries
+exact current packed values and independent X/Y bit-origin masks through that
+path in static generated code, strict translation and both interpreter lanes.
+Unsupported or destructive operations invalidate metadata; guest-visible GTE,
+GPR and memory values remain unchanged. Diagnostic retail addresses were not
+encoded as containment.
+
+A source-owned regression executes the complete compress/scratch/expand/MTC2
+route and a changed-bit negative case. The GTE and PGXP contract tests pass.
+Two clean hidden OpenGL 3,000-sample routes reached live Mission 1 state 0 and
+exited normally. Their last periodic samples report 187,190/202,170 (92.59%)
+and 180,298/194,910 (92.50%) complete triangles, compared with the prior
+2,125/56,919 (3.733%).
+
+The user confirms that all previously observed wobbliness is gone and calls
+the result a major upgrade. The checkpoint remains explicitly in progress:
+character-model seams are visible, and the starting-room couch texture still
+snaps between two positions. Corpus candidate `PSX-GPU-005` and failure
+`FAIL-031` make corrected/unmatched adjacency and temporal eligibility the next
+bounded checks. No value-only, mixed-corner or stale-tag relaxation will be
+used. The detailed evidence and next gate are recorded in
+`docs/sf3/PGXP_CPU_COMPONENT_PASS1.md`.

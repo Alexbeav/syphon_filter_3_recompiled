@@ -1549,6 +1549,7 @@ static int exec_one_fetched(CPUState *cpu, uint32_t pc, uint32_t insn,
              * On a same-register conflict this naturally makes the LOAD win,
              * matching what the compiled backend emits for a dependent pair. */
             cpu->gpr[ld_rt] = ld_before;
+            gte_precision_gpr_invalidate((uint8_t)ld_rt);
             s_ld_pend_rt    = ld_rt;
             s_ld_pend_val   = loaded;
             s_ld_pend_age   = 0u;
@@ -1570,6 +1571,40 @@ static int exec_one_fetched_inner(CPUState *cpu, uint32_t pc, uint32_t insn,
     uint32_t fnt  = funct_field(insn);
     int32_t  simm = simm16_field(insn);
     uint32_t imm  = imm16_field(insn);
+
+    /* A PGXP tag belongs to one architectural GPR generation. Invalidate the
+     * decoded destination before any write; exact MFC2/LW sources replace it
+     * below after their guest value has been produced. */
+    uint32_t precision_dest = 0u;
+    int precision_writes_gpr = 0;
+    if (opc == 0x00u) {
+        if (fnt <= 0x07u || fnt == 0x09u || fnt == 0x10u || fnt == 0x12u ||
+            (fnt >= 0x20u && fnt <= 0x2Bu)) {
+            precision_dest = rd;
+            precision_writes_gpr = 1;
+        }
+    } else if (opc == 0x03u) {
+        precision_dest = 31u;
+        precision_writes_gpr = 1;
+    } else if (opc == 0x01u && (rt == 0x10u || rt == 0x11u)) {
+        precision_dest = 31u;
+        precision_writes_gpr = 1;
+    } else if ((opc >= 0x08u && opc <= 0x0Fu) ||
+               (opc >= 0x20u && opc <= 0x26u)) {
+        precision_dest = rt;
+        precision_writes_gpr = 1;
+    } else if ((opc == 0x10u || opc == 0x12u) &&
+               (rs == 0x00u || rs == 0x02u)) {
+        precision_dest = rt;
+        precision_writes_gpr = 1;
+    }
+    const int precision_component_op =
+        (opc == 0x00u && (fnt == 0x00u || fnt == 0x02u || fnt == 0x03u ||
+                          fnt == 0x24u || fnt == 0x25u)) ||
+        opc == 0x0Cu;
+    if (precision_writes_gpr && precision_dest != 0u &&
+        !precision_component_op)
+        gte_precision_gpr_invalidate((uint8_t)precision_dest);
 
     *next_pc_out = pc + 4;
 
@@ -1657,14 +1692,20 @@ static int exec_one_fetched_inner(CPUState *cpu, uint32_t pc, uint32_t insn,
         switch (fnt) {
         case 0x00: /* SLL rd, rt, sh (also nop when all fields are 0) */
             cpu->gpr[rd] = cpu->gpr[rt] << sh;
+            gte_precision_gpr_shift((uint8_t)rd, (uint8_t)rt, (uint8_t)sh,
+                                    0, cpu->gpr[rd]);
             cpu->gpr[0] = 0;
             return 0;
         case 0x02: /* SRL */
             cpu->gpr[rd] = cpu->gpr[rt] >> sh;
+            gte_precision_gpr_shift((uint8_t)rd, (uint8_t)rt, (uint8_t)sh,
+                                    1, cpu->gpr[rd]);
             cpu->gpr[0] = 0;
             return 0;
         case 0x03: /* SRA */
             cpu->gpr[rd] = (uint32_t)((int32_t)cpu->gpr[rt] >> sh);
+            gte_precision_gpr_shift((uint8_t)rd, (uint8_t)rt, (uint8_t)sh,
+                                    2, cpu->gpr[rd]);
             cpu->gpr[0] = 0;
             return 0;
         case 0x04: /* SLLV */
@@ -1850,10 +1891,14 @@ static int exec_one_fetched_inner(CPUState *cpu, uint32_t pc, uint32_t insn,
             return 0;
         case 0x24: /* AND */
             cpu->gpr[rd] = cpu->gpr[rs] & cpu->gpr[rt];
+            gte_precision_gpr_bitwise((uint8_t)rd, (uint8_t)rs,
+                                      (uint8_t)rt, 0, cpu->gpr[rd]);
             cpu->gpr[0] = 0;
             return 0;
         case 0x25: /* OR */
             cpu->gpr[rd] = cpu->gpr[rs] | cpu->gpr[rt];
+            gte_precision_gpr_bitwise((uint8_t)rd, (uint8_t)rs,
+                                      (uint8_t)rt, 1, cpu->gpr[rd]);
             cpu->gpr[0] = 0;
             return 0;
         case 0x26: /* XOR */
@@ -2092,6 +2137,8 @@ static int exec_one_fetched_inner(CPUState *cpu, uint32_t pc, uint32_t insn,
     }
     case 0x0C: /* ANDI */
         cpu->gpr[rt] = cpu->gpr[rs] & imm;
+        gte_precision_gpr_andi((uint8_t)rt, (uint8_t)rs, imm,
+                               cpu->gpr[rt]);
         cpu->gpr[0] = 0;
         return 0;
     case 0x0D: /* ORI */
@@ -2149,6 +2196,7 @@ static int exec_one_fetched_inner(CPUState *cpu, uint32_t pc, uint32_t insn,
             psx_gte_read(cpu, rt);
 #endif
             cpu->gpr[rt] = gte_read_data(cpu, (uint8_t)rd);
+            gte_precision_gpr_from_gte((uint8_t)rt, (uint8_t)rd, cpu->gpr[rt]);
             cpu->gpr[0] = 0;
             return 0;
         }
@@ -2165,6 +2213,8 @@ static int exec_one_fetched_inner(CPUState *cpu, uint32_t pc, uint32_t insn,
             psx_gte_stall(cpu);
 #endif
             gte_write_data(cpu, (uint8_t)rd, cpu->gpr[rt]);
+            gte_precision_gte_from_gpr((uint8_t)rd, (uint8_t)rt,
+                                       cpu->gpr[rt]);
             return 0;
         }
         if (cop_op == 0x06) { /* CTC2 */
@@ -2215,6 +2265,7 @@ static int exec_one_fetched_inner(CPUState *cpu, uint32_t pc, uint32_t insn,
             cpu->gpr[rt] = psx_ws_xclip_bound(psx_cyc_load_word(cpu, addr, rt, 1u << rs));
         else
             cpu->gpr[rt] = psx_cyc_load_word(cpu, addr, rt, 1u << rs);
+        gte_precision_gpr_from_ram((uint8_t)rt, addr, cpu->gpr[rt]);
         cpu->gpr[0] = 0;
         return 0;
     }
@@ -2270,6 +2321,7 @@ static int exec_one_fetched_inner(CPUState *cpu, uint32_t pc, uint32_t insn,
         g_debug_last_store_pc = pc;
         parappa_rhythm_log_store(cpu, pc, addr, cpu->gpr[rt], 4u);
         cpu->write_word(addr, cpu->gpr[rt]);
+        gte_precision_store_gpr(addr, (uint8_t)rt, cpu->gpr[rt]);
         return 0;
     }
     case 0x2E: { /* SWR */

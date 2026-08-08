@@ -106,7 +106,10 @@ For each new symptom:
 - Use bounded TCP diagnostics, rings and structured summaries; never unbounded
   instruction logs.
 - Require two clean processes and semantic comparisons at each milestone.
-- Keep the complete repository footprint below 20 GiB.
+- Keep the complete repository footprint below 60 GiB. Remove regenerable
+  traces, temporary build trees and diagnostic caches after each completed
+  investigation or milestone; the larger cap is working headroom, not a reason
+  to retain obsolete artifacts.
 - Do not ask for human testing until an automated gate passes.
 - If blocked, perform three distinct bounded falsification attempts after
   corpus consultation, then document the exact first divergence without adding

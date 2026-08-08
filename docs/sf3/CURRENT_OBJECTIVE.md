@@ -25,8 +25,9 @@ the combined widescreen + mouse + full-PGXP state consume the 3,000-sample
 route with common stderr and card hashes; the combined state also passes after
 the launcher UI is linked. The user then accepted the visible launcher catalog,
 default-off state, PGXP geometry/full selector, combined activation and return
-to the all-off 4:3/mouse-disabled state. Batch 3 is complete. This does not
-upgrade PGXP motion quality; provenance coverage remains the Batch 4 owner.
+to the all-off 4:3/mouse-disabled state. Batch 3 is complete. Batch 4 now has a
+major in-progress component-provenance checkpoint described below; residual
+seams and texture snapping remain its owner.
 
 Redux state: `phase1_widescreen_human_accepted`. The isolated branch has a
 clean 4x/4:3 control and a 4x/16:9 default candidate, keyboard mapping,
@@ -39,7 +40,7 @@ world presentation, full-width cinematic mattes, mouse and keyboard are
 human-accepted in Mission 1, and two clean 3,000-sample runs match frame and
 card hashes. HUD/UI remains at its original 4:3 coordinates.
 
-PGXP state: `coverage_localized_visible_not_accepted`. The current 4x/4:3
+PGXP state: `cpu_component_provenance_in_progress`. The current 4x/4:3
 candidate has independent off, geometry-only and geometry-plus-perspective
 profiles. Two clean diagnostic processes per profile consume the 3,000-sample
 Mission 1 handoff route with live state-0 pages and no freeze/stall. The final
@@ -47,15 +48,16 @@ samples distinguish the switches: off records zero correction hits,
 geometry-only records about 2.1k geometry and zero perspective hits, and full
 PGXP records about 2.1k of each. Two ordinary uninstrumented Release processes
 also consume all 42,480 samples with byte-identical cards and normalized logs.
-The user reports that stationary scenes/non-moving models improve, but camera
-or model motion still exposes swimming. A fresh reason-classified diagnostic
-candidate consumed the same 3,000-sample route twice with identical results:
-56,919 candidate triangles, 2,125 complete corrections (3.733%), 54,794 fully
-unmatched triangles and 164,382 missing vertex records. Partial, stale,
-address-mismatch, packed-mismatch, speculative and invalid counts are all zero.
-The next gate is bounded provenance transport through a proven packet-building
-or RAM-copy owner, followed by two automated off/full comparisons. Another
-visible A/B is not warranted until coverage changes materially.
+The earlier motion-swimming result localized to missing provenance after
+MFC2/GPR packing, scratchpad transport and MTC2 restoration. A generic,
+component-aware CPU provenance pass now raises complete-triangle coverage from
+3.733% to 92.50-92.59% in two clean routes while preserving live state-0
+execution. Human testing confirms that all observed wobbliness is gone. This is
+a major in-progress result, not final PGXP acceptance: character-model seams
+remain, and the starting-room couch texture can still snap between two
+positions. The next gate is bounded adjacent-primitive and frame-to-frame
+eligibility classification, followed by a shared-edge regression and two clean
+automated comparisons. See `docs/sf3/PGXP_CPU_COMPONENT_PASS1.md`.
 
 Campaign state: `qualification_matrix_initialized`. The source-owned
 [`CAMPAIGN_QUALIFICATION.md`](CAMPAIGN_QUALIFICATION.md) ledger separates the
@@ -141,7 +143,7 @@ accepted route, keep an off switch, and record honest native/fallback ownership.
 | Campaign overlays beyond early Mission 2 | overlay coverage | performance risk and incomplete recompilation ownership | safe Mission 2 endpoint: seven regions, 9.81M native dispatches, 270,891 fallbacks | extend only from exact-byte additive history and replay each promotion |
 | Diagnostic display readback can alter host timing | validation observer | a clean observed run may not represent ordinary Release timing | OpenGL ring capture flushes/reads back even without CPU-VRAM synchronization; route observer is source/build validated only | reproduce under a recorded route, localize with bounded capture, then confirm the fix twice in ordinary Release with the observer disabled |
 | Campaign beyond arrival in Mission 4 unverified | retail/content lifecycle | no whole-campaign claim | the guarded 19-row campaign matrix records deterministic Mission 1, human-only Mission 2/3 completion, Mission 4 entry and open later seams | qualify Mission 4 completion and the retail `4 -> 5` seam twice, then advance one adjacent mission at a time |
-| PGXP visual quality at 4x/4:3 | GPU precision presentation/provenance coverage | stationary geometry improves, but models/camera motion retain swimming because only 3.733% of candidate triangles receive complete correction | prior off/geometry/full route qualification; user motion report; two identical reason-classified runs: 2,125/56,919 complete, all 164,382 rejected vertices missing provenance and zero mismatch/stale/partial cases | prove a bounded packet-construction/copy provenance owner, materially improve complete coverage without mixed primitives, pass two automated runs, then repeat human off/full A/B |
+| PGXP visual quality at 4x/4:3 | GPU precision presentation/provenance coverage | motion wobble is removed; character seams and a couch texture A/B snap remain | generic component-aware CPU transport; two clean routes at 187,190/202,170 and 180,298/194,910 complete triangles; human major-improvement verdict | classify adjacent complete/unmatched primitives and temporal eligibility, add a shared-edge regression, fix only the proven generic invariant, and repeat two clean routes before final human acceptance |
 | Cutscene mattes stop at authored 4:3 edges | **closed 2026-08-04**: auxiliary-list mono-quad ownership | no remaining observed impact in Mission 1 cinematics | list 4 carries `GP0 28h` black bands at authored `-192..192`; list 3 is the dense world owner; focused regression plus visible acceptance | passed: bars cover both 16:9 margins without restoring world slabs |
 | HUD/UI remains at 4:3 coordinates | HUD provenance | low-priority inset HUD at 16:9 | human 16:9 Mission 1 capture; `nw_hud_corners` cannot distinguish HUD from world polygons in SF3 | relocate only structurally proven HUD primitives |
 

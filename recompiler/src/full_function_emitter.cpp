@@ -624,7 +624,9 @@ bool FullFunctionEmitter::emit_function(
         auto it = ldd_sites.find(succ_addr - 4);
         if (it == ldd_sites.end()) return;
         if (it->second.second) {
-            out += fmt::format("    cpu->gpr[{}] = psx_ldd_{:08X};  /* load-delay writeback */\n",
+            out += fmt::format("    gte_precision_gpr_invalidate({}); "
+                               "cpu->gpr[{}] = psx_ldd_{:08X};  /* load-delay writeback */\n",
+                               it->second.first,
                                it->second.first, it->first);
         } else {
             out += fmt::format("    (void)psx_ldd_{:08X};  /* load-delay: successor overwrites rt */\n",

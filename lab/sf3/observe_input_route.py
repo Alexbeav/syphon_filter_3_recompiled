@@ -118,6 +118,12 @@ def main() -> int:
         help="stop after this many route samples instead of consuming the full route",
     )
     parser.add_argument(
+        "--periodic-interval",
+        type=int,
+        default=600,
+        help="positive frame interval for bounded runtime-state sampling",
+    )
+    parser.add_argument(
         "--capture-frame",
         type=int,
         action="append",
@@ -162,6 +168,8 @@ def main() -> int:
             parser.error(f"{label} must be between 0 and 10000")
     if args.require_state0_samples < 0:
         parser.error("--require-state0-samples must be non-negative")
+    if args.periodic_interval < 1:
+        parser.error("--periodic-interval must be positive")
     if not 0 <= args.fn_entry_tail_count <= 256:
         parser.error("--fn-entry-tail-count must be between 0 and 256")
     if not 1 <= args.cyc_watch_count <= 1024:
@@ -259,6 +267,7 @@ def main() -> int:
         "state0_page_samples": [],
         "corruption_matches": [],
         "periodic": [],
+        "pgxp_missing_writers": [],
         "widescreen_census": [],
         "fn_entry_samples": [],
         "cyc_watch_samples": [],
@@ -291,7 +300,8 @@ def main() -> int:
         last_pair: tuple[int, int] | None = None
         last_frame = -1
         last_page_sample = -60
-        last_periodic = -600
+        last_periodic = -args.periodic_interval
+        last_pgxp_missing_addr: int | None = None
         last_cyc_watch_sample = -60
         last_cd_dma_sample = -60
         last_cdrom_lifecycle_sample = -60
@@ -456,13 +466,14 @@ def main() -> int:
                     )
                     last_census_frame = frame
 
-                if frame - last_periodic >= 600:
+                if frame - last_periodic >= args.periodic_interval:
+                    periodic_gpu = safe_call(args.port, "gpu_state")
                     evidence["periodic"].append(
                         {
                             "frame": frame,
                             "depth": pair[0],
                             "state": pair[1],
-                            "gpu": safe_call(args.port, "gpu_state"),
+                            "gpu": periodic_gpu,
                             "spu": safe_call(args.port, "spu_status"),
                             "audio": safe_call(args.port, "audio_stats"),
                             "cdrom": safe_call(args.port, "cdrom_state"),
@@ -485,6 +496,43 @@ def main() -> int:
                             ),
                         }
                     )
+                    precision = periodic_gpu.get("precision", {})
+                    for sample_kind in ("sampled", "latest"):
+                        missing_addr_text = precision.get(
+                            f"{sample_kind}_missing_addr")
+                        if isinstance(missing_addr_text, str):
+                            missing_addr = int(missing_addr_text, 16)
+                        else:
+                            missing_addr = 0
+                        missing_key = (sample_kind, missing_addr)
+                        if missing_addr and missing_key != last_pgxp_missing_addr:
+                            evidence["pgxp_missing_writers"].append(
+                                {
+                                    "frame": frame,
+                                    "sample": sample_kind,
+                                    "addr": missing_addr_text,
+                                    "packed": precision.get(
+                                        f"{sample_kind}_missing_packed"),
+                                    "writes": safe_call(
+                                        args.port,
+                                        "wtrace_all_dump",
+                                        addr_lo=f"0x{missing_addr:08X}",
+                                        addr_hi=f"0x{missing_addr + 4:08X}",
+                                        count=32,
+                                        newest=1,
+                                    ),
+                                    "gte": (
+                                        safe_call(
+                                            args.port,
+                                            "gte_ring_dump",
+                                            count=32,
+                                            newest=1,
+                                        )
+                                        if sample_kind == "sampled" else None
+                                    ),
+                                }
+                            )
+                            last_pgxp_missing_addr = missing_key
                     last_periodic = frame
                 if (args.cyc_watch_pc is not None and
                         frame - last_cyc_watch_sample >= 60):

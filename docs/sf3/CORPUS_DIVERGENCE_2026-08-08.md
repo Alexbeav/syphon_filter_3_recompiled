@@ -18,13 +18,12 @@ owned-input/source-owned only.
 
 The important divergences are:
 
-1. PGXP coverage is too sparse to remove motion-era wobble. Two clean 3,000-
-   sample runs on 2026-08-07 agree exactly: 56,919 candidate triangles, 2,125
-   complete corrections (3.733%), and 54,794 fully unmatched triangles. All
-   164,382 unmatched vertex queries are `missing`; partial, stale, address-
-   mismatch, packed-mismatch, speculative and invalid counts are zero. This
-   confirms a provenance-transport/coverage gap, not corrupt metadata or an
-   unsafe mixed primitive.
+1. PGXP's dominant provenance-transport gap is closed locally: component-aware
+   CPU propagation raises complete-triangle coverage from 3.733% to about
+   92.5%, and human testing finds the motion wobble gone. Character-model seams
+   and a couch texture A/B snap remain, so adjacent corrected/unmatched
+   primitives and frame-to-frame eligibility are still an implementation and
+   qualification gap.
 2. The v0.1.0 public bootstrap predates the current `PSX-PUB-001` distribution
    contract. It has a manifest/hash verifier and payload-name checks, but no
    public CI/release-kit workflow, no clean acquisition contract, no shared
@@ -50,8 +49,8 @@ The important divergences are:
 | Determinism | Two clean processes at equivalent semantic boundaries; diagnostic evidence is not the ordinary oracle | Mission 1 and PGXP route gates use paired clean runs; ordinary and diagnostic lanes are kept distinct | aligned |
 | GPU composition | Preserve persistent pages and all authored same-tick submissions | Local GPU work records complete same-tick submission behavior; the shared GPU contract still says this is pending | corpus snapshot stale; return at checkpoint |
 | PGXP eligibility | Exact XY/depth metadata, exact RAM address/generation, all-corner atomic eligibility, renderer-neutral fallback, default off | Exact SWC2 address/generation/packed-value gate; all three corners required; unmatched primitives stay native | aligned |
-| PGXP observability | Record matched and rejected primitives and inspect camera motion/dense geometry | Aggregate hits existed; this checkpoint adds complete/partial and reason counters | gap closed locally, pending commit/corpus return |
-| PGXP visual result | Human high-resolution off/on comparison; plumbing is insufficient | User reports static improvement but model swimming during camera/motion; only 3.733% of route triangles qualify | open; current PGXP is not visually accepted |
+| PGXP observability | Record matched and rejected primitives and inspect camera motion/dense geometry | Complete/partial reason counters plus component-aware CPU provenance now expose about 92.5% complete coverage | aligned; residual adjacency/temporal classification remains |
+| PGXP visual result | Human high-resolution off/on comparison; plumbing is insufficient | User reports all wobbliness gone; character seams and a couch texture A/B snap remain | major in-progress improvement; not final acceptance |
 | Presentation independence | Compatibility remains oracle; enhancements independently selectable and default off | Separate complete configs exist, but the public launcher does not expose independent Mods | partially aligned; product gap |
 | Campaign | Connected deterministic content matrix, not direct-level or visible-frame inference | Explicit 19-row ledger; only Mission 1 fully deterministic | method aligned; coverage incomplete |
 | Graduation language | Use standard states such as `representative_slice_verified`, `enhanced_playable`, `campaign_complete` | Project also uses custom phase labels (`compatibility_baseline_verified`, `phase1_widescreen_human_accepted`) | documentation divergence; map labels explicitly |
@@ -67,7 +66,7 @@ correction only when every primitive corner validates. SF2's final report also
 records selective coverage and remaining motion-era instability. Consequently,
 there is no missing relaxed-match patch to copy from SF2.
 
-The new SF3 classification rejects three tempting explanations:
+The original SF3 classification rejected three tempting explanations:
 
 - no `packed_mismatch` means the tracked packet word was not simply rewritten
   after projection;
@@ -76,12 +75,15 @@ The new SF3 classification rejects three tempting explanations:
 - no `partial` means the route does not mostly lose one corner of otherwise
   tracked triangles.
 
-Instead, every rejected corner lacks a precision record at the GPU packet
-address. The next bounded experiment is therefore to identify how SF3 builds or
-copies those packet words after GTE projection, then transport provenance only
-through proven RAM-copy/packet-construction operations. Relaxing value-only
-matching would contradict `PSX-GPU-005` and risks the stitched-geometry cracks
-recorded by `FAIL-031`.
+Instead, every rejected corner lacked a precision record at the GPU packet
+address. SF3 has now proven MFC2/GPR component packing, scratchpad transport,
+inverse expansion and MTC2 restoration as the dominant missing path. Exact
+component-aware propagation raises complete coverage to about 92.5% and human
+testing finds the motion wobble gone. Residual character seams and couch
+texture snapping now move the bounded question to adjacent complete/unmatched
+primitives and frame-to-frame eligibility. Relaxing value-only matching would
+still contradict `PSX-GPU-005` and risks the stitched-geometry cracks recorded
+by `FAIL-031`.
 
 SF2-Modern's deeper source-semantic matrix/vector provenance is a useful oracle,
 but it cannot be copied directly into a binary recompilation until SF3 proves an
@@ -138,9 +140,9 @@ stale phase rules to block user-authorized Redux/publication work.
 
 ## Ordered closure plan
 
-1. Keep PGXP geometry fail-closed and add bounded packet-construction/copy
-   provenance tracing; do not ask for another visual test until coverage changes
-   materially and two automated runs pass.
+1. Keep PGXP geometry fail-closed and trace adjacent complete/unmatched
+   primitives plus frame-to-frame eligibility; add the corpus-required
+   shared-edge regression before correcting the residual seam/snap.
 2. Map the now-reconciled local phase labels explicitly to corpus graduation
    states.
 3. Upgrade the public kit to the resolved current `PSX-PUB-001` contract and
@@ -148,9 +150,9 @@ stale phase rules to block user-authorized Redux/publication work.
    features before publishing a new release.
 4. Resume connected Mission 4 completion and the `4 -> 5` seam in two ordinary
    clean processes, then request the visible 16:9 confirmation.
-5. At the next committed checkpoint, return a payload-free SF3 snapshot and the
-   PGXP missing-provenance result to the corpus, naming SF2 Recomp/Tenchu as
-   independent validators.
+5. At this committed checkpoint, return a payload-free SF3 snapshot and the
+   component-provenance result to the corpus, naming SF2 Recomp and the GT2
+   stitched-terrain failure as independent positive/negative validators.
 
 ## Corpus sources consulted
 

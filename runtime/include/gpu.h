@@ -84,6 +84,13 @@ typedef struct GpuPrecisionStats {
     uint64_t address_mismatch_vertices;
     uint64_t packed_mismatch_vertices;
     uint64_t invalid_vertices;
+    uint32_t latest_missing_addr;
+    uint32_t latest_missing_packed;
+    uint32_t sampled_missing_addr;
+    uint32_t sampled_missing_packed;
+    uint32_t sampled_missing_store_pc;
+    int32_t sampled_missing_store_result;
+    uint8_t sampled_missing_store_reg;
 } GpuPrecisionStats;
 void gpu_precision_get_stats(GpuPrecisionStats *out);
 

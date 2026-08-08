@@ -45,7 +45,7 @@ contains a title address or retail payload.
 | interpreter cycle deadlines | no isolated SF2 lead | `52ef738` | `generic-needs-second-consumer` | source-owned regression exists; independence pending |
 | complete-quad rejection | no isolated SF2 lead | `642949e` | `generic-needs-second-consumer` | hardware-backed contract; second game pending |
 | widescreen composition APIs | `65e3c49` through `a2b951c` | `04540b1`, `24cb538`, `f187fc3` | `generic-needs-reconciliation` | projection APIs generic; owner rules title-specific |
-| PGXP base contract | `2eebc41` | current SF3 renderer/GTE implementation plus `0998336` diagnostics | `generic-needs-reconciliation` | exact eligibility aligns; provenance transport remains open |
+| PGXP base contract | `2eebc41` | current SF3 renderer/GTE implementation plus component-aware CPU transport | `generic-in-progress` | exact eligibility aligns; motion wobble removed, residual seams/snap remain |
 | launcher enhancement Mods | `452cc0c` | profiles plus runtime settings | `generic-qualified-reference` | SF2 accepted; SF3 must become second lifecycle consumer |
 | public setup/bootstrap | `91c94e6` through `1e6b27a` | `7ef45a9` | `publication-needs-reconciliation` | SF2 contract is newer and broader |
 
@@ -421,3 +421,10 @@ is `EA74C538B8A03DCEF7D0443F1ACE77DB64D66FD8A1353C1A70584F633C3D8B7E`.
 Two subsequent clean all-off OpenGL processes consumed all 3,000 samples. Both
 retain the common stderr and card hashes above. The full SF3 suite remains
 73/73 and the repository footprint is 19.946 GiB.
+
+Batch 4 now has an in-progress major checkpoint. Generic MFC2/GPR component
+packing, scratchpad transport, inverse expansion and MTC2 restoration raise
+complete-triangle coverage from 3.733% to about 92.5%. Two clean routes pass,
+and the user reports that motion wobble is gone. Character seams and a couch
+texture A/B snap remain; adjacency and frame-to-frame eligibility are the next
+bounded owners. This is not final Batch 4 acceptance.
