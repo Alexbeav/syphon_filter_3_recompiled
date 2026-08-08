@@ -1,6 +1,7 @@
 import importlib.util
 from pathlib import Path
 import tempfile
+import tomllib
 
 
 root = Path(__file__).resolve().parents[2]
@@ -16,6 +17,9 @@ with tempfile.TemporaryDirectory() as temp:
     (project / "game.toml").write_text(
         "[runtime]\nwindow_title = \"SF3 test\"\n\n"
         "[video]\nrenderer = \"opengl\"\n\n"
+        'aspect_ratio = "4:3"\n'
+        "geometry_precision = false\n"
+        "perspective_textures = false\n\n"
         "[controller]\ndefault_mode = \"digital\"\n",
         encoding="utf-8")
     (project / "CMakeLists.txt").write_text(
@@ -29,6 +33,7 @@ with tempfile.TemporaryDirectory() as temp:
     assert 'aspect_ratio = "16:9"' in first
     assert "[widescreen]" in first
     assert "native_wide = true" in first
+    assert "offer = true" in first
     assert "gte_game_mode = true" in first
     assert "nw_full_mirror = false" in first
     assert "nw_hud_corners = false" in first
@@ -41,6 +46,8 @@ with tempfile.TemporaryDirectory() as temp:
     assert 'screen_h_imms = ["0xE0", "0xF0", "0xF1"]' in first
     assert "overlay_native = false" in first
     assert "supersampling = 4" in first
+    assert "enabled = true" in first.split(
+        "[controller.mouse_camera]", 1)[1]
 
     assert not module.configure(
         project, widescreen=True, output_config="game-wide.toml")
@@ -59,6 +66,19 @@ with tempfile.TemporaryDirectory() as temp:
     assert "native_wide = true" not in pgxp
     assert not module.configure(
         project, pgxp=True, output_config="game-pgxp.toml")
+
+    assert module.configure(
+        project, widescreen=True, pgxp=True,
+        output_config="game-pgxp-wide.toml")
+    combined = (project / "game-pgxp-wide.toml").read_text(encoding="utf-8")
+    parsed = tomllib.loads(combined)
+    assert parsed["video"]["aspect_ratio"] == "16:9"
+    assert parsed["video"]["geometry_precision"] is True
+    assert parsed["video"]["perspective_textures"] is True
+    assert parsed["controller"]["mouse_camera"]["enabled"] is True
+    assert parsed["widescreen"]["offer"] is True
+    for key in ("aspect_ratio", "geometry_precision", "perspective_textures"):
+        assert combined.count(f"{key} =") == 1
 
     assert module.configure(
         project, geometry_precision=True,

@@ -12,6 +12,7 @@ codegen = (root / "recompiler/src/code_generator.cpp").read_text(encoding="utf-8
 strict = (root / "recompiler/src/strict_translator.cpp").read_text(encoding="utf-8")
 dirty = (root / "runtime/src/dirty_ram_interp.c").read_text(encoding="utf-8")
 interp = (root / "runtime/src/psx_interpreter.c").read_text(encoding="utf-8")
+shared_edge = (root / "runtime/src/pgxp_shared_edge.c").read_text(encoding="utf-8")
 
 # Packed screen coordinates are values, not identities. Both fractional XY
 # and depth must use the exact packet address/generation store.
@@ -63,6 +64,52 @@ assert "projection.packed != packed" in gte
 assert "gte_precision_query_word(addr, packed" in gte
 assert "latest_missing_addr = addr" in gpu
 assert "latest_missing_addr" in (root / "runtime/src/debug_server.c").read_text(encoding="utf-8")
+
+# Residual seam diagnosis is bounded and observation-only. It must compare
+# whole-triangle eligibility across shared edges and stable packet slots; it
+# must never make a mixed primitive eligible or retain an unbounded history.
+for token in (
+    "PRECISION_EDGE_SLOTS 4096u",
+    "PRECISION_TEMPORAL_SLOTS 16384u",
+    "PRECISION_TABLE_PROBES 16u",
+    "precision_record_edge",
+    "precision_record_temporal",
+    "mixed_shared_edges",
+    "precise_shared_edge_mismatches",
+    "precise_edge_delta_le_1_256",
+    "canonicalized_triangles",
+    "canonicalized_area_collapses",
+    "canonicalized_winding_flips",
+    "canonicalization_rollbacks",
+    "precise_nclip_complete",
+    "precise_nclip_sign_disagreements",
+    "native_culled_precise_visible",
+    "temporal_eligibility_flips",
+):
+    assert token in gpu
+assert "frame - slot->frame <= 2u" in gpu
+assert "precision_area2(original_fx, original_fy)" in precision_body
+assert "precision_area2(fx, fy)" in precision_body
+assert "pgxp_triangle_topology_preserved(area_before, area_after)" in precision_body
+assert "memcpy(fx, original_fx, sizeof(fx))" in precision_body
+for token in (
+    "s_precise_nclip_complete++",
+    "s_precise_nclip_sign_disagreements++",
+    "s_native_culled_precise_visible++",
+    "s_native_visible_precise_culled++",
+    "s_precise_sxy[0].packed == (uint32_t)gte->SXY[0]",
+):
+    assert token in gte
+assert "slot->ot_rank != ot_rank" in gpu
+assert "first->depth_a != second->depth_a" in shared_edge
+assert "first->depth_b != second->depth_b" in shared_edge
+assert "first->ot_rank != second->ot_rank" in shared_edge
+assert gpu.index("precision_record_temporal(addrs, matched == 3)") < gpu.index(
+    "if (matched != 3) {"
+)
+assert "gr_set_precise_triangle(1" not in gpu.split(
+    "static void precision_record_edge", 1
+)[1].split("static void prepare_precision_triangle", 1)[0]
 
 # The renderer-neutral boundary must reach software and OpenGL.
 for token in (".set_precise_triangle", ".set_perspective_triangle"):

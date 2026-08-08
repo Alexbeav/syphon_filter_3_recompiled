@@ -2,7 +2,7 @@
 
 Updated: 2026-08-08
 
-Status: `in_progress_major_improvement_residual_seams`
+Status: `in_progress_major_improvement_precise_culling_candidate`
 
 ## Result
 
@@ -56,8 +56,32 @@ be a temporal eligibility or perspective/depth transition. Neither hypothesis
 is accepted without a bounded trace. Value-only matching, mixed-corner
 correction and retained stale tags remain prohibited.
 
-Next, classify complete/unmatched adjacency and frame-to-frame eligibility in
-the starting room, add a renderer-neutral shared-edge regression, and correct
-only the proven generic invariant. SF2 Recomp is the independent positive
-validator; the GT2 stitched-terrain failure recorded as `FAIL-031` is the
-negative validator.
+## Shared-edge and precise-culling checkpoint
+
+Bounded frame-local adjacency and temporal tables found zero mixed
+complete/fallback shared edges and zero recent eligibility flips, but 194
+same-integer/depth/OT shared edges with different precise fractions. A
+renderer-neutral edge reconciler now acts only on two complete, depth-matched,
+packet-local representations. In two clean routes it safely reconciled 135
+triangles; a whole-triangle guard rolled back three corrections that would
+reverse winding. Human testing reports another material improvement, but
+character seams, couch snapping and a distant bellhop face dropout remain.
+
+Disabling perspective-depth correction did not change the face dropout, so the
+DuckStation SF3 cached-Z warning is narrowed rather than confirmed as owner.
+Read-only SF1 PC-port inspection supplied a closer invariant: its model
+renderer culls using the same full-precision projection that it renders because
+packed PS1 XY made thin triangles randomly change winding. Observation-only
+SF3 instrumentation then compared retail NCLIP with the exact current PGXP FIFO
+without changing MAC0. A bounded Mission 1 route measured 393,174 complete
+comparisons and 34,122 sign disagreements, including 20,721 native-nonpositive
+versus precise-positive cases; the latest sample was native area -2 versus
+precise sign +1.
+
+This confirms a precision split before GP0 submission. SF1 can fix it in its
+native model renderer; SF3 retail has already discarded the material packet
+when quantized NCLIP rejects the face. Any precise-NCLIP experiment must
+therefore be isolated, optional, exact-three-vertex-only and explicitly report
+that it changes guest-visible MAC0/branch behavior. Compatibility remains the
+unchanged native oracle. SF2 Recomp remains a selective pass-1 comparison, not
+a claim of solved PGXP; GT2 `FAIL-031` remains the negative validator.

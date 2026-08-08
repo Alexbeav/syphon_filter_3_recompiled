@@ -243,6 +243,33 @@ struct PrecisionGprEntry {
     uint32_t generation;
 };
 static PrecisionGprEntry s_precision_gpr[32] = {};
+static uint64_t s_precise_nclip_complete = 0;
+static uint64_t s_precise_nclip_sign_disagreements = 0;
+static uint64_t s_native_culled_precise_visible = 0;
+static uint64_t s_native_visible_precise_culled = 0;
+static int32_t s_latest_nclip_native_area = 0;
+static int8_t s_latest_nclip_precise_sign = 0;
+
+extern "C" void gte_precision_cull_stats_reset(void) {
+    s_precise_nclip_complete = 0;
+    s_precise_nclip_sign_disagreements = 0;
+    s_native_culled_precise_visible = 0;
+    s_native_visible_precise_culled = 0;
+    s_latest_nclip_native_area = 0;
+    s_latest_nclip_precise_sign = 0;
+}
+
+extern "C" void gte_precision_cull_stats_get(
+    uint64_t *complete, uint64_t *disagreements,
+    uint64_t *native_culled, uint64_t *native_visible,
+    int32_t *latest_native_area, int8_t *latest_precise_sign) {
+    if (complete) *complete = s_precise_nclip_complete;
+    if (disagreements) *disagreements = s_precise_nclip_sign_disagreements;
+    if (native_culled) *native_culled = s_native_culled_precise_visible;
+    if (native_visible) *native_visible = s_native_visible_precise_culled;
+    if (latest_native_area) *latest_native_area = s_latest_nclip_native_area;
+    if (latest_precise_sign) *latest_precise_sign = s_latest_nclip_precise_sign;
+}
 static PreciseProjection s_speculative_saved_sxy[4];
 static uint32_t s_speculative_depth = 0;
 static int s_speculative_timeline_invalidated = 0;
@@ -1188,6 +1215,34 @@ void gte_nclip(GTEState* gte, uint32_t instr) {
     int64_t mac0 = (int64_t)sx0 * (sy1 - sy2) +
                    (int64_t)sx1 * (sy2 - sy0) +
                    (int64_t)sx2 * (sy0 - sy1);
+    if (s_precision_tracking &&
+        s_precise_sxy[0].valid && s_precise_sxy[1].valid &&
+        s_precise_sxy[2].valid &&
+        s_precise_sxy[0].packed == (uint32_t)gte->SXY[0] &&
+        s_precise_sxy[1].packed == (uint32_t)gte->SXY[1] &&
+        s_precise_sxy[2].packed == (uint32_t)gte->SXY[2]) {
+        const long double x10 = (long double)s_precise_sxy[1].x16 -
+                                s_precise_sxy[0].x16;
+        const long double y10 = (long double)s_precise_sxy[1].y16 -
+                                s_precise_sxy[0].y16;
+        const long double x20 = (long double)s_precise_sxy[2].x16 -
+                                s_precise_sxy[0].x16;
+        const long double y20 = (long double)s_precise_sxy[2].y16 -
+                                s_precise_sxy[0].y16;
+        const long double precise_area = x10 * y20 - y10 * x20;
+        const int native_sign = (mac0 > 0) - (mac0 < 0);
+        const int precise_sign = (precise_area > 0) - (precise_area < 0);
+        s_precise_nclip_complete++;
+        if (native_sign != precise_sign) {
+            s_precise_nclip_sign_disagreements++;
+            if (native_sign <= 0 && precise_sign > 0)
+                s_native_culled_precise_visible++;
+            if (native_sign > 0 && precise_sign <= 0)
+                s_native_visible_precise_culled++;
+            s_latest_nclip_native_area = (int32_t)mac0;
+            s_latest_nclip_precise_sign = (int8_t)precise_sign;
+        }
+    }
     gte->check_mac0_overflow(mac0);
     gte->MAC0 = static_cast<int32_t>(mac0);
     gte->set_error_flag();

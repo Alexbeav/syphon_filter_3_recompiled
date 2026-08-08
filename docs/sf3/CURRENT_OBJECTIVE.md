@@ -40,7 +40,7 @@ world presentation, full-width cinematic mattes, mouse and keyboard are
 human-accepted in Mission 1, and two clean 3,000-sample runs match frame and
 card hashes. HUD/UI remains at its original 4:3 coordinates.
 
-PGXP state: `cpu_component_provenance_in_progress`. The current 4x/4:3
+PGXP state: `precise_culling_candidate_in_progress`. The current 4x/4:3
 candidate has independent off, geometry-only and geometry-plus-perspective
 profiles. Two clean diagnostic processes per profile consume the 3,000-sample
 Mission 1 handoff route with live state-0 pages and no freeze/stall. The final
@@ -55,9 +55,18 @@ component-aware CPU provenance pass now raises complete-triangle coverage from
 execution. Human testing confirms that all observed wobbliness is gone. This is
 a major in-progress result, not final PGXP acceptance: character-model seams
 remain, and the starting-room couch texture can still snap between two
-positions. The next gate is bounded adjacent-primitive and frame-to-frame
-eligibility classification, followed by a shared-edge regression and two clean
-automated comparisons. See `docs/sf3/PGXP_CPU_COMPONENT_PASS1.md`.
+positions. Bounded adjacency found 194 complete shared-edge fractional
+disagreements; 135 triangles were reconciled and three winding-reversing
+results were rolled back. Human testing reports further improvement but still
+shows seams, couch snapping and intermittent loss of a distant character face.
+Geometry-only A/B rules out perspective-depth correction as that face's owner.
+The SF1 PC port's full-precision culling invariant led to an observation-only
+NCLIP comparison: 393,174 exact FIFO comparisons contained 34,122 sign
+disagreements, including 20,721 native-nonpositive versus precise-positive
+cases. The next isolated experiment is exact-three-vertex precise NCLIP,
+explicitly classified as an optional guest-visible presentation divergence;
+native compatibility remains unchanged. See
+`docs/sf3/PGXP_CPU_COMPONENT_PASS1.md`.
 
 Campaign state: `qualification_matrix_initialized`. The source-owned
 [`CAMPAIGN_QUALIFICATION.md`](CAMPAIGN_QUALIFICATION.md) ledger separates the

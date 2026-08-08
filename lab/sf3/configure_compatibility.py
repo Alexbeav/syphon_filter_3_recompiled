@@ -71,23 +71,29 @@ def configure(project: Path, widescreen: bool = False, pgxp: bool = False,
             text, changed = set_setting_value(
                 text, "widescreen", key, value)
             widescreen_changed = widescreen_changed or changed
-        for table, setting in (
-            ("widescreen", "native_wide = true"),
-            ("widescreen", "gte_game_mode = true"),
-            ("widescreen", "nw_guest_projection = true"),
+        for table, key, value in (
+            ("widescreen", "native_wide", "true"),
+            ("widescreen", "gte_game_mode", "true"),
+            ("widescreen", "nw_guest_projection", "true"),
             # SCUS-94640 Mission 1 census: world list 483..925 polygons;
             # auxiliary lists 1..21. Sixty-four is a measured separation,
             # not an address/value copied from SF2.
-            ("widescreen", "nw_world_min_polygons = 64"),
-            ("widescreen.cull", "auto_screen_x = true"),
-            ("widescreen.cull",
-             'screen_h_imms = ["0xE0", "0xF0", "0xF1"]'),
+            ("widescreen", "nw_world_min_polygons", "64"),
+            ("widescreen.cull", "auto_screen_x", "true"),
+            ("widescreen.cull", "screen_h_imms",
+             '["0xE0", "0xF0", "0xF1"]'),
         ):
-            text, changed = set_setting(text, table, setting)
+            text, changed = set_setting_value(text, table, key, value)
             widescreen_changed = widescreen_changed or changed
         if widescreen:
-            text, changed = set_setting(
-                text, "video", 'aspect_ratio = "16:9"')
+            text, changed = set_setting_value(
+                text, "widescreen", "offer", "true")
+            widescreen_changed = widescreen_changed or changed
+            text, changed = set_setting_value(
+                text, "video", "aspect_ratio", '"16:9"')
+            widescreen_changed = widescreen_changed or changed
+            text, changed = set_setting_value(
+                text, "controller.mouse_camera", "enabled", "true")
             widescreen_changed = widescreen_changed or changed
         if launcher_mods:
             for table, key, value in (
@@ -103,12 +109,12 @@ def configure(project: Path, widescreen: bool = False, pgxp: bool = False,
     if pgxp:
         geometry_precision = True
         perspective_textures = True
-    for enabled, setting in (
-        (geometry_precision, "geometry_precision = true"),
-        (perspective_textures, "perspective_textures = true"),
+    for enabled, key in (
+        (geometry_precision, "geometry_precision"),
+        (perspective_textures, "perspective_textures"),
     ):
         if enabled:
-            text, changed = set_setting(text, "video", setting)
+            text, changed = set_setting_value(text, "video", key, "true")
             precision_changed = precision_changed or changed
     game_toml.write_text(text, encoding="utf-8", newline="\n")
 

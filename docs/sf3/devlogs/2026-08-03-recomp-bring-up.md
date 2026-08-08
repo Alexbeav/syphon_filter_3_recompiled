@@ -1327,3 +1327,28 @@ snaps between two positions. Corpus candidate `PSX-GPU-005` and failure
 bounded checks. No value-only, mixed-corner or stale-tag relaxation will be
 used. The detailed evidence and next gate are recorded in
 `docs/sf3/PGXP_CPU_COMPONENT_PASS1.md`.
+
+### R31 — shared-edge improvement and precise-culling diagnosis
+
+Frame-local adjacency and bounded temporal diagnostics contradicted mixed
+eligibility as the dominant residual: both clean routes recorded zero mixed
+shared edges and zero recent eligibility flips. They did find 194 complete
+edge pairs with identical packed endpoints, depth and OT ownership but
+different fractions. A source-owned renderer-neutral reconciler corrected 135
+triangles and a topology guard rolled back three winding reversals. Human A/B
+reported a further substantial improvement, while seams, couch snapping and a
+distant bellhop face dropout remained.
+
+Perspective-off geometry-only A/B left the dropout unchanged. The SF1 PC port
+then supplied the matching lead: thin model faces must be culled in the same
+full-precision space used to render them. Observation-only SF3 NCLIP counters
+proved 34,122 quantized/precise sign disagreements across 393,174 exact FIFO
+comparisons in the short Mission 1 route, including 20,721 cases where native
+NCLIP was nonpositive and precise winding positive. No guest register was
+changed in this checkpoint. A precise-NCLIP behavior experiment remains
+separate because it necessarily changes guest-visible MAC0/visual submission.
+
+The direct profile configurator now replaces existing TOML values instead of
+inserting duplicate keys, enables mouse camera for direct widescreen profiles,
+and explicitly sets `widescreen.offer = true`; launcher-installed features
+remain independently default off.
