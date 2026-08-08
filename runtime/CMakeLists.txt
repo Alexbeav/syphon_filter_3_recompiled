@@ -24,6 +24,16 @@ if(BUILD_TESTING)
     target_include_directories(input_timeline_test PRIVATE include)
     add_test(NAME input_timeline_test COMMAND input_timeline_test)
 
+    add_executable(psx_keybinds_test
+        tests/test_psx_keybinds.cpp
+        src/psx_keybinds.c)
+    target_include_directories(psx_keybinds_test PRIVATE
+        include ${PSX_SDL_INCLUDE_DIRS})
+    target_compile_definitions(psx_keybinds_test PRIVATE
+        $<$<BOOL:${PSX_SDL3}>:PSX_SDL3=1>)
+    target_link_libraries(psx_keybinds_test PRIVATE ${PSX_SDL_LIBRARIES})
+    add_test(NAME psx_keybinds_test COMMAND psx_keybinds_test)
+
     add_executable(frame_color_stats_test
         tests/test_frame_color_stats.c
         src/frame_color_stats.c)
