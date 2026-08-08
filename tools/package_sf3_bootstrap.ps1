@@ -1,7 +1,8 @@
 [CmdletBinding()]
 param(
-    [string]$Version = 'v0.2.2-alpha',
-    [string]$CliPackageDirectory = 'dist\psxrecomp-cli-windows-x86_64'
+    [string]$Version = 'v0.2.3-alpha',
+    [string]$CliPackageDirectory = 'dist\psxrecomp-cli-windows-x86_64',
+    [switch]$Force
 )
 
 $ErrorActionPreference = 'Stop'
@@ -14,7 +15,8 @@ $archive = Join-Path $dist "$name.zip"
 $archiveHash = "$archive.sha256"
 foreach ($path in @($stage, $archive, $archiveHash)) {
     if (Test-Path -LiteralPath $path) {
-        throw "Refusing to overwrite existing release artifact: $path"
+        if (-not $Force) { throw "Refusing to overwrite existing release artifact: $path" }
+        Remove-Item -LiteralPath $path -Recurse -Force
     }
 }
 if (-not (Test-Path -LiteralPath (Join-Path $cli 'psxrecomp.exe') -PathType Leaf)) {
@@ -28,6 +30,8 @@ Copy-Item -LiteralPath (Join-Path $root 'tools\New-SF3LocalBuild.ps1') `
 Copy-Item -LiteralPath (Join-Path $root 'tools\Test-SF3BootstrapPackage.ps1') `
     -Destination $stage
 Copy-Item -LiteralPath (Join-Path $root 'public\BUILD_SF3.cmd') -Destination $stage
+Copy-Item -LiteralPath (Join-Path $root 'public\SETUP.cmd') -Destination $stage
+Copy-Item -LiteralPath (Join-Path $root 'public\SETUP.ps1') -Destination $stage
 Copy-Item -LiteralPath (Join-Path $root 'public\START_HERE.md') -Destination $stage
 $releaseNotes = Join-Path $root "docs\sf3\RELEASE_NOTES_$Version.md"
 if (-not (Test-Path -LiteralPath $releaseNotes -PathType Leaf)) {

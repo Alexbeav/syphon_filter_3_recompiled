@@ -1,7 +1,8 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
-    [string]$PackageDirectory
+    [string]$PackageDirectory,
+    [switch]$AllowLocalSetupState
 )
 
 $ErrorActionPreference = 'Stop'
@@ -42,6 +43,14 @@ $actual = @(Get-ChildItem -LiteralPath $root -Recurse -File | ForEach-Object {
     }
     $_.FullName.Substring($rootPrefix.Length).Replace('\', '/')
 } | Where-Object { $_ -cne 'PACKAGE_MANIFEST.json' })
+if ($AllowLocalSetupState) {
+    $actual = @($actual | Where-Object {
+        $_ -cne 'setup.log' -and
+        $_ -cne 'PLAY_SF3.cmd' -and
+        $_ -notmatch '^dependencies/' -and
+        $_ -notmatch '^SF3-Local-Build/'
+    })
+}
 $extra = @($actual | Where-Object { -not $declared.ContainsKey($_) })
 if ($extra.Count) { throw "Undeclared package file: $($extra[0])" }
 if ($actual.Count -ne $declared.Count) {

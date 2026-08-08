@@ -30,7 +30,9 @@ disabled until entry-level native/interpreter equivalence is proved.
 The public download is a clean bootstrap package, not a pre-generated game
 binary. It verifies the user's supported disc, generates retail-derived code
 locally, applies the accepted widescreen/PGXP SF3 profile, and compiles a
-private Release build.
+private Release build. The Windows kit's `SETUP.cmd` discovers existing tools
+or downloads isolated, hash-pinned Python and WinLibs build tools into the kit;
+it requires no WinGet, Git, pip, Visual Studio, or system-wide installation.
 Download it from [GitHub Releases](https://github.com/Alexbeav/Syphon-Filter-3-Recompiled/releases)
 and see [`docs/sf3/PUBLIC_BUILD.md`](docs/sf3/PUBLIC_BUILD.md).
 

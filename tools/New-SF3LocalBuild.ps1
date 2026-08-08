@@ -5,7 +5,15 @@ param(
     [ValidateSet('widescreen-4x', 'compatibility-4x')]
     [string]$VideoProfile = 'widescreen-4x',
     [string]$PsxRecompPackageDirectory,
+    [string]$PythonExecutable,
+    [string]$CMakeExecutable,
+    [string]$NinjaExecutable,
+    [string]$CCompiler,
+    [string]$CxxCompiler,
+    [ValidateRange(1, 64)]
+    [int]$BuildJobs = [Math]::Min(4, [Math]::Max(1, [Environment]::ProcessorCount)),
     [switch]$AcceptNoncommercialLicense,
+    [switch]$PackageAlreadyVerified,
     [switch]$GenerateOnly,
     [switch]$Interactive
 )
@@ -19,6 +27,16 @@ function Resolve-ExistingFile([string]$Path, [string]$Label) {
         throw "$Label does not exist: $Path"
     }
     return (Resolve-Path -LiteralPath $Path).Path
+}
+
+function Resolve-CommandPath([string]$Requested, [string]$Fallback, [string]$Label) {
+    if ($Requested) {
+        return Resolve-ExistingFile $Requested $Label
+    }
+    $command = Get-Command $Fallback -CommandType Application -ErrorAction SilentlyContinue |
+        Select-Object -First 1
+    if (-not $command) { throw "$Label is not available: $Fallback" }
+    return $command.Source
 }
 
 function Read-LicenseAcceptance {
@@ -38,7 +56,8 @@ if (Test-Path -LiteralPath (Join-Path $packagedAssets 'configure_compatibility.p
         $PsxRecompPackageDirectory = Join-Path $PSScriptRoot 'toolchain'
     }
     $packageVerifier = Join-Path $PSScriptRoot 'Test-SF3BootstrapPackage.ps1'
-    if (Test-Path -LiteralPath (Join-Path $PSScriptRoot 'PACKAGE_MANIFEST.json')) {
+    if (-not $PackageAlreadyVerified -and
+        (Test-Path -LiteralPath (Join-Path $PSScriptRoot 'PACKAGE_MANIFEST.json'))) {
         & $packageVerifier -PackageDirectory $PSScriptRoot | Out-Null
     }
 } else {
@@ -83,11 +102,14 @@ if (Test-Path -LiteralPath $output) {
     throw "Refusing to overwrite an existing local project: $output"
 }
 
-foreach ($command in @('python', 'cmake', 'ninja')) {
-    if (-not (Get-Command $command -ErrorAction SilentlyContinue)) {
-        throw "Required build tool is not available on PATH: $command"
-    }
-}
+$python = Resolve-CommandPath $PythonExecutable 'python' 'Python 3 executable'
+$cmake = Resolve-CommandPath $CMakeExecutable 'cmake' 'CMake executable'
+$ninja = Resolve-CommandPath $NinjaExecutable 'ninja' 'Ninja executable'
+$cc = Resolve-CommandPath $CCompiler 'gcc' 'C compiler'
+$cxx = Resolve-CommandPath $CxxCompiler 'g++' 'C++ compiler'
+$env:PATH = "$(Split-Path $cc -Parent);$(Split-Path $python -Parent);$env:PATH"
+& $python -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)'
+if ($LASTEXITCODE -ne 0) { throw 'Python 3.10 or newer is required.' }
 
 Write-Host 'Generating a private SF3 project from the owned disc...'
 & $cli build --disc $cue --bios $openBios --output $output --name 'Syphon Filter 3'
@@ -108,7 +130,7 @@ if ($VideoProfile -eq 'widescreen-4x') {
         '--widescreen', '--pgxp', '--precise-culling',
         '--output-config', $profileConfig)
 }
-& python @configureArgs
+& $python @configureArgs
 if ($LASTEXITCODE -ne 0) { throw 'SF3 profile configuration failed.' }
 
 Push-Location $output
@@ -157,10 +179,13 @@ if ($GenerateOnly) {
 $build = Join-Path $output 'build'
 $selectedConfig = $profileConfig
 Write-Host 'Compiling the private SF3 Release build...'
-& cmake -S $output -B $build -G Ninja -DCMAKE_BUILD_TYPE=Release `
+& $cmake -S $output -B $build -G Ninja -DCMAKE_BUILD_TYPE=Release `
+    "-DCMAKE_C_COMPILER=$($cc -replace '\\','/')" `
+    "-DCMAKE_CXX_COMPILER=$($cxx -replace '\\','/')" `
+    "-DCMAKE_MAKE_PROGRAM=$($ninja -replace '\\','/')" `
     -DPSX_RECOMP_UI=OFF "-DSF3_GAME_CONFIG=$selectedConfig"
 if ($LASTEXITCODE -ne 0) { throw 'SF3 CMake configuration failed.' }
-& cmake --build $build --config Release --target psx-runtime --parallel
+& $cmake --build $build --config Release --target psx-runtime --parallel $BuildJobs
 if ($LASTEXITCODE -ne 0) { throw 'SF3 Release build failed.' }
 
 Copy-Item -LiteralPath $settings -Destination (Join-Path $build 'settings.toml') -Force
