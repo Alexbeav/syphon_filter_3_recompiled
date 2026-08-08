@@ -414,3 +414,10 @@ features and PGXP choices, combined Widescreen + Mouse Look + PGXP Full
 activation worked, and disabling the enhancements restored 4:3 with mouse look
 off. Batch 3 is complete. PGXP motion quality remains explicitly deferred to
 Batch 4 provenance coverage.
+
+Accepted-build receipt: commit `f36d0d51` rebuilt the launcher-enabled Release
+product with embedded revision `v0.3.1-alpha-315-gf36d0d51`; executable SHA-256
+is `EA74C538B8A03DCEF7D0443F1ACE77DB64D66FD8A1353C1A70584F633C3D8B7E`.
+Two subsequent clean all-off OpenGL processes consumed all 3,000 samples. Both
+retain the common stderr and card hashes above. The full SF3 suite remains
+73/73 and the repository footprint is 19.946 GiB.
