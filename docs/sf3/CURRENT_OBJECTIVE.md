@@ -11,7 +11,7 @@ previous catastrophic red/checkered failure and deterministic opening-room
 textured-shard defect are fixed. Visible 4x testing confirms a clean Mission 1
 opening room and connected, comfortable play through arrival in Mission 4.
 
-Framework convergence state: `batch3_automated_qualified_visible_pending`.
+Framework convergence state: `batch3_human_accepted`.
 Batch 2 remains qualified as recorded below. The canonical Batch 3 branch adds
 launcher-owned dual input bindings and a resettable, title-neutral enhancement
 state core. SF3 preserves independent geometry and perspective flags, resets
@@ -23,8 +23,10 @@ The canonical suite passes 46/46; SF3 passes 73/73 and a launcher-enabled full
 generated-runtime Release link. All-off twice, every single feature/mode and
 the combined widescreen + mouse + full-PGXP state consume the 3,000-sample
 route with common stderr and card hashes; the combined state also passes after
-the launcher UI is linked. The remaining Batch 3 gate is a visible launcher
-selection/reset smoke, not another PGXP motion-quality acceptance claim.
+the launcher UI is linked. The user then accepted the visible launcher catalog,
+default-off state, PGXP geometry/full selector, combined activation and return
+to the all-off 4:3/mouse-disabled state. Batch 3 is complete. This does not
+upgrade PGXP motion quality; provenance coverage remains the Batch 4 owner.
 
 Redux state: `phase1_widescreen_human_accepted`. The isolated branch has a
 clean 4x/4:3 control and a 4x/16:9 default candidate, keyboard mapping,

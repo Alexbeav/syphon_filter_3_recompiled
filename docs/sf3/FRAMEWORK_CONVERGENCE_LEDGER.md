@@ -408,6 +408,9 @@ Catalog and automated matrix checkpoint:
   duplicate combined stdout hashes to
   `4d2a2267696c608927e5405e65c7261c0d96c567b4578ddfb295c5a0372e668b`.
 
-Automated Batch 3 gates are qualified. Visible launcher selection and
-same-process disable/relaunch remain human-smoke items; PGXP motion quality is
-still deferred to Batch 4 provenance coverage.
+Automated Batch 3 gates are qualified. On 2026-08-08 the user accepted the
+launcher-enabled candidate: the Mods page exposed the expected default-off
+features and PGXP choices, combined Widescreen + Mouse Look + PGXP Full
+activation worked, and disabling the enhancements restored 4:3 with mouse look
+off. Batch 3 is complete. PGXP motion quality remains explicitly deferred to
+Batch 4 provenance coverage.
