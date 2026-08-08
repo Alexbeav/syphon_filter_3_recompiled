@@ -11,16 +11,20 @@ previous catastrophic red/checkered failure and deterministic opening-room
 textured-shard defect are fixed. Visible 4x testing confirms a clean Mission 1
 opening room and connected, comfortable play through arrival in Mission 4.
 
-Framework convergence state: `batch3_lifecycle_implemented`. Batch 2 remains
-qualified as recorded below. The canonical Batch 3 branch now adds launcher-
-owned dual input bindings and a resettable, title-neutral enhancement state
-core. SF3 preserves independent geometry and perspective flags (including the
-perspective-only diagnostic baseline), resets widescreen/PGXP/mouse state
-before every same-process plugin activation and compiles the guarded mouse hook
-independently of its default enablement. The canonical suite passes 46/46; SF3
-passes 72/72 plus a full generated-runtime Release compile/link contract. The
-remaining Batch 3 gate is to express SF3's four default-off launcher Mods and
-run the all-off/single/combination automated route matrix before human testing.
+Framework convergence state: `batch3_automated_qualified_visible_pending`.
+Batch 2 remains qualified as recorded below. The canonical Batch 3 branch adds
+launcher-owned dual input bindings and a resettable, title-neutral enhancement
+state core. SF3 preserves independent geometry and perspective flags, resets
+widescreen/PGXP/mouse state before each same-process plugin activation and
+compiles the guarded mouse hook independently of its default enablement. SF3
+now ships a source-owned, PolyForm-Noncommercial launcher catalog with
+default-off Widescreen, Mouse Look and three-state PGXP (off/geometry/full).
+The canonical suite passes 46/46; SF3 passes 73/73 and a launcher-enabled full
+generated-runtime Release link. All-off twice, every single feature/mode and
+the combined widescreen + mouse + full-PGXP state consume the 3,000-sample
+route with common stderr and card hashes; the combined state also passes after
+the launcher UI is linked. The remaining Batch 3 gate is a visible launcher
+selection/reset smoke, not another PGXP motion-quality acceptance claim.
 
 Redux state: `phase1_widescreen_human_accepted`. The isolated branch has a
 clean 4x/4:3 control and a 4x/16:9 default candidate, keyboard mapping,

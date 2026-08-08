@@ -376,3 +376,38 @@ Validation at this checkpoint:
 This qualifies the lifecycle implementation, not the Batch 3 exit gate. The
 next step is source-owned, default-off SF3 package/plugin definitions followed
 by automated all-off, single-feature and representative-combination routes.
+
+Catalog and automated matrix checkpoint:
+
+- `lab/sf3/mods` contains only a source manifest: no patch, overlay, retail or
+  generated payload. Widescreen and Mouse Look are independent default-off
+  features. PGXP is one default-off feature with exact geometry-only and
+  geometry-plus-perspective choices, avoiding conflicting PGXP feature states.
+- `lab/sf3/src/sf3_mods.c` is statically linked and exposes only narrow trusted
+  activation APIs. The generated project enables recomp-ui, copies the catalog
+  beside the executable and retains a 4:3/PGXP-off/mouse-off baseline with the
+  legacy Settings widescreen selector hidden.
+- SF3 suite: 73/73. The catalog regression proves default-off identity,
+  complete PGXP choices, exact SCUS-94640 targeting, build wiring and
+  configurator idempotence.
+- Launcher-enabled Release executable SHA-256:
+  `9EF047B1FD5DE6AD69CF7B7333857211F301CF2D7D2C3CC4DA7088A028E68CD8`;
+  input compatibility ID `psxrecomp-60b385dc0961c193`; retained replay payload
+  SHA-256 `dc57139288ebc5f17de801264619ff855aedb6973da5e54c4ad6cb1917662f5b`.
+- Two clean all-off processes, Widescreen alone, Mouse Look alone, PGXP
+  geometry alone, PGXP full alone and two combined Widescreen + Mouse Look +
+  PGXP-full processes all consume 3,000 samples. The launcher-linked final
+  executable additionally passes one all-off and one combined process.
+- Every matrix process has stderr SHA-256
+  `EFBCC7B119D254FAF365D9949A6BB775A72670AB7B16F4A75BCD00ED9468FB68`,
+  card 1 `A717D08D25E78DB0ED71DCEB6CFC0A5A6249B71727820C0C69B5E89AE570CC3F`
+  and card 2
+  `7706C7D43EDAF8CB7618E574F03457105153E3BDC196DB803A600AD96A8F58E8`.
+  Duplicate all-off normalized stdout hashes to
+  `51ae26602aa9bb8cc12cf5c36646ae85f6b56776eaa36ac9a897a52c35eb5841`;
+  duplicate combined stdout hashes to
+  `4d2a2267696c608927e5405e65c7261c0d96c567b4578ddfb295c5a0372e668b`.
+
+Automated Batch 3 gates are qualified. Visible launcher selection and
+same-process disable/relaunch remain human-smoke items; PGXP motion quality is
+still deferred to Batch 4 provenance coverage.

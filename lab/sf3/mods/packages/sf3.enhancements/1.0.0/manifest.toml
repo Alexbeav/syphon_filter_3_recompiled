@@ -1,0 +1,59 @@
+format_version = 5
+id = "sf3.enhancements"
+version = "1.0.0"
+name = "Syphon Filter 3 Enhancements"
+author = "SF3 Recompiled project"
+description = "Optional, independently controlled PC presentation and input enhancements."
+license = "PolyForm-Noncommercial-1.0.0"
+save_compatibility = "shared"
+
+[[target]]
+game_id = "SCUS-94640"
+
+[[feature]]
+id = "mouse-look"
+name = "Mouse Look"
+description = "Direct relative-mouse camera control with SCUS-94640 camera ownership guards."
+group = "Controls"
+default_enabled = false
+
+[[feature]]
+id = "widescreen"
+name = "Widescreen (16:9)"
+description = "Native-wide world rendering with the verified SF3 world-list and cinematic-matte rules."
+group = "Graphics"
+default_enabled = false
+
+[[feature]]
+id = "pgxp"
+name = "PGXP Geometry Correction"
+description = "Uses exact GTE provenance for complete triangles; perspective correction is optional."
+group = "Graphics"
+default_enabled = false
+
+[[option]]
+feature = "pgxp"
+id = "mode"
+label = "Correction mode"
+type = "choice"
+default = "geometry"
+
+[[option.choice]]
+value = "geometry"
+label = "Geometry only"
+
+[[option.choice]]
+value = "full"
+label = "Geometry + perspective textures"
+
+[[plugin]]
+feature = "mouse-look"
+id = "sf3.mouse-look"
+
+[[plugin]]
+feature = "widescreen"
+id = "sf3.widescreen"
+
+[[plugin]]
+feature = "pgxp"
+id = "sf3.pgxp"

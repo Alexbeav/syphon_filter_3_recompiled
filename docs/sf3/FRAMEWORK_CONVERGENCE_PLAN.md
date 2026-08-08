@@ -136,9 +136,12 @@ Exit gate:
 Implementation checkpoint (2026-08-08): canonical commits `fdf23abd`,
 `c1b24451` and `1ce3b001` provide dual bindings plus a complete resettable
 enhancement state. SF3 has wired pre-activation reset for aspect, independent
-geometry/perspective precision and mouse-camera state; 72/72 tests and a full
-generated-runtime Release compile/link pass. Package/plugin definitions and the
-automated feature matrix remain in progress; no visible test is requested yet.
+geometry/perspective precision and mouse-camera state; 73/73 tests and a full
+launcher-enabled generated-runtime Release link pass. SF3's default-off catalog
+and trusted plugin now expose Widescreen, Mouse Look and PGXP
+off/geometry/full. The all-off, each-single-state and combined automated matrix
+passes; a visible launcher selection/reset smoke remains before closing Batch
+3.
 
 Adopt one generic lifecycle for Widescreen, PGXP and Mouse Look. Use SF2
 `452cc0c` as the launcher-Mod reference, but independently express SF3 title

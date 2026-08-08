@@ -31,6 +31,14 @@ python tools\compare_generated_projects.py .\lab\sf3\generated\run-a .\lab\sf3\g
 The retail executable, generated sources, builds, traces and captures are
 ignored and must remain local.
 
+For a launcher-owned enhancement build, apply `--launcher-mods` instead of a
+fixed widescreen/PGXP profile. This installs the payload-free built-in catalog,
+links the trusted SF3 plugin and enables recomp-ui; configure CMake with the
+game project's pinned `recomp-ui` checkout (or `RECOMP_UI_ROOT`). Widescreen,
+Mouse Look and PGXP all default off. PGXP exposes geometry-only and full
+geometry-plus-perspective choices inside one feature so mutually conflicting
+modes cannot be enabled together.
+
 The compatibility configurator disables native execution of runtime-installed
 overlays for SF3. Visible testing proved the current compiled Mission 1 overlay
 can return invalid geometry ownership while the same retail route succeeds

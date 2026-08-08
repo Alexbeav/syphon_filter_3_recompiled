@@ -491,6 +491,7 @@ if(BUILD_TESTING)
                 sdl3_main_single_include
                 sf3_gp0_primitive_analyzer
                 sf3_input_route_helpers
+                sf3_launcher_mod_catalog
                 sf3_widescreen_profile
                 pgxp_precision_contract
                 sf3_approved_capture_selector

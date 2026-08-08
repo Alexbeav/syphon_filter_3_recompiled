@@ -40,7 +40,8 @@ def set_setting_value(text: str, table: str, key: str,
 def configure(project: Path, widescreen: bool = False, pgxp: bool = False,
               geometry_precision: bool = False,
               perspective_textures: bool = False,
-              output_config: str | None = None) -> bool:
+              output_config: str | None = None,
+              launcher_mods: bool = False) -> bool:
     game_toml = project / (output_config or "game.toml")
     output_created = False
     if output_config and not game_toml.exists():
@@ -62,7 +63,7 @@ def configure(project: Path, widescreen: bool = False, pgxp: bool = False,
                 "\n\n[controller.mouse_camera]" + camera_table)
 
     widescreen_changed = False
-    if widescreen:
+    if widescreen or launcher_mods:
         for key, value in (
             ("nw_hud_corners", "false"),
             ("nw_full_mirror", "false"),
@@ -71,7 +72,6 @@ def configure(project: Path, widescreen: bool = False, pgxp: bool = False,
                 text, "widescreen", key, value)
             widescreen_changed = widescreen_changed or changed
         for table, setting in (
-            ("video", 'aspect_ratio = "16:9"'),
             ("widescreen", "native_wide = true"),
             ("widescreen", "gte_game_mode = true"),
             ("widescreen", "nw_guest_projection = true"),
@@ -85,6 +85,20 @@ def configure(project: Path, widescreen: bool = False, pgxp: bool = False,
         ):
             text, changed = set_setting(text, table, setting)
             widescreen_changed = widescreen_changed or changed
+        if widescreen:
+            text, changed = set_setting(
+                text, "video", 'aspect_ratio = "16:9"')
+            widescreen_changed = widescreen_changed or changed
+        if launcher_mods:
+            for table, key, value in (
+                ("widescreen", "offer", "false"),
+                ("video", "aspect_ratio", '"4:3"'),
+                ("video", "geometry_precision", "false"),
+                ("video", "perspective_textures", "false"),
+                ("controller.mouse_camera", "enabled", "false"),
+            ):
+                text, changed = set_setting_value(text, table, key, value)
+                widescreen_changed = widescreen_changed or changed
     precision_changed = False
     if pgxp:
         geometry_precision = True
@@ -128,7 +142,46 @@ endif()
     cmake_changed = "TARGET_FILE_DIR:psx-runtime>/keybinds.ini" not in cmake_text
     if cmake_changed:
         cmake_text = cmake_text.rstrip() + "\n" + copy_block
-    if config_select_changed or cmake_changed:
+    mods_changed = False
+    if launcher_mods:
+        ui_off = 'set(PSX_RECOMP_UI OFF CACHE BOOL "" FORCE)'
+        ui_on = 'set(PSX_RECOMP_UI ON CACHE BOOL "" FORCE)'
+        if ui_off in cmake_text:
+            cmake_text = cmake_text.replace(ui_off, ui_on, 1)
+            mods_changed = True
+        source_mod = Path(__file__).with_name("src") / "sf3_mods.c"
+        project_src = project / "src"
+        project_src.mkdir(exist_ok=True)
+        project_mod = project_src / "sf3_mods.c"
+        if not project_mod.exists() or project_mod.read_bytes() != source_mod.read_bytes():
+            shutil.copyfile(source_mod, project_mod)
+            mods_changed = True
+        source_manifest = (Path(__file__).with_name("mods") / "packages" /
+                           "sf3.enhancements" / "1.0.0" / "manifest.toml")
+        project_manifest = (project / "mods" / "preloaded" / "packages" /
+                            "sf3.enhancements" / "1.0.0" / "manifest.toml")
+        if (not project_manifest.exists() or
+                project_manifest.read_bytes() != source_manifest.read_bytes()):
+            project_manifest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(source_manifest, project_manifest)
+            mods_changed = True
+        if 'EXTRAS_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/sf3_mods.c"' not in cmake_text:
+            cmake_text = cmake_text.replace(
+                'DEFAULT_GAME_CONFIG_PATH "${SF3_GAME_CONFIG}"\n)',
+                'DEFAULT_GAME_CONFIG_PATH "${SF3_GAME_CONFIG}"\n'
+                '  EXTRAS_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/sf3_mods.c"\n)')
+            mods_changed = True
+        mods_copy = """
+add_custom_command(TARGET psx-runtime POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+    "${CMAKE_CURRENT_SOURCE_DIR}/mods/preloaded"
+    "$<TARGET_FILE_DIR:psx-runtime>/mods"
+  COMMENT "Installing Syphon Filter 3 built-in mod catalog")
+"""
+        if "Installing Syphon Filter 3 built-in mod catalog" not in cmake_text:
+            cmake_text = cmake_text.rstrip() + "\n" + mods_copy
+            mods_changed = True
+    if config_select_changed or cmake_changed or mods_changed:
         cmake.write_text(cmake_text, encoding="utf-8", newline="\n")
 
     for build in project.glob("build*"):
@@ -137,7 +190,7 @@ endif()
 
     return (output_created or compat_changed or scale_changed or mouse_pad_changed or
             camera_changed or widescreen_changed or precision_changed or bindings_changed or
-            config_select_changed or cmake_changed)
+            config_select_changed or cmake_changed or mods_changed)
 
 
 def main() -> int:
@@ -159,12 +212,16 @@ def main() -> int:
     parser.add_argument(
         "--output-config",
         help="write/read a sibling config instead of changing game.toml")
+    parser.add_argument(
+        "--launcher-mods", action="store_true",
+        help="install default-off SF3 enhancement Mods and their trusted plugin")
     args = parser.parse_args()
     project = args.project.resolve()
     changed = configure(project, widescreen=args.widescreen, pgxp=args.pgxp,
                         geometry_precision=args.geometry_precision,
                         perspective_textures=args.perspective_textures,
-                        output_config=args.output_config)
+                        output_config=args.output_config,
+                        launcher_mods=args.launcher_mods)
     print(f"SF3 compatibility/presentation defaults "
           f"{'applied' if changed else 'already present'}: {project}")
     return 0
