@@ -19,7 +19,8 @@ typedef struct PsxModEnhancementConfig {
     int adaptive_aspect;
     uint32_t adaptive_max_num;
     uint32_t adaptive_max_den;
-    uint32_t pgxp_mode;
+    int geometry_precision;
+    int perspective_textures;
     int mouse_camera;
 } PsxModEnhancementConfig;
 

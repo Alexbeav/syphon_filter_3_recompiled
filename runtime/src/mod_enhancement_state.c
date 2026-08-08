@@ -24,9 +24,12 @@ void psx_mod_enhancement_initialize(
     const PsxModEnhancementConfig *baseline) {
     if (!state) return;
     state->baseline = identity_config();
-    if (baseline && valid_aspect(baseline->aspect_num, baseline->aspect_den) &&
-        baseline->pgxp_mode <= PSX_MOD_PGXP_FULL) {
+    if (baseline && valid_aspect(baseline->aspect_num, baseline->aspect_den)) {
         state->baseline = *baseline;
+        state->baseline.geometry_precision =
+            baseline->geometry_precision ? 1 : 0;
+        state->baseline.perspective_textures =
+            baseline->perspective_textures ? 1 : 0;
         state->baseline.mouse_camera = baseline->mouse_camera ? 1 : 0;
         state->baseline.adaptive_aspect = baseline->adaptive_aspect ? 1 : 0;
         if (!valid_aspect(state->baseline.adaptive_max_num,
@@ -65,7 +68,8 @@ int psx_mod_enhancement_set_adaptive_aspect(
 int psx_mod_enhancement_set_pgxp_mode(
     PsxModEnhancementState *state, uint32_t mode) {
     if (!state || mode > PSX_MOD_PGXP_FULL) return 0;
-    state->current.pgxp_mode = mode;
+    state->current.geometry_precision = mode >= PSX_MOD_PGXP_GEOMETRY;
+    state->current.perspective_textures = mode >= PSX_MOD_PGXP_FULL;
     return 1;
 }
 

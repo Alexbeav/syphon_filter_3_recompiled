@@ -11,7 +11,7 @@ static int check(int condition, const char *message) {
 int main(void) {
     PsxModEnhancementState state;
     PsxModEnhancementConfig baseline = {
-        4, 3, 0, 16, 9, PSX_MOD_PGXP_OFF, 0
+        4, 3, 0, 16, 9, 0, 0, 0
     };
     int ok = 1;
     psx_mod_enhancement_initialize(&state, &baseline);
@@ -23,20 +23,35 @@ int main(void) {
                     &state, PSX_MOD_PGXP_FULL), "full PGXP rejected");
     psx_mod_enhancement_set_mouse_camera(&state, 1);
     ok &= check(state.current.adaptive_aspect &&
-                state.current.pgxp_mode == PSX_MOD_PGXP_FULL &&
+                state.current.geometry_precision &&
+                state.current.perspective_textures &&
                 state.current.mouse_camera, "contamination setup failed");
 
     psx_mod_enhancement_reset(&state);
     ok &= check(state.current.aspect_num == 4 &&
                 state.current.aspect_den == 3 &&
                 !state.current.adaptive_aspect &&
-                state.current.pgxp_mode == PSX_MOD_PGXP_OFF &&
+                !state.current.geometry_precision &&
+                !state.current.perspective_textures &&
                 !state.current.mouse_camera,
                 "reset did not restore the complete compatibility baseline");
     ok &= check(!psx_mod_enhancement_set_pgxp_mode(&state, 3),
                 "invalid PGXP mode accepted");
     ok &= check(!psx_mod_enhancement_set_fixed_aspect(&state, 1, 1),
                 "invalid aspect accepted");
+
+    baseline.geometry_precision = 0;
+    baseline.perspective_textures = 1;
+    psx_mod_enhancement_initialize(&state, &baseline);
+    ok &= check(!state.current.geometry_precision &&
+                state.current.perspective_textures,
+                "perspective-only diagnostic baseline was collapsed");
+    ok &= check(psx_mod_enhancement_set_pgxp_mode(
+                    &state, PSX_MOD_PGXP_OFF), "PGXP off rejected");
+    psx_mod_enhancement_reset(&state);
+    ok &= check(!state.current.geometry_precision &&
+                state.current.perspective_textures,
+                "reset did not preserve independent PGXP baseline flags");
 
     if (!ok) return 1;
     puts("PASS: enhancement state resets from contamination");
